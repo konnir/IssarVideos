@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Narrative Video Tagger</title>
+    <link rel="stylesheet" href="/static/tagger.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Narrative Video Tagger</h1>
+
+      <!-- Username Section -->
+      <div class="username-section">
+        <label for="username">Enter Your Full Name:</label>
+        <input type="text" id="username" placeholder="Your full name" />
+        <button onclick="startTagging()">Start Tagging</button>
+      </div>
+
+      <!-- Video Section -->
+      <div class="video-section" id="videoSection">
+        <div class="video-container" id="videoContainer">
+          <!-- Video will be loaded here -->
+        </div>
+
+        <div class="narrative-question">
+          Does this video imply the following narrative?
+        </div>
+
+        <div class="narrative-container" id="narrativeContainer">
+          <div class="narrative-english">
+            <div class="narrative-label">Narrative</div>
+            <div class="narrative-text" id="narrativeEnglish">
+              <!-- English narrative will be loaded here -->
+            </div>
+          </div>
+          <div class="narrative-hebrew">
+            <div class="narrative-label">נרטיב</div>
+            <div class="narrative-text" id="narrativeHebrew">
+              <!-- Hebrew narrative will be loaded here -->
+            </div>
+          </div>
+        </div>
+
+        <div class="tagging-section">
+          <div class="radio-group">
+            <div class="radio-option">
+              <input type="radio" id="result0" name="result" value="0" />
+              <label for="result0">0 - Init</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="result1" name="result" value="1" />
+              <label for="result1">1 - Yes</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="result2" name="result" value="2" />
+              <label for="result2">2 - No</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="result3" name="result" value="3" />
+              <label for="result3">3 - Too Obvious</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="result4" name="result" value="4" />
+              <label for="result4">4 - Problem</label>
+            </div>
+            <button class="send-button" onclick="submitTag()">Send</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats Section -->
+      <div class="stats-section">
+        <div class="stats" id="taggedCount">You tagged: 0</div>
+      </div>
+
+      <!-- Message Section -->
+      <div id="messageSection"></div>
+    </div>
+
+    <script src="/static/tagger.js"></script>
+  </body>
+</html>
