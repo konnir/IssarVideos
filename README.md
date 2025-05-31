@@ -7,6 +7,9 @@ FastAPI application for managing video narratives with Excel database backend.
 - 🎥 Video narrative management with Excel storage
 - 🔄 CRUD operations via REST API
 - 🏷️ Tagging system with result tracking (`Tagger_1_Result`, `Tagger_2_Result`)
+- 🏆 **Real-time Leaderboard** showing tagging statistics and user rankings
+- 📊 **Authenticated Report System** with Excel download functionality
+- ☁️ **Cloud Run Ready** with HTTPS support and health endpoints
 - 🧪 Comprehensive testing suite with safe database handling
 - 📊 Web interface for data visualization
 

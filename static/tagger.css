@@ -228,6 +228,55 @@ label {
   margin: 10px 0;
 }
 
+/* Report Link Section */
+.report-link-section {
+  text-align: center;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #333;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.report-link {
+  display: inline-block;
+  color: #4caf50;
+  text-decoration: none;
+  font-size: 1.1em;
+  font-weight: 500;
+  padding: 10px 20px;
+  border: 2px solid #4caf50;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.report-link:hover {
+  background-color: #4caf50;
+  color: #121212;
+  transform: translateY(-2px);
+}
+
+.leaderboard-toggle-btn {
+  background-color: #ff9800;
+  color: #121212;
+  border: 2px solid #ff9800;
+  padding: 10px 20px;
+  font-size: 1.1em;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.leaderboard-toggle-btn:hover {
+  background-color: #f57c00;
+  border-color: #f57c00;
+  transform: translateY(-2px);
+}
+
 @media (max-width: 768px) {
   .radio-group {
     flex-direction: column;
@@ -265,5 +314,93 @@ label {
 
   .narrative-hebrew {
     border-top-color: #ff9800;
+  }
+
+  .report-link-section {
+    flex-direction: column;
+    gap: 15px;
+  }
+}
+
+/* Leaderboard Styles */
+.leaderboard-section {
+  background-color: #2d2d2d;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.leaderboard-section h2 {
+  color: #4caf50;
+  margin-bottom: 15px;
+  font-size: 1.5em;
+  text-align: center;
+}
+
+.leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.leaderboard-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  background-color: #3d3d3d;
+  border-radius: 6px;
+  border-left: 3px solid #555;
+  transition: all 0.3s ease;
+}
+
+.leaderboard-item:hover {
+  background-color: #4a4a4a;
+  transform: translateX(5px);
+}
+
+.leaderboard-item.top-three {
+  border-left-color: #4caf50;
+  background-color: #2a3f2a;
+}
+
+.leaderboard-position {
+  font-size: 1.2em;
+  font-weight: bold;
+  min-width: 60px;
+  text-align: center;
+}
+
+.leaderboard-username {
+  flex: 1;
+  font-weight: 500;
+  margin-left: 15px;
+}
+
+.leaderboard-count {
+  color: #4caf50;
+  font-weight: bold;
+  font-size: 0.9em;
+}
+
+.leaderboard-container p {
+  text-align: center;
+  color: #888;
+  font-style: italic;
+  padding: 20px;
+}
+
+/* Responsive adjustments for leaderboard */
+@media (max-width: 768px) {
+  .leaderboard-item {
+    padding: 10px;
+  }
+  
+  .leaderboard-position {
+    min-width: 50px;
+    font-size: 1em;
+  }
+  
+  .leaderboard-username {
+    margin-left: 10px;
   }
 }

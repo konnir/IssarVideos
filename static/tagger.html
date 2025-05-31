@@ -17,6 +17,14 @@
         <button onclick="startTagging()">Start Tagging</button>
       </div>
 
+      <!-- Leaderboard Section -->
+      <div class="leaderboard-section" id="leaderboardSection">
+        <h2>🏆 Leaderboard</h2>
+        <div class="leaderboard-container" id="leaderboardContainer">
+          <div class="loading">Loading leaderboard...</div>
+        </div>
+      </div>
+
       <!-- Video Section -->
       <div class="video-section" id="videoSection">
         <div class="video-container" id="videoContainer">
@@ -76,6 +84,18 @@
 
       <!-- Message Section -->
       <div id="messageSection"></div>
+
+      <!-- Report Link -->
+      <div class="report-link-section">
+        <a href="/report" class="report-link">📊 View Report</a>
+        <button
+          onclick="toggleLeaderboard()"
+          class="leaderboard-toggle-btn"
+          id="leaderboardToggleBtn"
+        >
+          🏆 Leaderboard
+        </button>
+      </div>
     </div>
 
     <script src="/static/tagger.js"></script>

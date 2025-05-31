@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tagged Records Report</title>
+    <link rel="stylesheet" href="/static/tagger.css" />
+    <link rel="stylesheet" href="/static/report.css" />
+  </head>
+  <body>
+    <div class="container">
+      <a href="/" class="back-link">← Back to Tagger</a>
+      <h1>📊 Tagged Records Report</h1>
+
+      <!-- Authentication Section -->
+      <div class="auth-section" id="authSection">
+        <h2>Authentication Required</h2>
+        <p>Please enter your credentials to access the report.</p>
+        <div class="auth-form">
+          <input
+            type="text"
+            id="authUsername"
+            class="auth-input"
+            placeholder="Full Name"
+          />
+          <input
+            type="password"
+            id="authPassword"
+            class="auth-input"
+            placeholder="Password"
+          />
+          <button class="auth-button" onclick="authenticate()">Login</button>
+        </div>
+        <div id="authMessage"></div>
+      </div>
+
+      <!-- Report Section -->
+      <div class="report-section" id="reportSection">
+        <div class="stats-info" id="statsInfo">
+          <!-- Stats will be loaded here -->
+        </div>
+
+        <div id="loadingMessage" class="loading">Loading tagged records...</div>
+        <div id="errorMessage"></div>
+
+        <div id="tableContainer">
+          <!-- Table will be loaded here -->
+        </div>
+
+        <div class="download-section">
+          <a
+            href="/download-excel"
+            class="download-button"
+            download="tagged_records_report.xlsx"
+          >
+            📥 Download Excel Report
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <script src="/static/tagger.js"></script>
+    <script src="/static/report.js"></script>
+  </body>
+</html>

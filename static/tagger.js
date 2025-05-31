@@ -85,6 +85,7 @@ async function startTagging() {
     await updateTaggedCount();
     await loadNextVideo();
     document.getElementById("videoSection").style.display = "block";
+    hideLeaderboard(); // Hide leaderboard when user starts tagging
   } catch (error) {
     showMessage("Error starting tagging: " + error.message, "error");
   }
@@ -208,8 +209,82 @@ async function updateTaggedCount() {
   }
 }
 
+async function loadLeaderboard() {
+  try {
+    const response = await apiCall("/leaderboard");
+    const leaderboard = await response.json();
+    
+    const leaderboardContainer = document.getElementById("leaderboardContainer");
+    
+    if (leaderboard.length === 0) {
+      leaderboardContainer.innerHTML = "<p>No tagging activity yet. Be the first to start!</p>";
+      return;
+    }
+    
+    let leaderboardHTML = '<div class="leaderboard-list">';
+    leaderboard.forEach((user, index) => {
+      const position = index + 1;
+      const medalEmoji = position === 1 ? "🥇" : position === 2 ? "🥈" : position === 3 ? "🥉" : "📊";
+      
+      leaderboardHTML += `
+        <div class="leaderboard-item ${position <= 3 ? 'top-three' : ''}">
+          <div class="leaderboard-position">${medalEmoji} ${position}</div>
+          <div class="leaderboard-username">${user.username}</div>
+          <div class="leaderboard-count">${user.tagged_count} tagged</div>
+        </div>
+      `;
+    });
+    leaderboardHTML += '</div>';
+    
+    leaderboardContainer.innerHTML = leaderboardHTML;
+  } catch (error) {
+    console.error("Error loading leaderboard:", error);
+    document.getElementById("leaderboardContainer").innerHTML = 
+      "<p>Unable to load leaderboard.</p>";
+  }
+}
+
+function hideLeaderboard() {
+  const leaderboardSection = document.getElementById("leaderboardSection");
+  const toggleBtn = document.getElementById("leaderboardToggleBtn");
+  if (leaderboardSection) {
+    leaderboardSection.style.display = "none";
+  }
+  if (toggleBtn) {
+    toggleBtn.textContent = "🏆 Show Leaderboard";
+  }
+}
+
+function showLeaderboard() {
+  const leaderboardSection = document.getElementById("leaderboardSection");
+  const toggleBtn = document.getElementById("leaderboardToggleBtn");
+  if (leaderboardSection) {
+    leaderboardSection.style.display = "block";
+  }
+  if (toggleBtn) {
+    toggleBtn.textContent = "🏆 Hide Leaderboard";
+  }
+}
+
+function toggleLeaderboard() {
+  const leaderboardSection = document.getElementById("leaderboardSection");
+  const toggleBtn = document.getElementById("leaderboardToggleBtn");
+  
+  if (leaderboardSection.style.display === "none") {
+    showLeaderboard();
+    // Reload leaderboard data when showing
+    loadLeaderboard();
+  } else {
+    hideLeaderboard();
+  }
+}
+
 // Initialize event listeners when DOM is loaded
 document.addEventListener("DOMContentLoaded", function() {
+  // Load leaderboard on page load and ensure it's visible
+  loadLeaderboard();
+  showLeaderboard();
+  
   // Allow Enter key to start tagging
   document
     .getElementById("username")

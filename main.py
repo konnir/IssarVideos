@@ -191,6 +191,30 @@ def get_user_tagged_count(username: str):
     return {"username": username, "tagged_count": count}
 
 
+@app.get("/leaderboard")
+def get_leaderboard():
+    """Get leaderboard with tagging statistics for all users"""
+    if db.df.empty:
+        return []
+
+    # Get all unique users who have tagged records
+    tagger1_users = db.df[db.df["Tagger_1"] != "Init"]["Tagger_1"].tolist()
+    tagger2_users = db.df[db.df["Tagger_2"] != "Init"]["Tagger_2"].tolist()
+    all_users = list(set(tagger1_users + tagger2_users))
+
+    # Calculate statistics for each user
+    leaderboard = []
+    for username in all_users:
+        count = db.get_user_tagged_count(username)
+        if count > 0:  # Only include users who have tagged at least one record
+            leaderboard.append({"username": username, "tagged_count": count})
+
+    # Sort by tagged count in descending order
+    leaderboard.sort(key=lambda x: x["tagged_count"], reverse=True)
+
+    return leaderboard
+
+
 @app.post("/tag-record")
 def tag_record(request: TagRecordRequest):
     """Tag a record with user's name and result"""
@@ -233,6 +257,77 @@ def serve_tagger():
 def serve_tagger_alt():
     """Alternative route for the video tagger UI"""
     return FileResponse("static/tagger.html")
+
+
+# Report endpoints with authentication
+@app.post("/auth-report")
+def authenticate_report(request: dict):
+    """Authenticate user for report access"""
+    username = request.get("username", "").strip()
+    password = request.get("password", "").strip()
+
+    allowed_users = ["Nir Kon", "Issar Tzachor"]
+    correct_password = "originai"
+
+    if username in allowed_users and password == correct_password:
+        return {"success": True, "message": "Authentication successful"}
+    else:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+
+@app.get("/tagged-records")
+def get_tagged_records():
+    """Get all records that have been tagged by Tagger_1 or Tagger_2"""
+    if db.df.empty:
+        return []
+
+    # Filter records where Tagger_1 or Tagger_2 is not "Init"
+    tagged_df = db.df[
+        (db.df["Tagger_1"] != "Init") | (db.df["Tagger_2"] != "Init")
+    ].copy()
+
+    if tagged_df.empty:
+        return []
+
+    records = []
+    for _, row in tagged_df.iterrows():
+        row_dict = row.to_dict()
+        # Convert NaN values to None
+        for key, value in row_dict.items():
+            if pd.isna(value):
+                row_dict[key] = None
+        records.append(row_dict)
+
+    return records
+
+
+@app.get("/download-excel")
+def download_excel():
+    """Download the complete Excel file"""
+    try:
+        excel_bytes = db.get_excel_bytes()
+        from fastapi.responses import Response
+
+        headers = {
+            "Content-Disposition": 'attachment; filename="narratives_report.xlsx"',
+            "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        }
+
+        return Response(
+            content=excel_bytes,
+            headers=headers,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to generate Excel file: {str(e)}"
+        )
+
+
+@app.get("/report")
+def serve_report():
+    """Serve the report UI"""
+    return FileResponse("static/report.html")
 
 
 if __name__ == "__main__":
