@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Button Test</title>
+    <link rel="stylesheet" href="/static/tagger.css" />
+    <style>
+      body {
+        padding: 20px;
+        background: #1a1a1a;
+        color: white;
+      }
+      .test-section {
+        margin: 20px 0;
+        padding: 20px;
+        background: #2d2d2d;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Button Display Test</h1>
+
+    <div class="test-section">
+      <h2>Test 1: Direct HTML</h2>
+      <div class="video-link-section">
+        <a
+          href="https://youtube.com/watch?v=test"
+          target="_blank"
+          class="video-link-btn"
+        >
+          🔗 Open Link in New Tab
+        </a>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h2>Test 2: JavaScript Generated</h2>
+      <div class="video-link-section" id="testVideoLinkSection">
+        <!-- Button will be added here -->
+      </div>
+      <button onclick="addButton()" style="margin-top: 10px; padding: 10px">
+        Add Button via JavaScript
+      </button>
+    </div>
+
+    <div class="test-section">
+      <h2>Test 3: Full Video Section Structure</h2>
+      <div class="video-section" style="display: block">
+        <div class="video-container">
+          <div
+            style="
+              background: #3d3d3d;
+              padding: 40px;
+              text-align: center;
+              border-radius: 8px;
+            "
+          >
+            Mock Video Container
+          </div>
+        </div>
+
+        <div class="video-link-section" id="fullTestVideoLinkSection">
+          <!-- Button will be added here -->
+        </div>
+
+        <div class="narrative-question">
+          Does this video imply the following narrative?
+        </div>
+      </div>
+      <button onclick="addFullButton()" style="margin-top: 10px; padding: 10px">
+        Add Button to Full Structure
+      </button>
+    </div>
+
+    <script>
+      function addButton() {
+        const section = document.getElementById("testVideoLinkSection");
+        if (section) {
+          section.innerHTML = `
+                    <a href="https://youtube.com/watch?v=test2" target="_blank" class="video-link-btn">
+                        🔗 Open Link in New Tab
+                    </a>
+                `;
+          console.log("Button added successfully to test section");
+        } else {
+          console.error("Test section not found");
+        }
+      }
+
+      function addFullButton() {
+        const section = document.getElementById("fullTestVideoLinkSection");
+        if (section) {
+          section.innerHTML = `
+                    <a href="https://youtube.com/watch?v=test3" target="_blank" class="video-link-btn">
+                        🔗 Open Link in New Tab
+                    </a>
+                `;
+          console.log("Button added successfully to full test section");
+        } else {
+          console.error("Full test section not found");
+        }
+      }
+    </script>
+  </body>
+</html>

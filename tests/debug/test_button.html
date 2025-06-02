@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Video Link Button</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #121212;
+        color: white;
+        padding: 20px;
+      }
+      .test-container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: #1e1e1e;
+        padding: 20px;
+        border-radius: 8px;
+      }
+      .video-container {
+        width: 100%;
+        margin-bottom: 15px;
+      }
+      iframe {
+        width: 100%;
+        height: 600px;
+        border: none;
+        border-radius: 8px;
+      }
+      .video-link-section {
+        text-align: center;
+        margin-bottom: 20px;
+        padding: 10px;
+        background-color: #3d3d3d;
+        border-radius: 8px;
+      }
+      .video-link-btn {
+        background-color: #2196f3;
+        color: white;
+        padding: 14px 28px;
+        font-size: 16px;
+        font-weight: bold;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+        margin: 0 auto;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+      .video-link-btn:hover {
+        background-color: #1976d2;
+        text-decoration: none;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      }
+      .test-info {
+        background: #2d2d2d;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="test-container">
+      <h1>🧪 Video Link Button Test</h1>
+
+      <div class="test-info">
+        <h3>Test Instructions:</h3>
+        <p>
+          1. This page demonstrates how the "Open Link in New Tab" button
+          appears below videos
+        </p>
+        <p>2. The button should be clearly visible with blue styling</p>
+        <p>3. Clicking it should open the video link in a new tab</p>
+      </div>
+
+      <h3>Test Video Example:</h3>
+
+      <div class="video-container">
+        <iframe
+          src="https://www.youtube.com/embed/hbe3CQamF8k"
+          allowfullscreen
+        ></iframe>
+      </div>
+
+      <div class="video-link-section">
+        <a
+          href="https://www.youtube.com/watch?v=hbe3CQamF8k"
+          target="_blank"
+          class="video-link-btn"
+        >
+          🔗 Open Link in New Tab
+        </a>
+      </div>
+
+      <div class="test-info">
+        <h3>✅ Expected Behavior in Main App:</h3>
+        <p>• Enter your name and click "Start Tagging"</p>
+        <p>• A video will load with full height (600px)</p>
+        <p>
+          • Below the video, you'll see the blue "🔗 Open Link in New Tab"
+          button
+        </p>
+        <p>• The button opens the original video source in a new tab</p>
+      </div>
+    </div>
+  </body>
+</html>

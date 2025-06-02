@@ -16,7 +16,7 @@ class VideoRecord(BaseModel):
     Narrative: str
     Platform: str
     Title: str
-    Hebrew_Title: str
+    Hebrew_Title: Optional[str] = None
     Tagger_1: str
     Tagger_1_Result: Optional[int] = None
     Tagger_2: str
@@ -48,7 +48,7 @@ class VideoRecordCreate(BaseModel):
     Narrative: str
     Platform: str
     Title: str
-    Hebrew_Title: str
+    Hebrew_Title: Optional[str] = None
     Tagger_1: str = "Init"
     Tagger_1_Result: Optional[int] = 0
     Tagger_2: str = "Init"

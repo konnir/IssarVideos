@@ -123,7 +123,7 @@ async function loadNextVideo() {
 
 function displayVideo(video) {
   const videoContainer = document.getElementById("videoContainer");
-  const narrativeQuestion = document.getElementById("narrativeQuestion");
+  const videoLinkSection = document.getElementById("videoLinkSection");
 
   const embedUrl = getVideoEmbedUrl(video.Link);
 
@@ -131,9 +131,6 @@ function displayVideo(video) {
     if (video.Link.includes("tiktok.com")) {
       videoContainer.innerHTML = `
                 <iframe src="${embedUrl}" allowfullscreen></iframe>
-                <p style="margin-top: 10px; text-align: center;">
-                    <a href="${video.Link}" target="_blank" style="color: #4CAF50;">Open in TikTok</a>
-                </p>
             `;
     } else {
       videoContainer.innerHTML = `<iframe src="${embedUrl}" allowfullscreen></iframe>`;
@@ -142,21 +139,29 @@ function displayVideo(video) {
     videoContainer.innerHTML = `
             <div style="text-align: center; padding: 40px; background-color: #3d3d3d; border-radius: 8px;">
                 <p style="margin-bottom: 15px;">Video Preview Not Available</p>
-                <a href="${video.Link}" target="_blank" style="color: #4CAF50; font-size: 18px;">
-                    Open Video in New Tab
-                </a>
             </div>
         `;
   }
 
+  // Update the video link button
+  const videoLinkBtn = document.getElementById("videoLinkBtn");
+  if (videoLinkBtn && video.Link) {
+    // Ensure we have the full URL
+    videoLinkBtn.href = video.Link;
+    // Force a re-render by setting the attribute as well
+    videoLinkBtn.setAttribute('href', video.Link);
+    // Enable the button now that we have a valid link
+    videoLinkBtn.style.opacity = '1';
+    videoLinkBtn.style.pointerEvents = 'auto';
+  }
+
   // Update narrative content
   const narrativeEnglish = document.getElementById("narrativeEnglish");
-  const narrativeHebrew = document.getElementById("narrativeHebrew");
 
-  narrativeEnglish.textContent =
-    video.Narrative || "No English narrative available";
-  narrativeHebrew.textContent =
-    video.Hebrew_Title || "אין כותרת עברית זמינה";
+  if (narrativeEnglish) {
+    narrativeEnglish.textContent =
+      video.Narrative || "No English narrative available";
+  }
 }
 
 async function submitTag() {
@@ -200,9 +205,10 @@ async function updateTaggedCount() {
     );
     
     const data = await response.json();
-    document.getElementById(
-      "taggedCount"
-    ).textContent = `You tagged: ${data.tagged_count}`;
+    const taggedCountElement = document.getElementById("taggedCount");
+    if (taggedCountElement) {
+      taggedCountElement.textContent = `You tagged: ${data.tagged_count}`;
+    }
   } catch (error) {
     console.error("Error updating tagged count:", error);
     // Don't show error message to user for this non-critical operation
@@ -276,6 +282,23 @@ function toggleLeaderboard() {
     loadLeaderboard();
   } else {
     hideLeaderboard();
+  }
+}
+
+// Test function to verify video link button functionality
+function testVideoLinkButton() {
+  const testVideo = {
+    Link: "https://www.youtube.com/watch?v=hbe3CQamF8k",
+    Narrative: "Test narrative for button verification",
+    Title: "Test Video"
+  };
+  
+  // Show the video section for testing
+  const videoSection = document.getElementById("videoSection");
+  if (videoSection) {
+    videoSection.style.display = "block";
+    displayVideo(testVideo);
+    console.log("✅ Test video loaded with link button");
   }
 }
 

@@ -102,12 +102,44 @@ button:disabled {
 
 .video-container {
   width: 100%;
-  margin-bottom: 20px;
+  margin-bottom: 15px; /* Reduced from 20px */
+}
+
+.video-link-section {
+  text-align: center;
+  margin-bottom: 10px;
+  margin-top: 8px;
+  padding: 0;
+  background-color: transparent;
+}
+
+.video-link-btn {
+  background-color: #4CAF50;
+  color: white;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-decoration: none;
+  display: inline-block;
+  margin: 0 auto;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.video-link-btn:hover {
+  background-color: #45a049;
+  text-decoration: none;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 iframe {
   width: 100%;
-  height: 400px;
+  height: 600px; /* Increased from 400px to 600px for full height */
   border: none;
   border-radius: 8px;
 }

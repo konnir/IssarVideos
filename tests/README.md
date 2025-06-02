@@ -1,107 +1,153 @@
-# Tests Directory
+# Video Narratives - Test Suite
 
-This directory contains comprehensive tests for the Video Narratives API project.
+This directory contains the comprehensive test suite for the Video Narratives FastAPI application.
+
+## Quick Start
+
+Run all tests from the project root:
+
+```bash
+# Comprehensive test suite (recommended)
+python run_tests.py
+
+# Or run directly
+python tests/test_runner.py
+```
 
 ## Test Structure
 
-- `conftest.py` - Test configuration and utilities including the TestDBManager for safe database testing
+### Core Test Files
+
+- `test_runner.py` - **Main comprehensive test runner** with isolated database testing
+- `test_api.py` - API integration tests for all FastAPI endpoints
 - `test_db.py` - Unit tests for the NarrativesDB class
-- `test_api.py` - Integration tests for the FastAPI endpoints (includes both integration and standalone test styles)
-- `run_tests.py` - Main test runner script with multiple options
-- `pytest.ini` - Pytest configuration for easy test execution
+- `test_protection.py` - Production database protection tests
+- `conftest.py` - Test configuration and utilities (DBTestManager)
+
+### Legacy/Compatibility
+
+- `run_tests.py` - Legacy test runner (redirects to test_runner.py)
+
+### Test Organization
+
+- `debug/` - Debug and development test files
+- `html_tests/` - HTML/UI test files and validation
+- `integration/` - Integration test demos and utilities
+
+## Test Types
+
+### 1. Comprehensive Test Suite (Default)
+
+```bash
+python tests/test_runner.py
+# or
+python run_tests.py
+```
+
+Runs all tests in the correct order with full isolation and cleanup.
+
+### 2. Individual Test Types
+
+```bash
+# Database unit tests only
+python tests/test_runner.py --type db
+
+# API integration tests only
+python tests/test_runner.py --type api
+
+# UI/HTML validation tests only
+python tests/test_runner.py --type ui
+
+# Production protection tests only
+python tests/test_runner.py --type protection
+
+# All tests individually
+python tests/test_runner.py --type all
+```
+
+### 3. Non-Interactive Mode
+
+```bash
+python tests/test_runner.py --no-prompt
+```
 
 ## Features
 
-### Safe Database Testing
+### ✅ Safe Database Testing
 
-- **Automatic DB Copy**: Tests use a temporary copy of the production database
-- **Automatic Cleanup**: Test databases are automatically deleted after tests complete
-- **No Production Impact**: Original database is never modified during tests
+- **Automatic DB Copy**: Tests use temporary copies of the production database
+- **Automatic Cleanup**: Test databases are automatically deleted after completion
+- **Production Protection**: Original database is never modified during tests
+- **Environment Validation**: Prevents accidental production database usage
 
-### Test Coverage
+### ✅ Comprehensive Coverage
 
-- Database operations (add, update, query)
-- API endpoints (GET, POST, PUT)
-- Error handling (duplicate records, non-existent records)
-- Data validation and serialization
-- Comprehensive API flow testing
+- **Database Operations**: CRUD operations, queries, validation
+- **API Endpoints**: All REST endpoints with proper error handling
+- **UI Components**: HTML file validation and structure checks
+- **Integration Flows**: End-to-end testing with isolated test server
 
-## Running Tests
+### ✅ Production Protection
 
-### 🚀 One Command - Run All Tests (Recommended)
+- Database path validation
+- Environment variable checks
+- Safe test isolation
+- Automatic cleanup on failures
 
-```bash
-python3 tests/run_tests.py
-```
+## Test Results
 
-This will:
+The test runner provides detailed results:
 
-1. Run all database unit tests
-2. Prompt you to start the server
-3. Run all API integration tests
-4. Show comprehensive test summary
+- ✅ **SUCCESS**: Test passed
+- ❌ **ERROR**: Test failed
+- ⚠️ **WARNING**: Non-critical issue
+- 🧪 **TEST**: Test running
+- ℹ️ **INFO**: Information message
 
-### Quick Test Options
+## Development
 
-```bash
-# Run only database tests (no server needed)
-python3 tests/run_tests.py --type db
+### Adding New Tests
 
-# Run only API tests (server must be running)
-python3 tests/run_tests.py --type api
+1. Add test functions to appropriate test files
+2. Follow the existing naming convention (`test_*`)
+3. Use the logging methods for consistent output
+4. Ensure proper cleanup and isolation
 
-# Run all tests without prompts (assumes server is already running)
-python3 tests/run_tests.py --no-prompt
-```
+### Test Database Management
 
-### Using Pytest (Alternative)
+The `DBTestManager` in `conftest.py` provides:
 
-```bash
-# Run all tests with pytest
-pytest
+- Temporary database creation
+- Automatic cleanup
+- Safe isolation from production data
 
-# Run only database tests
-pytest tests/test_db.py
+### Best Practices
 
-# Run only API tests (server must be running)
-pytest tests/test_api.py
-```
+- Always use the test runner for comprehensive testing
+- Test individual components during development
+- Verify production protection before deploying
+- Keep test data separate from production data
 
-### Run Individual Test Files
+## Troubleshooting
 
-```bash
-# Database tests only
-python3 tests/test_db.py
+### Common Issues
 
-# API tests only (requires server)
-python3 tests/test_api.py
-```
+1. **"Production database protection failed"**
 
-## Test Database Management
+   - Ensure `NARRATIVES_DB_PATH` points to a test database
+   - Use paths containing "test" or "temp"
 
-The `TestDBManager` context manager handles all database operations safely:
+2. **"Test server not accessible"**
 
-```python
-from tests.conftest import TestDBManager
+   - Check if port 8000 is available
+   - Ensure no other instances are running
 
-# Automatic setup and cleanup
-with TestDBManager() as test_db_path:
-    db = NarrativesDB(test_db_path)
-    # ... run tests ...
-# Database automatically cleaned up here
-```
+3. **Import errors**
+   - Run tests from the project root directory
+   - Ensure all dependencies are installed
 
-## Expected Output
+### Getting Help
 
-Successful test runs will show:
-
-- ✅ Individual test results
-- 📁 Database copy creation messages
-- 🗑️ Cleanup confirmation messages
-- 🎉 Final success summary
-
-Failed tests will show:
-
-- ❌ Error messages with details
-- Stack traces for debugging
-- Clear indication of which tests failed
+- Check test output for specific error messages
+- Verify your environment setup
+- Run individual test types to isolate issues
