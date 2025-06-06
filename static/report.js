@@ -88,16 +88,6 @@ async function loadTaggedRecords() {
     const tagger1Count = records.filter(
       (r) => r.Tagger_1 && r.Tagger_1 !== "Init"
     ).length;
-    const tagger2Count = records.filter(
-      (r) => r.Tagger_2 && r.Tagger_2 !== "Init"
-    ).length;
-    const fullyTagged = records.filter(
-      (r) =>
-        r.Tagger_1 &&
-        r.Tagger_1 !== "Init" &&
-        r.Tagger_2 &&
-        r.Tagger_2 !== "Init"
-    ).length;
 
     // Display statistics
     statsInfo.innerHTML = `
@@ -107,15 +97,7 @@ async function loadTaggedRecords() {
       </div>
       <div class="stat-card">
         <div class="stat-number">${tagger1Count}</div>
-        <div class="stat-label">Tagger 1 Tags</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-number">${tagger2Count}</div>
-        <div class="stat-label">Tagger 2 Tags</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-number">${fullyTagged}</div>
-        <div class="stat-label">Fully Tagged</div>
+        <div class="stat-label">Tagged Records</div>
       </div>
     `;
 
@@ -127,10 +109,8 @@ async function loadTaggedRecords() {
             <th>Sheet</th>
             <th>Video Link</th>
             <th>Narrative</th>
-            <th>Tagger 1</th>
-            <th>Result 1</th>
-            <th>Tagger 2</th>
-            <th>Result 2</th>
+            <th>Tagger</th>
+            <th>Result</th>
           </tr>
         </thead>
         <tbody>
@@ -181,8 +161,6 @@ async function loadTaggedRecords() {
       }</td>
           <td>${record.Tagger_1 || "Init"}</td>
           <td>${getResultLabel(record.Tagger_1_Result)}</td>
-          <td>${record.Tagger_2 || "Init"}</td>
-          <td>${getResultLabel(record.Tagger_2_Result)}</td>
         </tr>
       `;
     });

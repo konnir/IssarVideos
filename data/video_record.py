@@ -19,8 +19,6 @@ class VideoRecord(BaseModel):
     Hebrew_Title: Optional[str] = None
     Tagger_1: str
     Tagger_1_Result: Optional[int] = None
-    Tagger_2: str
-    Tagger_2_Result: Optional[int] = None
     Link: str
     Length: Optional[float] = None
 
@@ -35,8 +33,6 @@ class VideoRecordUpdate(BaseModel):
     Hebrew_Title: Optional[str] = None
     Tagger_1: Optional[str] = None
     Tagger_1_Result: Optional[int] = None
-    Tagger_2: Optional[str] = None
-    Tagger_2_Result: Optional[int] = None
     Link: Optional[str] = None
     Length: Optional[float] = None
 
@@ -51,7 +47,5 @@ class VideoRecordCreate(BaseModel):
     Hebrew_Title: Optional[str] = None
     Tagger_1: str = "Init"
     Tagger_1_Result: Optional[int] = 0
-    Tagger_2: str = "Init"
-    Tagger_2_Result: Optional[int] = 0
     Link: str
     Length: Optional[float] = None

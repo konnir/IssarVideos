@@ -15,6 +15,11 @@ class NarrativesDB:
             df_sheet = pd.read_excel(self.excel_path, sheet_name=sheet)
             if not df_sheet.empty:
                 df_sheet.insert(0, "Sheet", sheet)
+                # Remove Tagger_2 and Tagger_2_Result columns if they exist
+                columns_to_drop = ["Tagger_2", "Tagger_2_Result"]
+                df_sheet = df_sheet.drop(
+                    columns=[col for col in columns_to_drop if col in df_sheet.columns]
+                )
                 self.df = pd.concat([self.df, df_sheet], ignore_index=True)
 
     def save_to_excel(self) -> str:
@@ -26,6 +31,11 @@ class NarrativesDB:
             for sheet_name in self.df["Sheet"].unique():
                 df_sheet = self.df[self.df["Sheet"] == sheet_name].drop(
                     columns=["Sheet"]
+                )
+                # Ensure Tagger_2 columns are not saved
+                columns_to_drop = ["Tagger_2", "Tagger_2_Result"]
+                df_sheet = df_sheet.drop(
+                    columns=[col for col in columns_to_drop if col in df_sheet.columns]
                 )
                 df_sheet.to_excel(writer, sheet_name=sheet_name, index=False)
         return save_path
@@ -40,10 +50,8 @@ class NarrativesDB:
     def get_random_not_fully_tagged_row(self):
         if self.df.empty:
             return None
-        # Filter rows where either Tagger_1 or Tagger_2 is 'Init'
-        filtered_df = self.df[
-            (self.df["Tagger_1"] == "Init") | (self.df["Tagger_2"] == "Init")
-        ]
+        # Filter rows where Tagger_1 is 'Init'
+        filtered_df = self.df[(self.df["Tagger_1"] == "Init")]
         if filtered_df.empty:
             return None
         random_row = filtered_df.sample()
@@ -88,6 +96,11 @@ class NarrativesDB:
                 df_sheet = self.df[self.df["Sheet"] == sheet_name].drop(
                     columns=["Sheet"]
                 )
+                # Ensure Tagger_2 columns are not saved
+                columns_to_drop = ["Tagger_2", "Tagger_2_Result"]
+                df_sheet = df_sheet.drop(
+                    columns=[col for col in columns_to_drop if col in df_sheet.columns]
+                )
                 df_sheet.to_excel(writer, sheet_name=sheet_name, index=False)
 
         return True
@@ -97,11 +110,9 @@ class NarrativesDB:
         if self.df.empty:
             return None
 
-        # Filter rows where either Tagger_1 or Tagger_2 is 'Init' AND the user is not already a tagger
+        # Filter rows where Tagger_1 is 'Init' AND the user is not already a tagger
         filtered_df = self.df[
-            ((self.df["Tagger_1"] == "Init") | (self.df["Tagger_2"] == "Init"))
-            & (self.df["Tagger_1"] != username)
-            & (self.df["Tagger_2"] != username)
+            (self.df["Tagger_1"] == "Init") & (self.df["Tagger_1"] != username)
         ]
 
         if filtered_df.empty:
@@ -120,11 +131,7 @@ class NarrativesDB:
         if self.df.empty:
             return 0
 
-        count = len(
-            self.df[
-                (self.df["Tagger_1"] == username) | (self.df["Tagger_2"] == username)
-            ]
-        )
+        count = len(self.df[(self.df["Tagger_1"] == username)])
         return count
 
     def tag_record(self, link: str, username: str, result: int):
@@ -139,15 +146,12 @@ class NarrativesDB:
 
         row_idx = record_index[0]
 
-        # Determine which tagger field to use
+        # Check if Tagger_1 field is available
         if self.df.loc[row_idx, "Tagger_1"] == "Init":
             self.df.loc[row_idx, "Tagger_1"] = username
             self.df.loc[row_idx, "Tagger_1_Result"] = result
-        elif self.df.loc[row_idx, "Tagger_2"] == "Init":
-            self.df.loc[row_idx, "Tagger_2"] = username
-            self.df.loc[row_idx, "Tagger_2_Result"] = result
         else:
-            # Both taggers are filled, this shouldn't happen with proper filtering
+            # Tagger is already filled, this shouldn't happen with proper filtering
             return False
 
         return True

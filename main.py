@@ -199,8 +199,7 @@ def get_leaderboard():
 
     # Get all unique users who have tagged records
     tagger1_users = db.df[db.df["Tagger_1"] != "Init"]["Tagger_1"].tolist()
-    tagger2_users = db.df[db.df["Tagger_2"] != "Init"]["Tagger_2"].tolist()
-    all_users = list(set(tagger1_users + tagger2_users))
+    all_users = list(set(tagger1_users))
 
     # Calculate statistics for each user
     leaderboard = []
@@ -277,14 +276,12 @@ def authenticate_report(request: dict):
 
 @app.get("/tagged-records")
 def get_tagged_records():
-    """Get all records that have been tagged by Tagger_1 or Tagger_2"""
+    """Get all records that have been tagged by Tagger_1"""
     if db.df.empty:
         return []
 
-    # Filter records where Tagger_1 or Tagger_2 is not "Init"
-    tagged_df = db.df[
-        (db.df["Tagger_1"] != "Init") | (db.df["Tagger_2"] != "Init")
-    ].copy()
+    # Filter records where Tagger_1 is not "Init"
+    tagged_df = db.df[(db.df["Tagger_1"] != "Init")].copy()
 
     if tagged_df.empty:
         return []

@@ -60,7 +60,7 @@ class APITester:
             response = requests.get(f"{self.base_url}/random-narrative", timeout=10)
             if response.status_code == 200:
                 data = response.json()
-                required_fields = ["Link", "Title", "Tagger_1", "Tagger_2"]
+                required_fields = ["Link", "Title", "Tagger_1"]
                 if all(field in data for field in required_fields):
                     self.log("Random narrative endpoint working correctly", "SUCCESS")
                     return True

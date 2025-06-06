@@ -33,7 +33,38 @@ class DBTestManager:
 
         # Copy the original database to temp location
         self.test_db_path = os.path.join(self.temp_dir, "test_narratives_db.xlsx")
-        shutil.copy2(self.original_db_path, self.test_db_path)
+
+        # Create a test database without Tagger_2 columns
+        import pandas as pd
+
+        # Create test data with proper structure (without Tagger_2 columns)
+        test_data = [
+            {
+                "Narrative": "Test narrative for unit testing",
+                "Platform": "YouTube",
+                "Title": "Unit Test Video",
+                "Hebrew_Title": "וידאו בדיקת יחידה",
+                "Link": "https://youtube.com/test-unit-12345",
+                "Tagger_1": "Init",
+                "Tagger_1_Result": 0,
+                "Length": 120.5,
+            },
+            {
+                "Narrative": "Another test narrative",
+                "Platform": "TikTok",
+                "Title": "Another Test Video",
+                "Hebrew_Title": "עוד וידאו בדיקה",
+                "Link": "https://tiktok.com/test-unit-67890",
+                "Tagger_1": "Init",
+                "Tagger_1_Result": 0,
+                "Length": 60.0,
+            },
+        ]
+
+        # Create DataFrame and save to Excel
+        df = pd.DataFrame(test_data)
+        with pd.ExcelWriter(self.test_db_path, engine="openpyxl") as writer:
+            df.to_excel(writer, sheet_name="TestSheet", index=False)
 
         # Additional safety check: ensure test path contains "test" or "temp"
         if not (
@@ -87,8 +118,6 @@ def get_test_record_data():
         "Link": "https://youtube.com/test-unit-12345",
         "Tagger_1": "TestUser1",
         "Tagger_1_Result": 1,
-        "Tagger_2": "TestUser2",
-        "Tagger_2_Result": 1,
         "Length": 120.5,
     }
 
@@ -98,6 +127,4 @@ def get_test_update_data():
     return {
         "Tagger_1": "UpdatedUser",
         "Tagger_1_Result": 2,
-        "Tagger_2": "CompletedTest",
-        "Tagger_2_Result": 2,
     }

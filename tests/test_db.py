@@ -31,10 +31,11 @@ class TestNarrativesDB:
             assert (
                 "Tagger_1_Result" in db.df.columns
             ), "Should have 'Tagger_1_Result' column"
-            assert "Tagger_2" in db.df.columns, "Should have 'Tagger_2' column"
+            # Tagger_2 columns should not exist anymore
+            assert "Tagger_2" not in db.df.columns, "Should not have 'Tagger_2' column"
             assert (
-                "Tagger_2_Result" in db.df.columns
-            ), "Should have 'Tagger_2_Result' column"
+                "Tagger_2_Result" not in db.df.columns
+            ), "Should not have 'Tagger_2_Result' column"
 
             print(f"✅ Loaded {len(db.df)} records from test database")
 
@@ -50,8 +51,8 @@ class TestNarrativesDB:
             assert isinstance(random_row, dict), "Should return a dictionary"
             assert "Link" in random_row, "Should have Link field"
             assert (
-                random_row["Tagger_1"] == "Init" or random_row["Tagger_2"] == "Init"
-            ), "Should have at least one 'Init' tagger"
+                random_row["Tagger_1"] == "Init"
+            ), "Should have 'Init' tagger"
 
             print(f"✅ Found untagged record: {random_row['Link']}")
 
@@ -100,12 +101,9 @@ class TestNarrativesDB:
             assert (
                 updated_record["Tagger_1_Result"] == update_data["Tagger_1_Result"]
             ), "Tagger_1_Result should be updated"
-            assert (
-                updated_record["Tagger_2"] == update_data["Tagger_2"]
-            ), "Tagger_2 should be updated"
-            assert (
-                updated_record["Tagger_2_Result"] == update_data["Tagger_2_Result"]
-            ), "Tagger_2_Result should be updated"
+            # Tagger_2 fields no longer exist
+            assert "Tagger_2" not in updated_record.index, "Tagger_2 should not exist"
+            assert "Tagger_2_Result" not in updated_record.index, "Tagger_2_Result should not exist"
 
             print(f"✅ Successfully updated record: {test_record['Link']}")
 
