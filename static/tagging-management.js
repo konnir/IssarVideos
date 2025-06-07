@@ -260,7 +260,10 @@ function createFormLineHTML(lineId, copyTopic = '', copyNarrative = '') {
         <div class="form-field form-field-story" style="grid-column: 3 !important; grid-row: 1 !important; display: flex !important; flex-direction: column !important; min-width: 0 !important; width: 100% !important;">
           <label for="story${lineId}">Story:</label>
           <textarea id="story${lineId}" class="form-textarea story-input" placeholder="Enter story content" rows="4"></textarea>
-          <button class="suggest-story-btn" onclick="suggestStory(${lineId})" data-line-id="${lineId}" type="button">✨ Suggest Story</button>
+          <div class="story-buttons">
+            <button class="suggest-story-btn" onclick="suggestStory(${lineId})" data-line-id="${lineId}" type="button">✨ Suggest Story</button>
+            <button class="edit-prompt-btn" onclick="editPrompt(${lineId})" data-line-id="${lineId}" type="button">📝 Edit Prompt</button>
+          </div>
         </div>
         <div class="form-field" style="grid-column: 4 !important; grid-row: 1 !important; display: flex !important; flex-direction: column !important; min-width: 0 !important; width: 100% !important;">
           <label for="link${lineId}">Link:</label>
@@ -289,12 +292,24 @@ function addNewFormLine(sourceLineId) {
   const sourceTopic = document.getElementById(`sheet${sourceLineId}`).value.trim();
   const sourceNarrative = document.getElementById(`narrative${sourceLineId}`).value.trim();
   
+  // Copy custom prompt if it exists for the source line
+  if (customPrompts[sourceLineId]) {
+    customPrompts[newLineId] = customPrompts[sourceLineId];
+  }
+  
   // Create new form line HTML
   const newLineHTML = createFormLineHTML(newLineId, sourceTopic, sourceNarrative);
   
   // Add new line to container
   const container = document.getElementById('narrativeFormContainer');
   container.insertAdjacentHTML('beforeend', newLineHTML);
+  
+  // Update edit button appearance if custom prompt was copied
+  if (customPrompts[newLineId]) {
+    const editBtn = document.querySelector(`[data-line-id="${newLineId}"].edit-prompt-btn`);
+    editBtn.textContent = '📝 Prompt Edited ✓';
+    editBtn.style.background = '#357abd'; // Darker blue to indicate custom
+  }
   
   // Focus on the story field of the new line (since Topic and Narrative are pre-filled)
   document.getElementById(`story${newLineId}`).focus();
@@ -415,17 +430,37 @@ async function suggestStory(lineId) {
   suggestBtn.textContent = '✨ Generating...';
   
   try {
-    const response = await fetch('/generate-story', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        narrative: narrative,
-        style: 'engaging',
-        additional_context: ''
-      }),
-    });
+    // Check if this line has a custom prompt
+    const hasCustomPrompt = customPrompts[lineId];
+    let response;
+    
+    if (hasCustomPrompt) {
+      // Use custom prompt endpoint
+      response = await fetch('/generate-story-custom-prompt', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          narrative: narrative,
+          custom_prompt: customPrompts[lineId],
+          style: 'engaging'
+        }),
+      });
+    } else {
+      // Use default endpoint
+      response = await fetch('/generate-story', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          narrative: narrative,
+          style: 'engaging',
+          additional_context: ''
+        }),
+      });
+    }
     
     if (response.ok) {
       const result = await response.json();
@@ -469,15 +504,275 @@ async function suggestStory(lineId) {
 }
 
 /**
+ * Edit Prompt Modal Functions
+ */
+
+// Global storage for custom prompts per form line
+let customPrompts = {};
+let currentEditingLineId = null;
+
+// Default prompt template
+const DEFAULT_PROMPT = `Create a brief story concept (2-3 sentences) that incorporates this hidden narrative:
+
+Hidden Narrative: "{narrative}"
+
+Provide only a concise story idea that:
+1. Subtly includes the hidden narrative
+2. Is suitable for short video content
+3. Can be expanded into a full video later
+
+Keep it short and focused on the core concept only.`;
+
+/**
+ * Edit prompt for a specific line
+ */
+function editPrompt(lineId) {
+  // Check if narrative field exists and has content
+  const narrativeField = document.getElementById(`narrative${lineId}`);
+  const narrative = narrativeField ? narrativeField.value.trim() : '';
+  
+  if (!narrative) {
+    // Show error message using the same error div as other validation errors
+    const errorDiv = document.getElementById('addNarrativeError');
+    errorDiv.innerHTML = '<div class="error">Please enter a narrative first before editing the prompt</div>';
+    errorDiv.style.display = 'block';
+    
+    // Hide error after 3 seconds
+    setTimeout(() => {
+      errorDiv.style.display = 'none';
+    }, 3000);
+    
+    return; // Don't open the modal
+  }
+  
+  currentEditingLineId = lineId;
+  
+  // Get existing custom prompt or use default
+  const existingPrompt = customPrompts[lineId] || DEFAULT_PROMPT;
+  
+  // Show modal and populate with existing prompt
+  document.getElementById('editPromptModal').style.display = 'block';
+  document.getElementById('customPrompt').value = existingPrompt;
+  
+  // Clear any previous messages
+  document.getElementById('editPromptError').style.display = 'none';
+  document.getElementById('promptTestResult').style.display = 'none';
+  
+  // Update modal title to show the narrative being edited
+  const modalHeader = document.querySelector('#editPromptModal .modal-header h3');
+  const truncatedNarrative = narrative.length > 50 ? narrative.substring(0, 50) + '...' : narrative;
+  modalHeader.textContent = `Edit Story Prompt (${truncatedNarrative})`;
+}
+
+/**
+ * Hide the edit prompt modal
+ */
+function hideEditPromptModal() {
+  document.getElementById('editPromptModal').style.display = 'none';
+  currentEditingLineId = null;
+}
+
+/**
+ * Save the custom prompt for the current line
+ */
+function saveCustomPrompt() {
+  if (!currentEditingLineId) return;
+  
+  const promptText = document.getElementById('customPrompt').value.trim();
+  const errorDiv = document.getElementById('editPromptError');
+  
+  // Clear previous messages
+  errorDiv.style.display = 'none';
+   // Validate prompt
+  if (!promptText) {
+    errorDiv.innerHTML = '<div class="error">Prompt cannot be empty</div>';
+    errorDiv.style.display = 'block';
+    return;
+  }
+
+  if (!promptText.includes('{narrative}')) {
+    errorDiv.innerHTML = '<div class="error">Prompt must include {narrative} placeholder</div>';
+    errorDiv.style.display = 'block';
+    return;
+  }
+
+  // Check if the prompt is actually different from the default
+  if (promptText === DEFAULT_PROMPT) {
+    // If it's the same as default, remove any custom prompt and reset button
+    delete customPrompts[currentEditingLineId];
+    
+    const editBtn = document.querySelector(`[data-line-id="${currentEditingLineId}"].edit-prompt-btn`);
+    editBtn.textContent = '📝 Edit Prompt';
+    editBtn.style.background = '#4a90e2'; // Original blue
+    
+    errorDiv.innerHTML = '<div class="success">Prompt is using default settings</div>';
+    errorDiv.style.display = 'block';
+    
+    // Hide modal after short delay
+    setTimeout(() => {
+      hideEditPromptModal();
+    }, 1500);
+    return;
+  }
+
+  // Save the custom prompt (only if it's different from default)
+  customPrompts[currentEditingLineId] = promptText;
+  
+  // Update the edit button to show it has a custom prompt with checkmark
+  const editBtn = document.querySelector(`[data-line-id="${currentEditingLineId}"].edit-prompt-btn`);
+  editBtn.textContent = '📝 Prompt Edited ✓';
+  editBtn.style.background = '#357abd'; // Darker blue to indicate custom
+  
+  // Show success message
+  errorDiv.innerHTML = '<div class="success">Custom prompt saved successfully!</div>';
+  errorDiv.style.display = 'block';
+  
+  // Hide modal after short delay
+  setTimeout(() => {
+    hideEditPromptModal();
+  }, 1500);
+}
+
+/**
+ * Reset to default prompt
+ */
+function resetToDefaultPrompt() {
+  if (!currentEditingLineId) return;
+  
+  // Remove custom prompt
+  delete customPrompts[currentEditingLineId];
+  
+  // Reset button appearance
+  const editBtn = document.querySelector(`[data-line-id="${currentEditingLineId}"].edit-prompt-btn`);
+  editBtn.textContent = '📝 Edit Prompt';
+  editBtn.style.background = '#4a90e2'; // Original blue
+  
+  // Update textarea with default prompt
+  document.getElementById('customPrompt').value = DEFAULT_PROMPT;
+  
+  // Show success message
+  const errorDiv = document.getElementById('editPromptError');
+  errorDiv.innerHTML = '<div class="success">Reset to default prompt!</div>';
+  errorDiv.style.display = 'block';
+  
+  // Hide message after delay
+  setTimeout(() => {
+    errorDiv.style.display = 'none';
+  }, 2000);
+}
+
+/**
+ * Test the custom prompt with the current narrative
+ */
+async function testCustomPrompt() {
+  if (!currentEditingLineId) return;
+  
+  const narrative = document.getElementById(`narrative${currentEditingLineId}`).value.trim();
+  const customPrompt = document.getElementById('customPrompt').value.trim();
+  const resultDiv = document.getElementById('promptTestResult');
+  const errorDiv = document.getElementById('editPromptError');
+  
+  // Clear previous messages
+  errorDiv.style.display = 'none';
+  resultDiv.style.display = 'none';
+  
+  // Validate inputs
+  if (!narrative) {
+    errorDiv.innerHTML = '<div class="error">Please enter a narrative in the form first to test the prompt</div>';
+    errorDiv.style.display = 'block';
+    return;
+  }
+  
+  if (!customPrompt) {
+    errorDiv.innerHTML = '<div class="error">Please enter a custom prompt to test</div>';
+    errorDiv.style.display = 'block';
+    return;
+  }
+  
+  if (!customPrompt.includes('{narrative}')) {
+    errorDiv.innerHTML = '<div class="error">Prompt must include {narrative} placeholder</div>';
+    errorDiv.style.display = 'block';
+    return;
+  }
+  
+  // Disable test button and show loading
+  const testBtn = document.querySelector('.modal-btn.secondary:last-child');
+  const originalText = testBtn.textContent;
+  testBtn.disabled = true;
+  testBtn.textContent = '🧪 Testing...';
+  
+  try {
+    const response = await fetch('/generate-story-custom-prompt', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        narrative: narrative,
+        custom_prompt: customPrompt,
+        style: 'engaging'
+      }),
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      
+      // Show test result
+      resultDiv.className = 'prompt-test-result success';
+      resultDiv.innerHTML = `
+        <h4>✅ Test Successful</h4>
+        <p><strong>Generated Story:</strong></p>
+        <pre>${result.story}</pre>
+      `;
+      resultDiv.style.display = 'block';
+      
+    } else {
+      const errorData = await response.json();
+      let errorMessage = errorData.detail || 'Failed to test prompt';
+      
+      resultDiv.className = 'prompt-test-result error';
+      resultDiv.innerHTML = `
+        <h4>❌ Test Failed</h4>
+        <p><strong>Error:</strong> ${errorMessage}</p>
+      `;
+      resultDiv.style.display = 'block';
+    }
+    
+  } catch (error) {
+    console.error('Error testing prompt:', error);
+    resultDiv.className = 'prompt-test-result error';
+    resultDiv.innerHTML = `
+      <h4>❌ Connection Error</h4>
+      <p>Failed to connect to the server. Please try again.</p>
+    `;
+    resultDiv.style.display = 'block';
+  } finally {
+    // Reset test button
+    testBtn.disabled = false;
+    testBtn.textContent = originalText;
+  }
+}
+
+/**
  * Close modal when clicking outside of it
  */
 document.addEventListener('DOMContentLoaded', function() {
-  const modal = document.getElementById('addNarrativeModal');
-  
-  if (modal) {
-    modal.addEventListener('click', function(e) {
-      if (e.target === modal) {
+  // Handle add narrative modal
+  const addModal = document.getElementById('addNarrativeModal');
+  if (addModal) {
+    addModal.addEventListener('click', function(e) {
+      if (e.target === addModal) {
         hideAddNarrativeModal();
+      }
+    });
+  }
+  
+  // Handle edit prompt modal
+  const editModal = document.getElementById('editPromptModal');
+  if (editModal) {
+    editModal.addEventListener('click', function(e) {
+      if (e.target === editModal) {
+        hideEditPromptModal();
       }
     });
   }

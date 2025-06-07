@@ -239,13 +239,25 @@
                         placeholder="Enter story content"
                         rows="4"
                       ></textarea>
-                      <button
-                        class="suggest-story-btn"
-                        onclick="suggestStory(1)"
-                        data-line-id="1"
-                        type="button"
-                      >
-                        ✨ Suggest Story
+                      <div class="story-buttons">
+                        <button
+                          class="suggest-story-btn"
+                          onclick="suggestStory(1)"
+                          data-line-id="1"
+                          type="button"
+                        >
+                          ✨ Suggest Story
+                        </button>
+                        <button
+                          class="edit-prompt-btn"
+                          onclick="editPrompt(1)"
+                          data-line-id="1"
+                          type="button"
+                        >
+                          📝 Edit Prompt
+                        </button>
+                      </div>
+                    </div>
                       </button>
                     </div>
                     <div
@@ -307,6 +319,47 @@
                 class="error-message"
                 style="display: none"
               ></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Edit Prompt Modal -->
+        <div class="modal" id="editPromptModal" style="display: none">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3>Edit Story Prompt</h3>
+              <span class="close-btn" onclick="hideEditPromptModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+              <div class="prompt-edit-section">
+                <p class="modal-description">
+                  Customize the prompt used to generate stories. Use <code>{narrative}</code> 
+                  as a placeholder for the narrative text.
+                </p>
+                <div class="form-field">
+                  <label for="customPrompt">Custom Prompt:</label>
+                  <textarea
+                    id="customPrompt"
+                    class="form-textarea"
+                    placeholder="Create a story based on this narrative: {narrative}&#10;&#10;The story should be..."
+                    rows="16"
+                    style="font-family: monospace; font-size: 14px;"
+                  ></textarea>
+                </div>
+                <div class="prompt-buttons">
+                  <button class="modal-btn primary" onclick="saveCustomPrompt()">
+                    💾 Save Prompt
+                  </button>
+                  <button class="modal-btn secondary" onclick="resetToDefaultPrompt()">
+                    🔄 Reset to Default
+                  </button>
+                  <button class="modal-btn secondary" onclick="testCustomPrompt()">
+                    🧪 Test Prompt
+                  </button>
+                </div>
+                <div id="promptTestResult" class="prompt-test-result" style="display: none;"></div>
+              </div>
+              <div id="editPromptError" class="error-message" style="display: none;"></div>
             </div>
           </div>
         </div>

@@ -7,6 +7,7 @@ import os
 from typing import Optional, Dict, Any, List
 from openai import OpenAI
 import logging
+from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
 
@@ -20,11 +21,36 @@ class OpenAIClient:
 
         Args:
             api_key: OpenAI API key. If None, will use OPENAI_API_KEY environment variable.
+                    If not found, will try to load from .env file in the clients folder.
         """
+        # First try the provided api_key or environment variable
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
+
+        # If not found, try loading from .env file in the clients folder
+        if not self.api_key:
+            clients_dir = os.path.dirname(os.path.abspath(__file__))
+            env_file_path = os.path.join(clients_dir, ".env")
+
+            if os.path.exists(env_file_path):
+                # Load environment variables without overriding existing ones
+                load_dotenv(env_file_path, override=False)
+                self.api_key = os.getenv("OPENAI_API_KEY")
+                logger.info(f"Loaded environment variables from {env_file_path}")
+
+            # If still not found, try loading from project root .env as fallback
+            if not self.api_key:
+                project_root = os.path.dirname(clients_dir)
+                root_env_path = os.path.join(project_root, ".env")
+                if os.path.exists(root_env_path):
+                    load_dotenv(root_env_path, override=False)
+                    self.api_key = os.getenv("OPENAI_API_KEY")
+                    logger.info(f"Loaded environment variables from {root_env_path}")
+
         if not self.api_key:
             raise ValueError(
-                "OpenAI API key is required. Set OPENAI_API_KEY environment variable or pass api_key parameter."
+                "OpenAI API key is required. Set OPENAI_API_KEY environment variable, "
+                "pass api_key parameter, or create a .env file with OPENAI_API_KEY in the "
+                "clients folder or project root."
             )
 
         self.client = OpenAI(api_key=self.api_key)

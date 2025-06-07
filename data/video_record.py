@@ -100,3 +100,17 @@ class StoryResponse(BaseModel):
     story: str
     narrative: str
     metadata: Dict[str, Any]
+
+
+class CustomPromptStoryRequest(BaseModel):
+    """Model for generating a story with a custom prompt"""
+
+    narrative: str
+    custom_prompt: str
+    style: Optional[str] = "engaging"
+
+    @validator("narrative", "custom_prompt")
+    def strings_must_not_be_empty(cls, v):
+        if not v or not v.strip():
+            raise ValueError("Field cannot be empty")
+        return v

@@ -18,6 +18,7 @@ from data.video_record import (
     StoryVariantsRequest,
     StoryRefinementRequest,
     StoryResponse,
+    CustomPromptStoryRequest,
 )
 from db.narratives_db import NarrativesDB
 from llm.get_story import StoryGenerator
@@ -560,6 +561,29 @@ def refine_story(request: StoryRefinementRequest):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to refine story: {str(e)}")
+
+
+@app.post("/generate-story-custom-prompt", response_model=StoryResponse)
+def generate_story_custom_prompt(request: CustomPromptStoryRequest):
+    """Generate a story using a custom prompt"""
+    try:
+        # Initialize story generator
+        generator = StoryGenerator()
+
+        # Use the custom prompt directly as the user prompt
+        result = generator.get_story_with_custom_prompt(
+            narrative=request.narrative,
+            custom_prompt=request.custom_prompt,
+            style=request.style,
+        )
+
+        return StoryResponse(**result)
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate story with custom prompt: {str(e)}",
+        )
 
 
 @app.get("/test-openai-connection")

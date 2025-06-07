@@ -511,8 +511,8 @@ body {
   min-width: 0 !important;
   width: 100% !important;
   overflow: visible !important;
-  flex-direction: row !important; /* Override any flex column */
-  flex-wrap: nowrap !important; /* Prevent wrapping */
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
 }
 
 .form-field {
@@ -584,8 +584,8 @@ body {
 
 .form-textarea {
   resize: vertical;
-  min-height: 80px;
-  max-height: 120px;
+  min-height: 160px;
+  max-height: 240px;
 }
 
 .add-btn-inline {
@@ -613,6 +613,51 @@ body {
 
 .add-btn-inline:disabled {
   background: #666;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Story buttons container */
+.story-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Edit Prompt Button - Soft Blue */
+.edit-prompt-btn {
+  padding: 8px 16px;
+  background: #4a90e2; /* Soft blue */
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: fit-content !important;
+  align-self: flex-start !important;
+  min-width: auto !important;
+  height: auto !important;
+  box-shadow: 0 2px 4px rgba(74, 144, 226, 0.2);
+}
+
+.edit-prompt-btn:hover {
+  background: #357abd; /* Darker blue on hover */
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(74, 144, 226, 0.3);
+}
+
+.edit-prompt-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(74, 144, 226, 0.2);
+}
+
+.edit-prompt-btn:disabled {
+  background: #999;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
@@ -812,8 +857,8 @@ html body .modal .modal-content .modal-body .narrative-form-single-line .form-ro
 
 .form-textarea {
   resize: vertical;
-  min-height: 80px;
-  max-height: 120px;
+  min-height: 160px;
+  max-height: 240px;
 }
 
 .add-btn-inline {
@@ -841,6 +886,51 @@ html body .modal .modal-content .modal-body .narrative-form-single-line .form-ro
 
 .add-btn-inline:disabled {
   background: #666;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Story buttons container */
+.story-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Edit Prompt Button - Soft Blue */
+.edit-prompt-btn {
+  padding: 8px 16px;
+  background: #4a90e2; /* Soft blue */
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: fit-content !important;
+  align-self: flex-start !important;
+  min-width: auto !important;
+  height: auto !important;
+  box-shadow: 0 2px 4px rgba(74, 144, 226, 0.2);
+}
+
+.edit-prompt-btn:hover {
+  background: #357abd; /* Darker blue on hover */
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(74, 144, 226, 0.3);
+}
+
+.edit-prompt-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(74, 144, 226, 0.2);
+}
+
+.edit-prompt-btn:disabled {
+  background: #999;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
@@ -946,112 +1036,130 @@ html body .modal .modal-content .modal-body .narrative-form-single-line .form-ro
   }
 }
 
-/* ULTIMATE GRID FIX - Place at end of file for maximum priority */
-/* This MUST be the last CSS rule to ensure it overrides everything */
-
-#addNarrativeModal .modal-content .modal-body .narrative-form-container .narrative-form-line .form-row {
-  display: grid !important;
-  grid-template-columns: 150px 200px 1fr 200px 120px !important;
-  grid-template-rows: 1fr !important;
-  gap: 20px !important;
-  align-items: start !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
-  margin-bottom: 20px !important;
-  background: #2d2d2d !important;
-  border: 2px solid #404040 !important;
-  border-radius: 12px !important;
-  padding: 20px !important;
-  /* Hard reset to override any conflicting styles */
-  position: relative !important;
-  overflow: visible !important;
-  flex-direction: row !important;
-  flex-wrap: nowrap !important;
-  align-content: start !important;
-  justify-content: start !important;
-  justify-items: stretch !important;
-  place-items: start stretch !important;
-  min-width: 1000px !important;
+/* Edit Prompt Modal Styles */
+#editPromptModal .modal-content {
+  max-width: 700px;
+  width: 90%;
 }
 
-/* Topic field (first column) */
-#addNarrativeModal .modal-content .modal-body .narrative-form-container .narrative-form-line .form-row > div:nth-child(1) {
-  grid-column: 1 !important;
-  grid-row: 1 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  width: 100% !important;
-  min-width: 0 !important;
+.prompt-edit-section {
+  margin-bottom: 20px;
 }
 
-/* Narrative field (second column) */
-#addNarrativeModal .modal-content .modal-body .narrative-form-container .narrative-form-line .form-row > div:nth-child(2) {
-  grid-column: 2 !important;
-  grid-row: 1 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  width: 100% !important;
-  min-width: 0 !important;
+.modal-description {
+  background: #1a4b5c;
+  border: 1px solid #2e6a7d;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  color: #b8e6ff;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
-/* Story field (third column) */
-#addNarrativeModal .modal-content .modal-body .narrative-form-container .narrative-form-line .form-row > div:nth-child(3) {
-  grid-column: 3 !important;
-  grid-row: 1 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  width: 100% !important;
-  min-width: 0 !important;
+.modal-description code {
+  background: #2e6a7d;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  color: #ffffff;
 }
 
-/* Link field (fourth column) */
-#addNarrativeModal .modal-content .modal-body .narrative-form-container .narrative-form-line .form-row > div:nth-child(4) {
-  grid-column: 4 !important;
-  grid-row: 1 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  width: 100% !important;
-  min-width: 0 !important;
+.prompt-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 15px;
+  flex-wrap: wrap;
 }
 
-/* Actions field (fifth column) */
-#addNarrativeModal .modal-content .modal-body .narrative-form-container .narrative-form-line .form-row > div:nth-child(5) {
-  grid-column: 5 !important;
-  grid-row: 1 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  width: 100% !important;
-  min-width: 0 !important;
+.modal-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 120px;
 }
 
-/* Clear any conflicting styles */
-#addNarrativeModal .modal-content .modal-body .narrative-form-container .narrative-form-line .form-row > div {
-  position: static !important;
-  float: none !important;
-  clear: none !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  transform: none !important;
-  top: auto !important;
-  left: auto !important;
-  right: auto !important;
-  bottom: auto !important;
+.modal-btn.primary {
+  background: #4caf50;
+  color: white;
 }
 
-/* Force inputs and labels to behave */
-#addNarrativeModal .form-field label {
-  display: block !important;
-  width: 100% !important;
-  margin-bottom: 12px !important;
-  font-weight: bold !important;
-  color: #ffffff !important;
-  font-size: 14px !important;
+.modal-btn.primary:hover {
+  background: #45a049;
+  transform: translateY(-1px);
 }
 
-#addNarrativeModal .form-input,
-#addNarrativeModal .form-textarea {
-  width: 100% !important;
-  box-sizing: border-box !important;
-  min-width: 0 !important;
+.modal-btn.secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.modal-btn.secondary:hover {
+  background: #5a6268;
+  transform: translateY(-1px);
+}
+
+.modal-btn:disabled {
+  background: #999;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.prompt-test-result {
+  margin-top: 15px;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #404040;
+  background: #1a1a1a;
+}
+
+.prompt-test-result.success {
+  border-color: #4caf50;
+  background: #1a2e1a;
+  color: #c8e6c9;
+}
+
+.prompt-test-result.error {
+  border-color: #f44336;
+  background: #2e1a1a;
+  color: #ffcdd2;
+}
+
+.prompt-test-result h4 {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+}
+
+.prompt-test-result pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin: 0;
+  font-family: inherit;
+}
+
+/* Story Buttons Alignment Fix */
+.story-buttons .suggest-story-btn,
+.story-buttons .edit-prompt-btn {
+  margin: 0 !important; /* Remove any margins that could cause misalignment */
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: fit-content;
+  height: auto;
+  line-height: 1.2; /* Ensure consistent line height */
+}
+
+/* Ensure buttons are properly aligned in flex container */
+.story-buttons {
+  align-items: center !important;
+  gap: 8px !important;
 }
 

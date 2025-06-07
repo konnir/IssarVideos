@@ -4,6 +4,7 @@ Uses OpenAI GPT-4 to generate creative stories for video content.
 """
 
 import logging
+import time
 from typing import Optional, Dict, Any, List
 from clients.openai_client import OpenAIClient
 
@@ -192,6 +193,61 @@ Please provide the refined story that addresses the feedback while maintaining t
         except Exception as e:
             logger.error(f"Story refinement failed: {str(e)}")
             raise Exception(f"Failed to refine story: {str(e)}")
+
+    def get_story_with_custom_prompt(
+        self,
+        narrative: str,
+        custom_prompt: str,
+        style: str = "engaging",
+    ) -> Dict[str, Any]:
+        """
+        Generate a story using a custom user prompt.
+
+        Args:
+            narrative: The hidden narrative to incorporate
+            custom_prompt: Custom prompt template to use instead of default
+            style: The style for the system prompt
+
+        Returns:
+            Dictionary containing story and metadata
+        """
+        logger.info(
+            f"Generating story with custom prompt for narrative: {narrative[:50]}..."
+        )
+
+        try:
+            # Create system prompt (still use default system for consistency)
+            system_prompt = self._create_system_prompt(style)
+
+            # Use the custom prompt as the user prompt, replacing placeholders
+            user_prompt = custom_prompt.replace("{narrative}", narrative)
+
+            # Generate story
+            story_content = self.openai_client.generate_simple_completion(
+                prompt=user_prompt,
+                system_prompt=system_prompt,
+                max_tokens=150,  # Keep consistent with default method
+                temperature=0.8,
+            )
+
+            # Create result
+            result = {
+                "story": story_content.strip(),
+                "narrative": narrative,
+                "metadata": {
+                    "style": style,
+                    "custom_prompt": custom_prompt,
+                    "generation_method": "custom_prompt",
+                    "timestamp": time.time(),
+                },
+            }
+
+            logger.info("Story generated successfully with custom prompt")
+            return result
+
+        except Exception as e:
+            logger.error(f"Error generating story with custom prompt: {str(e)}")
+            raise
 
 
 # Convenience function for quick story generation

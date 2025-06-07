@@ -43,13 +43,42 @@ poetry install
 
 3. **Set up environment variables**:
 
-```bash
-# Optional: Set OpenAI API key for story generation
-export OPENAI_API_KEY="your-openai-api-key-here"
+   You have multiple options to configure your OpenAI API key:
 
-# Optional: Set custom database path
-export NARRATIVES_DB_PATH="path/to/your/database.xlsx"
-```
+   **Option 1: Environment Variable (Traditional)**
+
+   ```bash
+   export OPENAI_API_KEY="your-openai-api-key-here"
+   export NARRATIVES_DB_PATH="path/to/your/database.xlsx"  # Optional
+   ```
+
+   **Option 2: .env File in Project Root**
+
+   ```bash
+   # Create .env file in project root
+   echo "OPENAI_API_KEY=your-openai-api-key-here" > .env
+   echo "NARRATIVES_DB_PATH=path/to/your/database.xlsx" >> .env
+   ```
+
+   **Option 3: .env File in clients Folder**
+
+   ```bash
+   # Create .env file in clients folder (takes priority)
+   echo "OPENAI_API_KEY=your-openai-api-key-here" > clients/.env
+   ```
+
+   > **Note**: The OpenAI client automatically looks for `.env` files in this order:
+   >
+   > 1. `clients/.env` (highest priority)
+   > 2. Project root `.env` (fallback)
+   > 3. System environment variables (fallback)
+
+   You can use the provided example file:
+
+   ```bash
+   cp clients/.env.example clients/.env
+   # Edit the file and add your actual API key
+   ```
 
 4. **Activate the virtual environment**:
 
