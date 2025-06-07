@@ -224,6 +224,117 @@ class TestStoryGenerationAPI:
         except requests.exceptions.ConnectionError:
             pytest.skip("Server not running - skipping method validation tests")
 
+    def test_suggest_story_integration_flow(self):
+        """Test the complete suggest story flow in tagging management"""
+        try:
+            # First test that the generate-story endpoint works for the suggest feature
+            payload = {
+                "narrative": "A scientist discovers something unusual in their lab",
+                "style": "engaging",  # Default style used by suggest feature
+                "additional_context": "",  # Empty as used by suggest feature
+            }
+
+            response = requests.post(
+                f"{self.base_url}/generate-story", json=payload, timeout=30
+            )
+
+            if response.status_code == 200:
+                data = response.json()
+
+                # Verify response structure matches what the suggest feature expects
+                assert "story" in data
+                assert "metadata" in data
+                assert isinstance(data["story"], str)
+                assert len(data["story"]) > 0
+
+                # Verify the story is suitable for narrative management
+                # Should be substantial but not too long
+                assert len(data["story"]) > 50  # Minimum meaningful story
+                assert len(data["story"]) < 2000  # Not too long for UI
+
+            else:
+                # In test environment, API key might not be configured
+                assert response.status_code in [400, 500]
+                pytest.skip(
+                    "OpenAI API not configured - skipping suggest story integration test"
+                )
+
+        except requests.exceptions.ConnectionError:
+            pytest.skip("Server not running - skipping suggest story integration test")
+
+    def test_suggest_story_with_empty_narrative(self):
+        """Test suggest story behavior with empty narrative"""
+        try:
+            payload = {
+                "narrative": "",  # Empty narrative
+                "style": "engaging",
+                "additional_context": "",
+            }
+
+            response = requests.post(
+                f"{self.base_url}/generate-story", json=payload, timeout=10
+            )
+
+            # Should return validation error for empty narrative
+            assert response.status_code == 422
+
+        except requests.exceptions.ConnectionError:
+            pytest.skip("Server not running - skipping validation test")
+
+    def test_suggest_story_with_very_long_narrative(self):
+        """Test suggest story with very long narrative input"""
+        try:
+            # Create a very long narrative (over 1000 characters)
+            long_narrative = "A person discovers " + "something amazing " * 100
+
+            payload = {
+                "narrative": long_narrative,
+                "style": "engaging",
+                "additional_context": "",
+            }
+
+            response = requests.post(
+                f"{self.base_url}/generate-story", json=payload, timeout=30
+            )
+
+            if response.status_code == 200:
+                data = response.json()
+                # Should still generate a reasonable story
+                assert "story" in data
+                assert len(data["story"]) > 0
+            else:
+                # Should handle gracefully
+                assert response.status_code in [400, 422, 500]
+
+        except requests.exceptions.ConnectionError:
+            pytest.skip("Server not running - skipping long narrative test")
+
+    def test_suggest_story_with_special_characters(self):
+        """Test suggest story with special characters in narrative"""
+        try:
+            payload = {
+                "narrative": "A developer finds a bug 🐛 in their code that causes emoji 😀 to appear everywhere!",
+                "style": "engaging",
+                "additional_context": "",
+            }
+
+            response = requests.post(
+                f"{self.base_url}/generate-story", json=payload, timeout=30
+            )
+
+            if response.status_code == 200:
+                data = response.json()
+                assert "story" in data
+                assert isinstance(data["story"], str)
+                # Should handle unicode characters properly
+                assert len(data["story"]) > 0
+            else:
+                # Should handle gracefully
+                assert response.status_code in [400, 500]
+
+        except requests.exceptions.ConnectionError:
+            pytest.skip("Server not running - skipping special characters test")
+
 
 class TestStoryGenerationUnit:
     """Unit tests for story generation components"""

@@ -260,6 +260,7 @@ function createFormLineHTML(lineId, copyTopic = '', copyNarrative = '') {
         <div class="form-field form-field-story" style="grid-column: 3 !important; grid-row: 1 !important; display: flex !important; flex-direction: column !important; min-width: 0 !important; width: 100% !important;">
           <label for="story${lineId}">Story:</label>
           <textarea id="story${lineId}" class="form-textarea story-input" placeholder="Enter story content" rows="4"></textarea>
+          <button class="suggest-story-btn" onclick="suggestStory(${lineId})" data-line-id="${lineId}" type="button">✨ Suggest Story</button>
         </div>
         <div class="form-field" style="grid-column: 4 !important; grid-row: 1 !important; display: flex !important; flex-direction: column !important; min-width: 0 !important; width: 100% !important;">
           <label for="link${lineId}">Link:</label>
@@ -385,6 +386,85 @@ async function addSingleNarrative(lineId) {
     // Reset button only on error
     addBtn.disabled = false;
     addBtn.textContent = 'Add';
+  }
+}
+
+/**
+ * Suggest a story based on the narrative using AI
+ */
+async function suggestStory(lineId) {
+  const narrative = document.getElementById(`narrative${lineId}`).value.trim();
+  const errorDiv = document.getElementById('addNarrativeError');
+  
+  // Clear previous messages
+  errorDiv.style.display = 'none';
+  
+  // Validate that narrative is filled
+  if (!narrative) {
+    errorDiv.innerHTML = '<div class="error">Please enter a narrative first to generate a story suggestion</div>';
+    errorDiv.style.display = 'block';
+    return;
+  }
+  
+  // Get the suggest button for this line
+  const suggestBtn = document.querySelector(`[data-line-id="${lineId}"].suggest-story-btn`);
+  const storyTextarea = document.getElementById(`story${lineId}`);
+  
+  // Set loading state
+  suggestBtn.disabled = true;
+  suggestBtn.textContent = '✨ Generating...';
+  
+  try {
+    const response = await fetch('/generate-story', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        narrative: narrative,
+        style: 'engaging',
+        additional_context: ''
+      }),
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      
+      // Set the generated story in the textarea
+      storyTextarea.value = result.story;
+      
+      // Reset button
+      suggestBtn.disabled = false;
+      suggestBtn.textContent = '✨ Suggest Story';
+      
+      // Show success message briefly
+      errorDiv.innerHTML = '<div class="success">Story generated successfully! You can edit it before adding.</div>';
+      errorDiv.style.display = 'block';
+      
+      // Hide success message after 3 seconds
+      setTimeout(() => {
+        errorDiv.style.display = 'none';
+      }, 3000);
+      
+    } else {
+      const errorData = await response.json();
+      let errorMessage = errorData.detail || 'Failed to generate story';
+      
+      errorDiv.innerHTML = `<div class="error">Story generation failed: ${errorMessage}</div>`;
+      errorDiv.style.display = 'block';
+      
+      // Reset button
+      suggestBtn.disabled = false;
+      suggestBtn.textContent = '✨ Suggest Story';
+    }
+  } catch (error) {
+    console.error('Error generating story:', error);
+    errorDiv.innerHTML = '<div class="error">Connection error. Please try again.</div>';
+    errorDiv.style.display = 'block';
+    
+    // Reset button
+    suggestBtn.disabled = false;
+    suggestBtn.textContent = '✨ Suggest Story';
   }
 }
 

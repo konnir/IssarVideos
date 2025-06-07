@@ -8,6 +8,9 @@ This script runs all tests including:
 - Integration tests (API endpoints)
 - UI tests (HTML validation)
 
+By default, shows individual test names and results.
+Use --verbose for even more detailed output including print statements.
+
 Usage:
     python tests/run_all_tests.py [--type all|unit|integration|ui] [--verbose]
 """
@@ -61,19 +64,17 @@ class ComprehensiveTestRunner:
                 return True
 
             cmd = (
-                [sys.executable, "-m", "pytest", str(unittest_dir), "-v"]
+                [sys.executable, "-m", "pytest", str(unittest_dir), "-v", "-s"]
                 if self.verbose
-                else [sys.executable, "-m", "pytest", str(unittest_dir)]
+                else [sys.executable, "-m", "pytest", str(unittest_dir), "-v"]
             )
-            result = subprocess.run(cmd, env=env, capture_output=not self.verbose)
+            result = subprocess.run(cmd, env=env, capture_output=False)
 
             if result.returncode == 0:
                 self.log("Unit tests passed", "SUCCESS")
                 return True
             else:
                 self.log("Unit tests failed", "ERROR")
-                if not self.verbose:
-                    self.log("Run with --verbose for detailed output", "INFO")
                 return False
 
         except Exception as e:
@@ -97,19 +98,17 @@ class ComprehensiveTestRunner:
 
             # Run pytest on integration directory
             cmd = (
-                [sys.executable, "-m", "pytest", str(integration_dir), "-v"]
+                [sys.executable, "-m", "pytest", str(integration_dir), "-v", "-s"]
                 if self.verbose
-                else [sys.executable, "-m", "pytest", str(integration_dir)]
+                else [sys.executable, "-m", "pytest", str(integration_dir), "-v"]
             )
-            result = subprocess.run(cmd, env=env, capture_output=not self.verbose)
+            result = subprocess.run(cmd, env=env, capture_output=False)
 
             if result.returncode == 0:
                 self.log("Integration tests passed", "SUCCESS")
                 return True
             else:
                 self.log("Integration tests failed", "ERROR")
-                if not self.verbose:
-                    self.log("Run with --verbose for detailed output", "INFO")
                 return False
 
         except Exception as e:
@@ -128,19 +127,17 @@ class ComprehensiveTestRunner:
 
             # Run pytest on UI directory
             cmd = (
-                [sys.executable, "-m", "pytest", str(ui_dir), "-v"]
+                [sys.executable, "-m", "pytest", str(ui_dir), "-v", "-s"]
                 if self.verbose
-                else [sys.executable, "-m", "pytest", str(ui_dir)]
+                else [sys.executable, "-m", "pytest", str(ui_dir), "-v"]
             )
-            result = subprocess.run(cmd, capture_output=not self.verbose)
+            result = subprocess.run(cmd, capture_output=False)
 
             if result.returncode == 0:
                 self.log("UI tests passed", "SUCCESS")
                 return True
             else:
                 self.log("UI tests failed", "ERROR")
-                if not self.verbose:
-                    self.log("Run with --verbose for detailed output", "INFO")
                 return False
 
         except Exception as e:
@@ -221,7 +218,11 @@ def main():
         default="all",
         help="Type of tests to run (default: all)",
     )
-    parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Enable extra verbose output (shows print statements and more details)",
+    )
 
     args = parser.parse_args()
 
