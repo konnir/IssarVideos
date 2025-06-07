@@ -410,6 +410,212 @@ class TestReportCounterLogic:
         assert counter_test_result["narrativeYesCounts"]["Story 3"] == 5
 
 
+class TestAddNarrativeModalFunctionality:
+    """Test Add Narrative modal JavaScript functionality"""
+
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        """Setup for tests"""
+        self.options = Options()
+        self.options.add_argument("--headless")
+        self.options.add_argument("--no-sandbox")
+        self.options.add_argument("--disable-dev-shm-usage")
+        self.base_url = "http://localhost:8000"
+
+    def skip_if_server_not_running(self):
+        """Skip test if server is not running"""
+        import requests
+
+        try:
+            requests.get(f"{self.base_url}/health", timeout=2)
+        except requests.exceptions.ConnectionError:
+            pytest.skip(
+                "Server not running - skipping JavaScript tests that require server"
+            )
+
+    def test_add_narrative_modal_functions_exist(self):
+        """Test that Add Narrative modal JavaScript functions exist"""
+        self.skip_if_server_not_running()
+        driver = webdriver.Chrome(options=self.options)
+
+        try:
+            # Load via server to get JavaScript functions working
+            driver.get(f"{self.base_url}/tagging-management")
+
+            # Wait for page to load
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.TAG_NAME, "body"))
+            )
+
+            # Wait for JavaScript to load
+            import time
+
+            time.sleep(2)
+
+            # Check that all required JavaScript functions are defined
+            required_functions = [
+                "showAddNarrativeModal",
+                "hideAddNarrativeModal",
+                "addSingleNarrative",
+                "addNewFormLine",
+                "createFormLineHTML",
+                "resetFormContainer",
+            ]
+
+            for func_name in required_functions:
+                function_exists = driver.execute_script(
+                    f"return typeof {func_name} === 'function';"
+                )
+                assert (
+                    function_exists
+                ), f"JavaScript function {func_name} should be defined"
+
+        finally:
+            driver.quit()
+
+    def test_form_line_counter_initialization(self):
+        """Test that form line counter is properly initialized"""
+        self.skip_if_server_not_running()
+        driver = webdriver.Chrome(options=self.options)
+
+        try:
+            # Load via server
+            driver.get(f"{self.base_url}/tagging-management")
+
+            # Wait for page to load
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.TAG_NAME, "body"))
+            )
+
+            # Wait for JavaScript to load
+            import time
+
+            time.sleep(2)
+
+            # Check that formLineCounter is initialized
+            counter_value = driver.execute_script(
+                "return typeof formLineCounter !== 'undefined' ? formLineCounter : null;"
+            )
+            assert counter_value is not None, "formLineCounter should be initialized"
+            assert counter_value == 1, "formLineCounter should start at 1"
+
+        finally:
+            driver.quit()
+
+    def test_create_form_line_html_structure(self):
+        """Test that createFormLineHTML generates proper structure"""
+        self.skip_if_server_not_running()
+        driver = webdriver.Chrome(options=self.options)
+
+        try:
+            # Load via server
+            driver.get(f"{self.base_url}/tagging-management")
+
+            # Wait for page to load and scripts to execute
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.TAG_NAME, "body"))
+            )
+
+            # Wait for JavaScript to load
+            import time
+
+            time.sleep(2)
+
+            # Test createFormLineHTML function
+            html_result = driver.execute_script(
+                """
+                if (typeof createFormLineHTML === 'function') {
+                    var html = createFormLineHTML(2, 'Test Topic', 'Test Narrative');
+                    var tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = html;
+                    
+                    return {
+                        hasFormLine: html.includes('narrative-form-line'),
+                        hasCorrectId: html.includes('formLine2'),
+                        hasTopicField: html.includes('id="sheet2"'),
+                        hasNarrativeField: html.includes('id="narrative2"'),
+                        hasStoryField: html.includes('id="story2"'),
+                        hasLinkField: html.includes('id="link2"'),
+                        hasAddButton: html.includes('addSingleNarrative(2)'),
+                        hasPlusButton: html.includes('addNewFormLine(2)'),
+                        hasGridLayout: html.includes('grid-template-columns'),
+                        hasCopiedValues: html.includes('value="Test Topic"') && html.includes('value="Test Narrative"')
+                    };
+                }
+                return null;
+            """
+            )
+
+            assert (
+                html_result is not None
+            ), "createFormLineHTML function should be available"
+            assert html_result["hasFormLine"], "Should create form line structure"
+            assert html_result["hasCorrectId"], "Should have correct line ID"
+            assert html_result["hasTopicField"], "Should have topic field"
+            assert html_result["hasNarrativeField"], "Should have narrative field"
+            assert html_result["hasStoryField"], "Should have story field"
+            assert html_result["hasLinkField"], "Should have link field"
+            assert html_result["hasAddButton"], "Should have Add button"
+            assert html_result["hasPlusButton"], "Should have Plus button"
+            assert html_result["hasGridLayout"], "Should use CSS grid layout"
+            assert html_result[
+                "hasCopiedValues"
+            ], "Should copy Topic and Narrative values"
+
+        finally:
+            driver.quit()
+
+    def test_form_field_grid_positioning(self):
+        """Test that form fields are properly positioned in CSS grid"""
+        self.skip_if_server_not_running()
+        driver = webdriver.Chrome(options=self.options)
+
+        try:
+            # Load via server
+            driver.get(f"{self.base_url}/tagging-management")
+
+            # Wait for page to load
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.TAG_NAME, "body"))
+            )
+
+            # Wait for styles to load
+            import time
+
+            time.sleep(2)
+
+            # Test that grid positioning is correct
+            grid_test = driver.execute_script(
+                """
+                var formLine = document.querySelector('#formLine1 .form-row');
+                if (formLine) {
+                    var computedStyle = window.getComputedStyle(formLine);
+                    var gridColumns = computedStyle.getPropertyValue('grid-template-columns');
+                    var display = computedStyle.getPropertyValue('display');
+                    var gap = computedStyle.getPropertyValue('gap');
+                    
+                    return {
+                        hasGridDisplay: display === 'grid',
+                        hasCorrectColumns: gridColumns.includes('0.42fr') && gridColumns.includes('1.5fr') && gridColumns.includes('3fr'),
+                        hasGap: gap.includes('30px'),
+                        formLineExists: true
+                    };
+                }
+                return { formLineExists: false };
+            """
+            )
+
+            assert grid_test["formLineExists"], "Form line should exist"
+            assert grid_test["hasGridDisplay"], "Form should use CSS grid display"
+            assert grid_test[
+                "hasCorrectColumns"
+            ], "Should have correct grid column proportions"
+            assert grid_test["hasGap"], "Should have 30px gap between fields"
+
+        finally:
+            driver.quit()
+
+
 if __name__ == "__main__":
     # Run with pytest
     pytest.main([__file__, "-v"])

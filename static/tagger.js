@@ -285,22 +285,7 @@ function toggleLeaderboard() {
   }
 }
 
-// Test function to verify video link button functionality
-function testVideoLinkButton() {
-  const testVideo = {
-    Link: "https://www.youtube.com/watch?v=hbe3CQamF8k",
-    Narrative: "Test narrative for button verification",
-    Title: "Test Video"
-  };
-  
-  // Show the video section for testing
-  const videoSection = document.getElementById("videoSection");
-  if (videoSection) {
-    videoSection.style.display = "block";
-    displayVideo(testVideo);
-    console.log("✅ Test video loaded with link button");
-  }
-}
+
 
 // Initialize event listeners when DOM is loaded
 document.addEventListener("DOMContentLoaded", function() {

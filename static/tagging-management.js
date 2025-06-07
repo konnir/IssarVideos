@@ -198,3 +198,207 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 });
+
+/**
+ * Add Narrative Modal Functions
+ */
+
+// Global counter for form lines
+let formLineCounter = 1;
+
+/**
+ * Show the Add Narrative modal
+ */
+function showAddNarrativeModal() {
+  if (!isAuthenticated) {
+    alert('Please authenticate first');
+    return;
+  }
+  
+  document.getElementById('addNarrativeModal').style.display = 'block';
+  
+  // Reset to single form line
+  resetFormContainer();
+  
+  // Clear any previous messages
+  document.getElementById('addNarrativeError').style.display = 'none';
+}
+
+/**
+ * Hide the Add Narrative modal
+ */
+function hideAddNarrativeModal() {
+  document.getElementById('addNarrativeModal').style.display = 'none';
+}
+
+/**
+ * Reset form container to single line
+ */
+function resetFormContainer() {
+  const container = document.getElementById('narrativeFormContainer');
+  formLineCounter = 1;
+  
+  // Clear container and add first line
+  container.innerHTML = createFormLineHTML(1);
+}
+
+/**
+ * Create HTML for a new form line
+ */
+function createFormLineHTML(lineId, copyTopic = '', copyNarrative = '') {
+  return `
+    <div class="narrative-form-line" id="formLine${lineId}" data-line-id="${lineId}">
+      <div class="form-row" style="display: grid !important; grid-template-columns: 0.42fr 1.5fr 3fr 1.5fr auto !important; grid-template-rows: 1fr !important; gap: 30px !important; align-items: start !important; background: #2d2d2d !important; border: 2px solid #404040 !important; border-radius: 12px !important; padding: 20px !important; width: 100% !important; min-width: 0 !important; overflow: visible !important; flex-direction: row !important; flex-wrap: nowrap !important; margin-bottom: 20px !important;">
+        <div class="form-field" style="grid-column: 1 !important; grid-row: 1 !important; display: flex !important; flex-direction: column !important; min-width: 0 !important; width: 100% !important;">
+          <label for="sheet${lineId}">Topic:</label>
+          <input type="text" id="sheet${lineId}" class="form-input topic-input" placeholder="Enter Topic" value="${copyTopic}" />
+        </div>
+        <div class="form-field" style="grid-column: 2 !important; grid-row: 1 !important; display: flex !important; flex-direction: column !important; min-width: 0 !important; width: 100% !important;">
+          <label for="narrative${lineId}">Narrative:</label>
+          <input type="text" id="narrative${lineId}" class="form-input narrative-input" placeholder="Enter narrative text" value="${copyNarrative}" />
+        </div>
+        <div class="form-field form-field-story" style="grid-column: 3 !important; grid-row: 1 !important; display: flex !important; flex-direction: column !important; min-width: 0 !important; width: 100% !important;">
+          <label for="story${lineId}">Story:</label>
+          <textarea id="story${lineId}" class="form-textarea story-input" placeholder="Enter story content" rows="4"></textarea>
+        </div>
+        <div class="form-field" style="grid-column: 4 !important; grid-row: 1 !important; display: flex !important; flex-direction: column !important; min-width: 0 !important; width: 100% !important;">
+          <label for="link${lineId}">Link:</label>
+          <input type="url" id="link${lineId}" class="form-input link-input" placeholder="https://example.com" />
+        </div>
+        <div class="form-field form-field-button" style="grid-column: 5 !important; grid-row: 1 !important; display: flex !important; flex-direction: column !important; align-items: flex-start !important; padding-bottom: 0 !important;">
+          <label>Actions:</label>
+          <div class="button-group" style="display: flex; gap: 5px; align-items: center;">
+            <button class="add-btn-inline" onclick="addSingleNarrative(${lineId})" data-line-id="${lineId}">Add</button>
+            <button class="plus-btn" onclick="addNewFormLine(${lineId})" title="Add new line">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Add a new form line, copying topic and narrative if filled
+ */
+function addNewFormLine(sourceLineId) {
+  formLineCounter++;
+  const newLineId = formLineCounter;
+  
+  // Get values to copy from source line - Topic and Narrative only
+  const sourceTopic = document.getElementById(`sheet${sourceLineId}`).value.trim();
+  const sourceNarrative = document.getElementById(`narrative${sourceLineId}`).value.trim();
+  
+  // Create new form line HTML
+  const newLineHTML = createFormLineHTML(newLineId, sourceTopic, sourceNarrative);
+  
+  // Add new line to container
+  const container = document.getElementById('narrativeFormContainer');
+  container.insertAdjacentHTML('beforeend', newLineHTML);
+  
+  // Focus on the story field of the new line (since Topic and Narrative are pre-filled)
+  document.getElementById(`story${newLineId}`).focus();
+}
+
+/**
+ * Add a single narrative from the specified form line
+ */
+async function addSingleNarrative(lineId) {
+  const errorDiv = document.getElementById('addNarrativeError');
+  
+  // Clear previous messages
+  errorDiv.style.display = 'none';
+  
+  // Get form values for this specific line
+  const sheet = document.getElementById(`sheet${lineId}`).value.trim();
+  const narrative = document.getElementById(`narrative${lineId}`).value.trim();
+  const story = document.getElementById(`story${lineId}`).value.trim();
+  const link = document.getElementById(`link${lineId}`).value.trim();
+  
+  // Validate required fields
+  if (!sheet || !narrative || !story || !link) {
+    errorDiv.innerHTML = '<div class="error">Please fill in all fields</div>';
+    errorDiv.style.display = 'block';
+    return;
+  }
+  
+  // Validate URL format
+  try {
+    new URL(link);
+  } catch {
+    errorDiv.innerHTML = '<div class="error">Please enter a valid URL</div>';
+    errorDiv.style.display = 'block';
+    return;
+  }
+  
+  // Get the specific Add button for this line
+  const addBtn = document.querySelector(`[data-line-id="${lineId}"].add-btn-inline`);
+  addBtn.disabled = true;
+  addBtn.textContent = 'Adding...';
+  
+  try {
+    const response = await fetch('/add-narrative', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        Sheet: sheet,
+        Narrative: narrative,
+        Story: story,
+        Link: link
+      }),
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      
+      // Change button to "Added ✓" and keep it disabled
+      addBtn.textContent = 'Added ✓';
+      addBtn.disabled = true;
+      
+      // Refresh the stats table
+      await loadTaggingStats();
+      
+      // Keep all fields intact after successful submission for potential reuse
+      // User can manually clear fields if needed
+      
+    } else {
+      const errorData = await response.json();
+      let errorMessage = errorData.detail || 'Failed to add narrative';
+      
+      // Check for duplicate link error and provide user-friendly message
+      if (errorMessage.toLowerCase().includes('link already exists') || 
+          errorMessage.toLowerCase().includes('record with this link already exists')) {
+        errorMessage = '🔗 This link is already in the database. Please choose a different link.';
+      }
+      
+      errorDiv.innerHTML = `<div class="error">${errorMessage}</div>`;
+      errorDiv.style.display = 'block';
+      // Reset button on failure
+      addBtn.disabled = false;
+      addBtn.textContent = 'Add';
+    }
+  } catch (error) {
+    console.error('Error adding narrative:', error);
+    errorDiv.innerHTML = '<div class="error">Connection error. Please try again.</div>';
+    errorDiv.style.display = 'block';
+    // Reset button only on error
+    addBtn.disabled = false;
+    addBtn.textContent = 'Add';
+  }
+}
+
+/**
+ * Close modal when clicking outside of it
+ */
+document.addEventListener('DOMContentLoaded', function() {
+  const modal = document.getElementById('addNarrativeModal');
+  
+  if (modal) {
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) {
+        hideAddNarrativeModal();
+      }
+    });
+  }
+});

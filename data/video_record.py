@@ -17,7 +17,7 @@ class VideoRecord(BaseModel):
     Story: Optional[str] = None
     Tagger_1: Optional[str] = None
     Tagger_1_Result: Optional[int] = None
-    Link: str
+    Link: Optional[str] = None
 
 
 class VideoRecordUpdate(BaseModel):
@@ -39,4 +39,13 @@ class VideoRecordCreate(BaseModel):
     Story: Optional[str] = None
     Tagger_1: Optional[str] = None
     Tagger_1_Result: Optional[int] = None
+    Link: str
+
+
+class AddNarrativeRequest(BaseModel):
+    """Model for adding new narrative records"""
+
+    Sheet: str
+    Narrative: str
+    Story: str
     Link: str

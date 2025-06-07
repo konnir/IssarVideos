@@ -10,6 +10,7 @@ import pytest
 import requests
 import json
 import sys
+import time
 from pathlib import Path
 from unittest.mock import patch
 
@@ -317,6 +318,125 @@ class TestAllAPIEndpoints:
         # If first failed, both should have same error
         elif response1.status_code == 400:
             assert response2.status_code == 400
+
+    def test_add_narrative_endpoint(self):
+        """Test /add-narrative endpoint with valid data"""
+        self.skip_if_server_not_running()
+
+        # Test data for adding narrative
+        narrative_data = {
+            "Sheet": "Test Topic Add Narrative",
+            "Narrative": "Test narrative for add endpoint",
+            "Story": "This is a test story for the add narrative endpoint functionality",
+            "Link": f"https://example.com/test-add-narrative-{hash(str(time.time()))}",
+        }
+
+        response = requests.post(f"{self.base_url}/add-narrative", json=narrative_data)
+
+        # Should succeed or fail with 400 if duplicate
+        assert response.status_code in [
+            200,
+            400,
+        ], f"Unexpected status code: {response.status_code}"
+
+        if response.status_code == 200:
+            data = response.json()
+            assert "message" in data, "Should return success message"
+            assert "Narrative added successfully" in data["message"]
+            assert data["sheet"] == narrative_data["Sheet"]
+            assert data["narrative"] == narrative_data["Narrative"]
+            assert data["link"] == narrative_data["Link"]
+
+    def test_add_narrative_duplicate_link(self):
+        """Test /add-narrative endpoint with duplicate link"""
+        self.skip_if_server_not_running()
+
+        # Use a known link that might already exist
+        narrative_data = {
+            "Sheet": "Duplicate Test Topic",
+            "Narrative": "Duplicate test narrative",
+            "Story": "Test story for duplicate link test",
+            "Link": "https://example.com/duplicate-test-link",
+        }
+
+        # Try to add the same record twice
+        response1 = requests.post(f"{self.base_url}/add-narrative", json=narrative_data)
+
+        response2 = requests.post(f"{self.base_url}/add-narrative", json=narrative_data)
+
+        # At least one should fail with 400 for duplicate link
+        status_codes = [response1.status_code, response2.status_code]
+        assert 400 in status_codes, "Should reject duplicate link"
+
+        # Check error message for duplicate link
+        for response in [response1, response2]:
+            if response.status_code == 400:
+                error_data = response.json()
+                assert "detail" in error_data
+                assert "already exists" in error_data["detail"].lower()
+
+    def test_add_narrative_missing_fields(self):
+        """Test /add-narrative endpoint with missing required fields"""
+        self.skip_if_server_not_running()
+
+        # Test with missing fields
+        incomplete_data_sets = [
+            {
+                "Narrative": "Test",
+                "Story": "Test",
+                "Link": "https://example.com/test1",
+            },  # Missing Sheet
+            {
+                "Sheet": "Test",
+                "Story": "Test",
+                "Link": "https://example.com/test2",
+            },  # Missing Narrative
+            {
+                "Sheet": "Test",
+                "Narrative": "Test",
+                "Link": "https://example.com/test3",
+            },  # Missing Story
+            {"Sheet": "Test", "Narrative": "Test", "Story": "Test"},  # Missing Link
+            {},  # Missing all fields
+        ]
+
+        for incomplete_data in incomplete_data_sets:
+            response = requests.post(
+                f"{self.base_url}/add-narrative", json=incomplete_data
+            )
+            assert (
+                response.status_code == 422
+            ), f"Should reject incomplete data: {incomplete_data}"
+
+    def test_add_narrative_invalid_url(self):
+        """Test /add-narrative endpoint with invalid URL format"""
+        self.skip_if_server_not_running()
+
+        # Test with invalid URL formats
+        invalid_urls = [
+            "not-a-url",
+            "ftp://example.com",  # Wrong protocol
+            "http://",  # Incomplete URL
+            "",  # Empty URL
+        ]
+
+        for invalid_url in invalid_urls:
+            narrative_data = {
+                "Sheet": "Test Topic",
+                "Narrative": "Test narrative",
+                "Story": "Test story",
+                "Link": invalid_url,
+            }
+
+            response = requests.post(
+                f"{self.base_url}/add-narrative", json=narrative_data
+            )
+            # Backend accepts any string as URL (validation is frontend-only)
+            # So these should succeed (200) or fail only for other reasons (like duplicates)
+            assert response.status_code in [
+                200,
+                400,
+            ], f"Backend should accept URL format: {invalid_url}"
 
     def test_tag_record_endpoint(self):
         """Test /tag-record endpoint"""

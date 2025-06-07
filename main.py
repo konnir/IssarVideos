@@ -13,6 +13,7 @@ from data.video_record import (
     VideoRecordUpdate,
     VideoRecordCreate,
     TagRecordRequest,
+    AddNarrativeRequest,
 )
 from db.narratives_db import NarrativesDB
 
@@ -128,6 +129,48 @@ def add_record(record_data: VideoRecordCreate):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to add record: {str(e)}")
+
+
+@app.post("/add-narrative")
+def add_narrative(narrative_data: AddNarrativeRequest):
+    """Add a new narrative record to the database"""
+    try:
+        # Convert to dict for database insertion
+        record_dict = {
+            "Sheet": narrative_data.Sheet,
+            "Narrative": narrative_data.Narrative,
+            "Story": narrative_data.Story,
+            "Link": narrative_data.Link,
+            "Tagger_1": None,  # Empty as specified
+            "Tagger_1_Result": 0,  # Set to 0 as specified
+        }
+
+        # Check if record with same link already exists
+        existing_records = db.df[db.df["Link"] == record_dict["Link"]]
+        if not existing_records.empty:
+            raise HTTPException(
+                status_code=400, detail="Record with this link already exists"
+            )
+
+        # Add the record
+        db.add_new_record(record_dict)
+
+        # Save changes to the Excel file (this will create new sheet if needed)
+        db.save_changes()
+
+        return {
+            "message": "Narrative added successfully",
+            "sheet": narrative_data.Sheet,
+            "narrative": narrative_data.Narrative,
+            "link": narrative_data.Link,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to add narrative: {str(e)}"
+        )
 
 
 @app.get("/all-records", response_model=List[VideoRecord])

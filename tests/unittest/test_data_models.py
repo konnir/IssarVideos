@@ -19,6 +19,7 @@ from data.video_record import (
     VideoRecordUpdate,
     VideoRecordCreate,
     TagRecordRequest,
+    AddNarrativeRequest,
 )
 
 
@@ -66,8 +67,11 @@ class TestVideoRecord:
         with pytest.raises(ValidationError):
             VideoRecord(Sheet="Test Sheet")
 
-        with pytest.raises(ValidationError):
-            VideoRecord(Sheet="Test Sheet", Narrative="Test narrative")
+        # Link is now optional, so this should work
+        record = VideoRecord(Sheet="Test Sheet", Narrative="Test narrative")
+        assert record.Sheet == "Test Sheet"
+        assert record.Narrative == "Test narrative"
+        assert record.Link is None
 
 
 class TestVideoRecordUpdate:
@@ -273,6 +277,122 @@ class TestModelSerialization:
         assert "Narrative" not in data
         assert "Story" not in data
         assert "Link" not in data
+
+
+class TestAddNarrativeRequest:
+    """Test the AddNarrativeRequest model"""
+
+    def test_valid_add_narrative_request(self):
+        """Test creating a valid AddNarrativeRequest"""
+        request = AddNarrativeRequest(
+            Sheet="Test Topic",
+            Narrative="Test narrative content",
+            Story="This is a detailed test story content for validation",
+            Link="https://example.com/test-video",
+        )
+
+        assert request.Sheet == "Test Topic"
+        assert request.Narrative == "Test narrative content"
+        assert request.Story == "This is a detailed test story content for validation"
+        assert request.Link == "https://example.com/test-video"
+
+    def test_add_narrative_request_minimal_valid(self):
+        """Test AddNarrativeRequest with minimal valid data"""
+        request = AddNarrativeRequest(
+            Sheet="A",
+            Narrative="B",
+            Story="C",
+            Link="https://example.com",
+        )
+
+        assert request.Sheet == "A"
+        assert request.Narrative == "B"
+        assert request.Story == "C"
+        assert request.Link == "https://example.com"
+
+    def test_add_narrative_request_missing_fields(self):
+        """Test AddNarrativeRequest with missing required fields"""
+        with pytest.raises(ValueError):
+            AddNarrativeRequest(
+                Narrative="Test narrative",
+                Story="Test story",
+                Link="https://example.com",
+                # Missing Sheet
+            )
+
+        with pytest.raises(ValueError):
+            AddNarrativeRequest(
+                Sheet="Test Topic",
+                Story="Test story",
+                Link="https://example.com",
+                # Missing Narrative
+            )
+
+        with pytest.raises(ValueError):
+            AddNarrativeRequest(
+                Sheet="Test Topic",
+                Narrative="Test narrative",
+                Link="https://example.com",
+                # Missing Story
+            )
+
+        with pytest.raises(ValueError):
+            AddNarrativeRequest(
+                Sheet="Test Topic",
+                Narrative="Test narrative",
+                Story="Test story",
+                # Missing Link
+            )
+
+    def test_add_narrative_request_empty_fields(self):
+        """Test AddNarrativeRequest with empty string fields"""
+        # Pydantic should accept empty strings if they're explicitly provided
+        request = AddNarrativeRequest(
+            Sheet="",
+            Narrative="",
+            Story="",
+            Link="",
+        )
+
+        assert request.Sheet == ""
+        assert request.Narrative == ""
+        assert request.Story == ""
+        assert request.Link == ""
+
+    def test_add_narrative_request_serialization(self):
+        """Test AddNarrativeRequest serialization"""
+        request = AddNarrativeRequest(
+            Sheet="Serialization Test",
+            Narrative="Test narrative for serialization",
+            Story="Test story content",
+            Link="https://example.com/serialize-test",
+        )
+
+        # Test model_dump (serialization)
+        data = request.model_dump()
+        expected_keys = {"Sheet", "Narrative", "Story", "Link"}
+        assert set(data.keys()) == expected_keys
+
+        # Test that we can recreate from serialized data
+        recreated = AddNarrativeRequest(**data)
+        assert recreated.Sheet == request.Sheet
+        assert recreated.Narrative == request.Narrative
+        assert recreated.Story == request.Story
+        assert recreated.Link == request.Link
+
+    def test_add_narrative_request_with_special_characters(self):
+        """Test AddNarrativeRequest with special characters and unicode"""
+        request = AddNarrativeRequest(
+            Sheet="Test Topic with émojis 🚀",
+            Narrative="Narrative with special chars: àáâãäå çñ",
+            Story="Story with quotes 'single' and \"double\" and unicode: 中文",
+            Link="https://example.com/special-chars-test",
+        )
+
+        assert "🚀" in request.Sheet
+        assert "àáâãäå" in request.Narrative
+        assert "中文" in request.Story
+        assert request.Link == "https://example.com/special-chars-test"
 
 
 if __name__ == "__main__":

@@ -1,3 +1,40 @@
+/* Dark Theme Base Styles */
+body {
+  background-color: #121212;
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.container {
+  background-color: #121212;
+}
+
+.auth-section {
+  background-color: #1e1e1e;
+  border: 1px solid #333;
+}
+
+.form-group input {
+  background-color: #2d2d2d;
+  color: #ffffff;
+  border: 1px solid #555;
+}
+
+.form-group input:focus {
+  border-color: #4caf50;
+  background-color: #3d3d3d;
+}
+
+.btn {
+  background: linear-gradient(135deg, #4caf50, #45a049);
+  color: white;
+  border: none;
+}
+
+.btn:hover {
+  background: linear-gradient(135deg, #45a049, #4caf50);
+}
+
 /* Tagging Management Specific Styles */
 
 .management-content {
@@ -354,3 +391,422 @@
   color: #f44336;
   font-weight: bold;
 }
+
+/* Add Narrative Styles */
+.add-narrative-section {
+  margin: 2rem 0;
+  text-align: center;
+}
+
+.add-narrative-btn {
+  background: linear-gradient(135deg, #4caf50, #45a049);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+}
+
+.add-narrative-btn:hover {
+  background: linear-gradient(135deg, #45a049, #4caf50);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(76, 175, 80, 0.4);
+}
+
+/* Modal Styles - Dark Theme */
+.modal {
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+}
+
+.modal-content {
+  background-color: #1e1e1e;
+  margin: 2% auto;
+  padding: 0;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  width: 98%;
+  max-width: none;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modalFadeIn 0.3s ease;
+  border: 1px solid #333;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: translateY(-50px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 2px solid #333;
+  background: linear-gradient(135deg, #2d2d2d, #1a1a1a);
+  color: #ffffff;
+  border-radius: 12px 12px 0 0;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.close-btn {
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  color: #ffffff;
+  background: none;
+  border: none;
+  padding: 0;
+  line-height: 1;
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
+}
+
+.close-btn:hover {
+  opacity: 1;
+  color: #ff6b6b;
+}
+
+.modal-body {
+  padding: 24px;
+  background-color: #1e1e1e;
+  border-radius: 0 0 12px 12px;
+}
+
+/* Single Line Form Layout */
+.narrative-form-single-line {
+  margin-bottom: 24px;
+}
+
+/* Force horizontal layout - override any responsive rules */
+.narrative-form-single-line .form-row {
+  display: grid !important;
+  grid-template-columns: 0.42fr 1.5fr 3fr 1.5fr auto !important;
+  grid-template-rows: 1fr !important;
+  gap: 30px !important;
+  align-items: start !important;
+  background: #2d2d2d !important;
+  border: 2px solid #404040 !important;
+  border-radius: 12px !important;
+  padding: 20px !important;
+  position: relative !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  overflow: visible !important;
+  flex-direction: row !important; /* Override any flex column */
+  flex-wrap: nowrap !important; /* Prevent wrapping */
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* Prevent flex items from overflowing */
+  width: 100%; /* Ensure full width within grid cell */
+}
+
+/* Explicit grid positioning to ensure horizontal layout */
+.form-field:nth-child(1) { grid-column: 1; }
+.form-field:nth-child(2) { grid-column: 2; }
+.form-field:nth-child(3) { grid-column: 3; }
+.form-field:nth-child(4) { grid-column: 4; }
+.form-field:nth-child(5) { grid-column: 5; }
+
+.form-field-story {
+  grid-column: span 1;
+}
+
+.form-field-button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding-bottom: 0;
+}
+
+.form-field label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: #ffffff;
+  font-size: 14px;
+  height: 20px; /* Fixed height to ensure all labels align consistently */
+}
+
+.form-input,
+.form-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #555;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  box-sizing: border-box;
+  background-color: #3d3d3d;
+  color: #ffffff;
+}
+
+.form-input {
+  height: 48px; /* Fixed height for inputs */
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: #4caf50;
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+  background-color: #454545;
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: #aaa;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+  max-height: 120px;
+}
+
+.add-btn-inline {
+  padding: 12px 24px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 100px;
+  height: 48px; /* Match input field height */
+}
+
+.add-btn-inline:hover {
+  background: #5a6268;
+  transform: translateY(-1px);
+}
+
+.add-btn-inline:active {
+  transform: translateY(0);
+}
+
+.add-btn-inline:disabled {
+  background: #666;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Error and Success Messages - Dark Theme */
+.error-message,
+.success-message {
+  margin-top: 16px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.error-message .error {
+  background-color: #4a1a1a;
+  color: #ff6b6b;
+  border: 1px solid #ff4444;
+}
+
+.success-message .success {
+  background-color: #1a4a1a;
+  color: #4caf50;
+  border: 1px solid #4caf50;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .form-row {
+    grid-template-columns: 0.6fr 2fr 2fr auto;
+    gap: 20px;
+  }
+  
+  .form-field-story {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 0.8fr 1.5fr 2fr 1fr auto;
+    gap: 15px;
+  }
+  
+  .form-field-story {
+    grid-column: span 1;
+  }
+  
+  .form-field-button {
+    justify-content: center;
+    align-items: center;
+    padding-bottom: 0;
+  }
+  
+  .modal-content {
+    width: 99%;
+    margin: 1% auto;
+  }
+  
+  .modal-body {
+    padding: 16px;
+  }
+}
+
+/* CRITICAL FIX: Force horizontal layout with maximum CSS specificity */
+/* Override ALL responsive media queries that cause vertical stacking */
+html body .modal .modal-content .modal-body .narrative-form-single-line .form-row,
+.modal .modal-content .modal-body .narrative-form-single-line .form-row,
+.narrative-form-single-line .form-row {
+  display: grid !important;
+  grid-template-columns: 0.42fr 1.5fr 3fr 1.5fr auto !important;
+  grid-template-rows: 1fr !important;
+  gap: 30px !important;
+  align-items: start !important;
+  background: #2d2d2d !important;
+  border: 2px solid #404040 !important;
+  border-radius: 12px !important;
+  padding: 20px !important;
+  position: relative !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  overflow: visible !important;
+  flex-direction: row !important; /* Override any flex column */
+  flex-wrap: nowrap !important; /* Prevent wrapping */
+}
+
+/* Force explicit grid column positioning with maximum specificity */
+html body .modal .modal-content .modal-body .narrative-form-single-line .form-field:nth-child(1),
+.modal .modal-content .modal-body .narrative-form-single-line .form-field:nth-child(1),
+.narrative-form-single-line .form-field:nth-child(1) {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+}
+
+html body .modal .modal-content .modal-body .narrative-form-single-line .form-field:nth-child(2),
+.modal .modal-content .modal-body .narrative-form-single-line .form-field:nth-child(2),
+.narrative-form-single-line .form-field:nth-child(2) {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+}
+
+html body .modal .modal-content .modal-body .narrative-form-single-line .form-field:nth-child(3),
+.modal .modal-content .modal-body .narrative-form-single-line .form-field:nth-child(3),
+.narrative-form-single-line .form-field:nth-child(3) {
+  grid-column: 3 !important;
+  grid-row: 1 !important;
+}
+
+html body .modal .modal-content .modal-body .narrative-form-single-line .form-field:nth-child(4),
+.modal .modal-content .modal-body .narrative-form-single-line .form-field:nth-child(4),
+.narrative-form-single-line .form-field:nth-child(4) {
+  grid-column: 4 !important;
+  grid-row: 1 !important;
+}
+
+html body .modal .modal-content .modal-body .narrative-form-single-line .form-field:nth-child(5),
+.modal .modal-content .modal-body .narrative-form-single-line .form-field:nth-child(5),
+.narrative-form-single-line .form-field:nth-child(5) {
+  grid-column: 5 !important;
+  grid-row: 1 !important;
+}
+
+/* Disable ANY responsive behavior for the narrative form at ALL screen sizes */
+@media screen and (max-width: 9999px) {
+  .narrative-form-single-line .form-row {
+    display: grid !important;
+    grid-template-columns: 0.42fr 1.5fr 3fr 1.5fr auto !important;
+    grid-template-rows: 1fr !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+  }
+  
+  .narrative-form-single-line .form-field {
+    width: 100% !important;
+    min-width: 0 !important;
+    flex: none !important;
+  }
+}
+
+/* Grid layout CSS rules have been moved to inline styles in HTML for maximum specificity */
+
+/* User Tip Styling */
+.user-tip {
+  background: #1a4b5c !important;
+  border: 1px solid #2e6a7d !important;
+  border-radius: 8px !important;
+  padding: 15px !important;
+  margin-bottom: 20px !important;
+  color: #b8e6ff !important;
+  font-size: 14px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+.user-tip strong {
+  color: #ffffff !important;
+}
+
+/* Plus Button Styling */
+.plus-btn {
+  background: #4caf50 !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 50% !important;
+  width: 30px !important;
+  height: 30px !important;
+  font-size: 16px !important;
+  font-weight: bold !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s ease !important;
+}
+
+.plus-btn:hover {
+  background: #45a049 !important;
+  transform: scale(1.05) !important;
+}
+
+.plus-btn:active {
+  transform: scale(0.95) !important;
+}
+
+/* Button Group Styling */
+.button-group {
+  display: flex !important;
+  gap: 5px !important;
+  align-items: center !important;
+}
+
+/* Form Line Container */
+.narrative-form-container {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+}
+
+.narrative-form-line {
+  position: relative !important;
+}
+

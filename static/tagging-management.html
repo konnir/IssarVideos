@@ -90,6 +90,13 @@
           </div>
         </div>
 
+        <!-- Add Narrative Section -->
+        <div class="add-narrative-section">
+          <button class="add-narrative-btn" onclick="showAddNarrativeModal()">
+            ➕ Add Narrative
+          </button>
+        </div>
+
         <div class="table-container">
           <table class="management-table" id="managementTable">
             <thead>
@@ -116,6 +123,185 @@
         </div>
 
         <div id="error" class="error-message" style="display: none"></div>
+
+        <!-- Add Narrative Modal -->
+        <div class="modal" id="addNarrativeModal" style="display: none">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3>Add New Narrative</h3>
+              <span class="close-btn" onclick="hideAddNarrativeModal()"
+                >&times;</span
+              >
+            </div>
+            <div class="modal-body">
+              <!-- User Tip Section -->
+              <div
+                class="user-tip"
+                style="
+                  background: #1a4b5c;
+                  border: 1px solid #2e6a7d;
+                  border-radius: 8px;
+                  padding: 15px;
+                  margin-bottom: 20px;
+                  color: #b8e6ff;
+                "
+              >
+                <div style="display: flex; align-items: center; gap: 10px">
+                  <span style="font-size: 18px">💡</span>
+                  <div>
+                    <strong>Tip:</strong> Please ensure you choose a link that
+                    is not already in the database. Duplicate links will be
+                    rejected.
+                  </div>
+                </div>
+              </div>
+
+              <div class="narrative-form-container" id="narrativeFormContainer">
+                <!-- First form line -->
+                <div
+                  class="narrative-form-line"
+                  id="formLine1"
+                  data-line-id="1"
+                >
+                  <div
+                    class="form-row"
+                    style="
+                      display: grid !important;
+                      grid-template-columns: 0.42fr 1.5fr 3fr 1.5fr auto !important;
+                      grid-template-rows: 1fr !important;
+                      gap: 30px !important;
+                      align-items: start !important;
+                      background: #2d2d2d !important;
+                      border: 2px solid #404040 !important;
+                      border-radius: 12px !important;
+                      padding: 20px !important;
+                      width: 100% !important;
+                      min-width: 0 !important;
+                      overflow: visible !important;
+                      flex-direction: row !important;
+                      flex-wrap: nowrap !important;
+                      margin-bottom: 20px !important;
+                    "
+                  >
+                    <div
+                      class="form-field"
+                      style="
+                        grid-column: 1 !important;
+                        grid-row: 1 !important;
+                        display: flex !important;
+                        flex-direction: column !important;
+                        min-width: 0 !important;
+                        width: 100% !important;
+                      "
+                    >
+                      <label for="sheet1">Topic:</label>
+                      <input
+                        type="text"
+                        id="sheet1"
+                        class="form-input topic-input"
+                        placeholder="Enter Topic"
+                      />
+                    </div>
+                    <div
+                      class="form-field"
+                      style="
+                        grid-column: 2 !important;
+                        grid-row: 1 !important;
+                        display: flex !important;
+                        flex-direction: column !important;
+                        min-width: 0 !important;
+                        width: 100% !important;
+                      "
+                    >
+                      <label for="narrative1">Narrative:</label>
+                      <input
+                        type="text"
+                        id="narrative1"
+                        class="form-input narrative-input"
+                        placeholder="Enter narrative text"
+                      />
+                    </div>
+                    <div
+                      class="form-field form-field-story"
+                      style="
+                        grid-column: 3 !important;
+                        grid-row: 1 !important;
+                        display: flex !important;
+                        flex-direction: column !important;
+                        min-width: 0 !important;
+                        width: 100% !important;
+                      "
+                    >
+                      <label for="story1">Story:</label>
+                      <textarea
+                        id="story1"
+                        class="form-textarea story-input"
+                        placeholder="Enter story content"
+                        rows="4"
+                      ></textarea>
+                    </div>
+                    <div
+                      class="form-field"
+                      style="
+                        grid-column: 4 !important;
+                        grid-row: 1 !important;
+                        display: flex !important;
+                        flex-direction: column !important;
+                        min-width: 0 !important;
+                        width: 100% !important;
+                      "
+                    >
+                      <label for="link1">Link:</label>
+                      <input
+                        type="url"
+                        id="link1"
+                        class="form-input link-input"
+                        placeholder="https://example.com"
+                      />
+                    </div>
+                    <div
+                      class="form-field form-field-button"
+                      style="
+                        grid-column: 5 !important;
+                        grid-row: 1 !important;
+                        display: flex !important;
+                        flex-direction: column !important;
+                        align-items: flex-start !important;
+                        padding-bottom: 0 !important;
+                      "
+                    >
+                      <label>Actions:</label>
+                      <div
+                        class="button-group"
+                        style="display: flex; gap: 5px; align-items: center"
+                      >
+                        <button
+                          class="add-btn-inline"
+                          onclick="addSingleNarrative(1)"
+                          data-line-id="1"
+                        >
+                          Add
+                        </button>
+                        <button
+                          class="plus-btn"
+                          onclick="addNewFormLine(1)"
+                          title="Add new line"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                id="addNarrativeError"
+                class="error-message"
+                style="display: none"
+              ></div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 

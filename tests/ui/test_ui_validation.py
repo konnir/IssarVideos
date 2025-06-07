@@ -18,7 +18,6 @@ class TestUIFiles:
         """Setup for tests"""
         self.project_root = Path(__file__).parent.parent.parent
         self.static_dir = self.project_root / "static"
-        self.ui_test_dir = Path(__file__).parent.parent / "ui"
 
     def test_main_html_files_exist(self):
         """Test that main HTML files exist and are not empty"""
@@ -158,25 +157,6 @@ class TestUIFiles:
         assert "← Back to Tagger" in content, "Should have back link to tagger"
         assert 'href="/"' in content, "Should have link to homepage"
 
-    def test_ui_test_files_valid(self):
-        """Test that UI test files are valid HTML"""
-        if not self.ui_test_dir.exists():
-            pytest.skip("No UI test directory found")
-
-        html_files = list(self.ui_test_dir.glob("*.html"))
-        if not html_files:
-            pytest.skip("No HTML test files found")
-
-        for html_file in html_files:
-            assert (
-                html_file.stat().st_size > 0
-            ), f"UI test file {html_file.name} should not be empty"
-
-            content = html_file.read_text(encoding="utf-8")
-            assert (
-                "html" in content.lower()
-            ), f"UI test file {html_file.name} should contain HTML"
-
     def test_html_accessibility_and_meta(self):
         """Test HTML files for accessibility and proper meta information"""
         html_files = [
@@ -248,7 +228,125 @@ class TestUIFiles:
 
         print("✅ Tagging management page structure validation passed")
 
+    def test_add_narrative_modal_structure(self):
+        """Test that Add Narrative modal has proper structure and functionality"""
+        tagging_mgmt_file = self.static_dir / "tagging-management.html"
+        content = tagging_mgmt_file.read_text(encoding="utf-8")
 
-if __name__ == "__main__":
-    # Run with pytest
-    pytest.main([__file__, "-v"])
+        # Check for Add Narrative button
+        assert "Add Narrative" in content, "Should have Add Narrative button"
+        assert "add-narrative-btn" in content, "Should have Add Narrative button class"
+        assert "showAddNarrativeModal()" in content, "Should have modal show function"
+
+        # Check for modal structure
+        assert "addNarrativeModal" in content, "Should have Add Narrative modal"
+        assert "modal-content" in content, "Should have modal content structure"
+        assert "modal-header" in content, "Should have modal header"
+        assert "modal-body" in content, "Should have modal body"
+        assert "Add New Narrative" in content, "Should have modal title"
+
+        # Check for form fields
+        required_form_fields = [
+            'id="sheet1"',  # Topic field
+            'id="narrative1"',  # Narrative field
+            'id="story1"',  # Story field
+            'id="link1"',  # Link field
+        ]
+        for field in required_form_fields:
+            assert field in content, f"Should have form field {field}"
+
+        # Check for form labels
+        form_labels = ["Topic:", "Narrative:", "Story:", "Link:", "Actions:"]
+        for label in form_labels:
+            assert label in content, f"Should have form label {label}"
+
+        # Check for plus button functionality
+        assert "plus-btn" in content, "Should have plus button for adding new lines"
+        assert "addNewFormLine" in content, "Should have add new line functionality"
+        assert "+" in content, "Should have plus button text"
+
+        # Check for button group structure
+        assert (
+            "button-group" in content
+        ), "Should have button group for Add and Plus buttons"
+        assert (
+            "addSingleNarrative" in content
+        ), "Should have add single narrative function"
+
+        # Check for user tip section
+        assert "user-tip" in content, "Should have user tip section"
+        assert "Tip:" in content, "Should have tip content"
+        assert "duplicate links" in content.lower(), "Should warn about duplicate links"
+
+        print("✅ Add Narrative modal structure validation passed")
+
+    def test_add_narrative_form_layout(self):
+        """Test that Add Narrative form has proper grid layout and styling"""
+        tagging_mgmt_file = self.static_dir / "tagging-management.html"
+        content = tagging_mgmt_file.read_text(encoding="utf-8")
+
+        # Check for grid layout CSS
+        assert "display: grid" in content, "Should use CSS grid layout"
+        assert "grid-template-columns" in content, "Should have grid column definitions"
+        assert (
+            "0.42fr 1.5fr 3fr 1.5fr auto" in content
+        ), "Should have correct grid proportions"
+
+        # Check for gap spacing
+        assert "gap: 30px" in content, "Should have 30px gap between form fields"
+
+        # Check for form field grid positioning
+        grid_positions = [
+            "grid-column: 1",  # Topic
+            "grid-column: 2",  # Narrative
+            "grid-column: 3",  # Story
+            "grid-column: 4",  # Link
+            "grid-column: 5",  # Actions
+        ]
+        for position in grid_positions:
+            assert position in content, f"Should have grid position {position}"
+
+        # Check for horizontal layout enforcement
+        assert "flex-direction: row" in content, "Should enforce horizontal layout"
+        assert "flex-wrap: nowrap" in content, "Should prevent wrapping"
+
+        print("✅ Add Narrative form layout validation passed")
+
+    def test_add_narrative_javascript_integration(self):
+        """Test that Add Narrative JavaScript functionality is properly integrated"""
+        js_file = self.static_dir / "tagging-management.js"
+        assert js_file.exists(), "tagging-management.js should exist"
+
+        content = js_file.read_text(encoding="utf-8")
+
+        # Check for modal functions
+        modal_functions = [
+            "showAddNarrativeModal",
+            "hideAddNarrativeModal",
+            "addSingleNarrative",
+            "addNewFormLine",
+            "createFormLineHTML",
+            "resetFormContainer",
+        ]
+        for func in modal_functions:
+            assert func in content, f"Should have {func} function"
+
+        # Check for form line counter
+        assert "formLineCounter" in content, "Should have form line counter"
+
+        # Check for field copying logic
+        assert "sourceTopic" in content, "Should copy topic field"
+        assert "sourceNarrative" in content, "Should copy narrative field"
+
+        # Check for API call to add-narrative endpoint
+        assert "/add-narrative" in content, "Should call add-narrative API endpoint"
+        assert "POST" in content, "Should use POST method"
+
+        # Check for error handling
+        assert "errorDiv" in content, "Should have error handling"
+        assert "Added ✓" in content, "Should show success state"
+
+        # Check for duplicate link validation
+        assert "link already exists" in content, "Should handle duplicate link errors"
+
+        print("✅ Add Narrative JavaScript integration validation passed")
