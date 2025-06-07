@@ -1,6 +1,6 @@
 from dataclasses import dataclass
-from pydantic import BaseModel
-from typing import Optional
+from pydantic import BaseModel, validator
+from typing import Optional, List, Dict, Any
 
 
 class TagRecordRequest(BaseModel):
@@ -49,3 +49,54 @@ class AddNarrativeRequest(BaseModel):
     Narrative: str
     Story: str
     Link: str
+
+
+class StoryGenerationRequest(BaseModel):
+    """Model for generating a story from a narrative"""
+
+    narrative: str
+    style: Optional[str] = "engaging"
+    additional_context: Optional[str] = None
+
+    @validator("narrative")
+    def narrative_must_not_be_empty(cls, v):
+        if not v or not v.strip():
+            raise ValueError("Narrative cannot be empty")
+        return v
+
+
+class StoryVariantsRequest(BaseModel):
+    """Model for generating multiple story variants"""
+
+    narrative: str
+    count: Optional[int] = 3
+    style: Optional[str] = "engaging"
+    additional_context: Optional[str] = None
+
+    @validator("narrative")
+    def narrative_must_not_be_empty(cls, v):
+        if not v or not v.strip():
+            raise ValueError("Narrative cannot be empty")
+        return v
+
+
+class StoryRefinementRequest(BaseModel):
+    """Model for refining an existing story"""
+
+    original_story: str
+    refinement_request: str
+    narrative: str
+
+    @validator("original_story", "refinement_request", "narrative")
+    def strings_must_not_be_empty(cls, v):
+        if not v or not v.strip():
+            raise ValueError("Field cannot be empty")
+        return v
+
+
+class StoryResponse(BaseModel):
+    """Model for story generation response"""
+
+    story: str
+    narrative: str
+    metadata: Dict[str, Any]

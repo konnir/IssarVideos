@@ -14,8 +14,13 @@ from data.video_record import (
     VideoRecordCreate,
     TagRecordRequest,
     AddNarrativeRequest,
+    StoryGenerationRequest,
+    StoryVariantsRequest,
+    StoryRefinementRequest,
+    StoryResponse,
 )
 from db.narratives_db import NarrativesDB
+from llm.get_story import StoryGenerator
 
 app = FastAPI()
 
@@ -485,6 +490,98 @@ def get_tagging_stats():
     }
 
     return {"summary": summary, "data": grouped_stats}
+
+
+# Story Generation Endpoints
+@app.post("/generate-story", response_model=StoryResponse)
+def generate_story(request: StoryGenerationRequest):
+    """Generate a story based on a narrative using OpenAI GPT-4"""
+    try:
+        # Initialize story generator
+        generator = StoryGenerator()
+
+        # Generate story
+        result = generator.get_story(
+            narrative=request.narrative,
+            style=request.style,
+            additional_context=request.additional_context,
+        )
+
+        return StoryResponse(**result)
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to generate story: {str(e)}"
+        )
+
+
+@app.post("/generate-story-variants")
+def generate_story_variants(request: StoryVariantsRequest):
+    """Generate multiple story variants for the same narrative"""
+    try:
+        # Initialize story generator
+        generator = StoryGenerator()
+
+        # Generate multiple variants
+        variants = generator.get_multiple_story_variants(
+            narrative=request.narrative,
+            count=request.count,
+            style=request.style,
+            additional_context=request.additional_context,
+        )
+
+        return {
+            "narrative": request.narrative,
+            "count": len(variants),
+            "variants": variants,
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to generate story variants: {str(e)}"
+        )
+
+
+@app.post("/refine-story", response_model=StoryResponse)
+def refine_story(request: StoryRefinementRequest):
+    """Refine an existing story based on feedback"""
+    try:
+        # Initialize story generator
+        generator = StoryGenerator()
+
+        # Refine the story
+        result = generator.refine_story(
+            original_story=request.original_story,
+            refinement_request=request.refinement_request,
+            narrative=request.narrative,
+        )
+
+        return StoryResponse(**result)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to refine story: {str(e)}")
+
+
+@app.get("/test-openai-connection")
+def test_openai_connection():
+    """Test OpenAI API connection"""
+    try:
+        from clients.openai_client import OpenAIClient
+
+        client = OpenAIClient()
+        is_connected = client.validate_connection()
+
+        return {
+            "connected": is_connected,
+            "message": (
+                "OpenAI connection successful"
+                if is_connected
+                else "OpenAI connection failed"
+            ),
+        }
+
+    except Exception as e:
+        return {"connected": False, "message": f"OpenAI connection error: {str(e)}"}
 
 
 if __name__ == "__main__":

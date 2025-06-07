@@ -65,6 +65,40 @@ class TestAPIEndpoints:
         except requests.exceptions.ConnectionError:
             pytest.skip("Server not running - skipping API endpoint tests")
 
+    def test_story_generation_endpoints_exist(self):
+        """Test that story generation endpoints exist and handle requests properly"""
+        # Test OpenAI connection endpoint
+        try:
+            response = requests.get(
+                f"{self.base_url}/test-openai-connection", timeout=10
+            )
+            assert response.status_code == 200
+            data = response.json()
+            assert "connected" in data
+            assert "message" in data
+
+        except requests.exceptions.ConnectionError:
+            pytest.skip("Server not running - skipping story generation endpoint tests")
+
+    def test_story_endpoints_require_post(self):
+        """Test that story generation endpoints require POST requests"""
+        story_endpoints = [
+            "/generate-story",
+            "/generate-story-variants",
+            "/refine-story",
+        ]
+
+        try:
+            for endpoint in story_endpoints:
+                # Try GET request (should fail with 405 Method Not Allowed)
+                response = requests.get(f"{self.base_url}{endpoint}", timeout=5)
+                assert (
+                    response.status_code == 405
+                ), f"Endpoint {endpoint} should reject GET requests"
+
+        except requests.exceptions.ConnectionError:
+            pytest.skip("Server not running - skipping method validation tests")
+
 
 if __name__ == "__main__":
     # Run with pytest

@@ -23,10 +23,14 @@ The test suite is organized into three main categories:
 
 ```
 tests/
-├── unittest/           # Database unit tests
-│   └── test_db.py     # NarrativesDB class unit tests
+├── unittest/           # Database and component unit tests
+│   ├── test_db.py     # NarrativesDB class unit tests
+│   ├── test_story_generation.py  # Story generation component tests
+│   └── test_data_models.py       # Data model tests
 ├── integration/        # API integration tests
-│   └── test_api_endpoints.py  # FastAPI endpoint tests
+│   ├── test_api_endpoints.py      # Core FastAPI endpoint tests
+│   ├── test_story_generation.py   # Story generation API tests
+│   └── test_comprehensive_api.py  # Comprehensive API tests
 ├── ui/                # UI validation tests
 │   └── test_ui_validation.py  # HTML/UI component tests
 ├── run_all_tests.py   # Unified test runner
@@ -43,16 +47,52 @@ tests/
 
 ### 1. Unit Tests (`unittest/`)
 
-Database layer tests focusing on the NarrativesDB class:
+**Database layer tests** (`test_db.py`):
 
 - CRUD operations
 - Query methods
 - Data validation
 - Empty/null value handling
 
+**Story generation component tests** (`test_story_generation.py`):
+
+- OpenAI client wrapper functionality
+- Story generator class methods
+- Error handling and validation
+- Prompt construction and response parsing
+
+**Data model tests** (`test_data_models.py`):
+
+- Pydantic model validation
+- Request/response model structure
+- Field validation and constraints
+
 ### 2. Integration Tests (`integration/`)
 
-API endpoint tests for the FastAPI application:
+**Core API endpoint tests** (`test_api_endpoints.py`):
+
+- Health check endpoint
+- Main application endpoints
+- Static file serving
+- HTTP method validation
+
+**Story generation API tests** (`test_story_generation.py`):
+
+- Story generation endpoints (`/generate-story`, `/generate-story-variants`, `/refine-story`)
+- OpenAI connection testing (`/test-openai-connection`)
+- Request validation and error handling
+- Mock testing for API responses
+- End-to-end story generation workflow
+
+**Comprehensive API tests** (`test_comprehensive_api.py`):
+
+- Full workflow testing
+- Cross-feature integration
+- Performance and reliability tests
+
+### 3. UI Tests (`ui/`)
+
+**HTML/UI validation tests** (`test_ui_validation.py`):
 
 - All REST endpoints
 - Request/response validation
@@ -97,6 +137,12 @@ python -m pytest tests/unittest/test_db.py -v
 
 # API integration tests
 python -m pytest tests/integration/test_api_endpoints.py -v
+
+# Story generation unit tests
+python -m pytest tests/unittest/test_story_generation.py -v
+
+# Story generation API tests (requires OpenAI API key for full testing)
+python -m pytest tests/integration/test_story_generation.py -v
 
 # UI validation tests
 python -m pytest tests/ui/test_ui_validation.py -v
