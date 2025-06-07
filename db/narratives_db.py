@@ -77,15 +77,56 @@ class NarrativesDB:
         # Update the record
         for key, value in updated_data.items():
             if key in self.df.columns:
+                # Get the current column dtype to ensure compatibility
+                current_dtype = self.df[key].dtype
+
+                # Handle type conversion to avoid pandas FutureWarning
+                if value is not None:
+                    if current_dtype == "float64":
+                        try:
+                            value = (
+                                float(value)
+                                if str(value)
+                                .replace(".", "")
+                                .replace("-", "")
+                                .isdigit()
+                                else value
+                            )
+                        except (ValueError, TypeError):
+                            pass  # Keep original value if conversion fails
+                    elif current_dtype == "int64":
+                        try:
+                            value = (
+                                int(value)
+                                if str(value).replace("-", "").isdigit()
+                                else value
+                            )
+                        except (ValueError, TypeError):
+                            pass  # Keep original value if conversion fails
+
                 self.df.loc[record_index[0], key] = value
 
         return True
 
     def add_new_record(self, record_data: dict):
         """Add a new record to the database"""
-        # Convert to DataFrame row and append
+        # Convert to DataFrame row and handle concatenation properly
         new_row = pd.DataFrame([record_data])
-        self.df = pd.concat([self.df, new_row], ignore_index=True)
+
+        if self.df.empty:
+            # If dataframe is empty, just assign the new row
+            self.df = new_row.copy()
+        else:
+            # Ensure column consistency before concatenation
+            missing_cols = set(self.df.columns) - set(new_row.columns)
+            for col in missing_cols:
+                new_row[col] = None
+
+            # Reorder columns to match existing dataframe
+            new_row = new_row.reindex(columns=self.df.columns)
+
+            # Concatenate non-empty dataframes
+            self.df = pd.concat([self.df, new_row], ignore_index=True)
         return True
 
     def save_changes(self):

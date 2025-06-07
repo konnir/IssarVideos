@@ -265,9 +265,17 @@ class TestNarrativesDBDataIntegrity:
                 ].iloc[0]
                 for key, value in update.items():
                     if value is not None:
-                        assert updated_record[key] == value or pd.isna(
-                            updated_record[key]
-                        )
+                        # Handle pandas automatic type conversion
+                        stored_value = updated_record[key]
+                        if (
+                            key == "Tagger_1_Result"
+                            and isinstance(value, str)
+                            and value.isdigit()
+                        ):
+                            # For numeric strings in Tagger_1_Result, pandas converts to float
+                            assert stored_value == float(value)
+                        else:
+                            assert stored_value == value or pd.isna(stored_value)
 
     def test_random_selection_distribution(self):
         """Test that random record selection has reasonable distribution"""

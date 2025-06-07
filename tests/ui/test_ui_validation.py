@@ -25,6 +25,7 @@ class TestUIFiles:
         required_files = [
             self.static_dir / "tagger.html",
             self.static_dir / "report.html",
+            self.static_dir / "tagging-management.html",
         ]
 
         for file_path in required_files:
@@ -44,6 +45,7 @@ class TestUIFiles:
         css_files = [
             self.static_dir / "tagger.css",
             self.static_dir / "report.css",
+            self.static_dir / "tagging-management.css",
         ]
 
         for file_path in css_files:
@@ -206,6 +208,45 @@ class TestUIFiles:
                 assert (
                     has_labels or has_placeholders
                 ), f"{html_file.name} should have form labels or placeholders for accessibility"
+
+    def test_tagging_management_page_structure(self):
+        """Test that tagging management page has proper structure"""
+        tagging_mgmt_file = self.static_dir / "tagging-management.html"
+        assert tagging_mgmt_file.exists(), "Tagging management HTML file should exist"
+
+        content = tagging_mgmt_file.read_text(encoding="utf-8")
+
+        # Check for essential elements
+        assert "📋 Tagging Management" in content, "Should have page title"
+        assert "authSection" in content, "Should have authentication section"
+        assert "managementContent" in content, "Should have management content section"
+        assert "managementTable" in content, "Should have management table"
+
+        # Check for table columns
+        required_columns = [
+            "Topic",
+            "Narrative",
+            "Initial",
+            "Yes",
+            "No",
+            "Too Obvious",
+            "Problem",
+            "Missing",
+        ]
+        for column in required_columns:
+            assert column in content, f"Should have {column} column in table"
+
+        # Check for JavaScript integration
+        assert (
+            "tagging-management.js" in content
+        ), "Should include tagging management JavaScript"
+
+        # Check for proper CSS links
+        assert (
+            "tagging-management.css" in content
+        ), "Should include tagging management CSS"
+
+        print("✅ Tagging management page structure validation passed")
 
 
 if __name__ == "__main__":

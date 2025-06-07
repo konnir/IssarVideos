@@ -209,6 +209,52 @@ class TestAllAPIEndpoints:
         assert "attachment" in content_disposition
         assert "narratives_report.xlsx" in content_disposition
 
+    def test_tagging_management_endpoint(self):
+        """Test /tagging-management endpoint (serves tagging-management.html)"""
+        self.skip_if_server_not_running()
+
+        response = requests.get(f"{self.base_url}/tagging-management")
+        assert response.status_code == 200
+        assert "html" in response.headers.get("content-type", "").lower()
+
+    def test_tagging_stats_endpoint(self):
+        """Test /tagging-stats endpoint"""
+        self.skip_if_server_not_running()
+
+        response = requests.get(f"{self.base_url}/tagging-stats")
+        assert response.status_code == 200
+
+        data = response.json()
+        assert "summary" in data
+        assert "data" in data
+
+        # Verify summary structure with new 9 metrics
+        summary = data["summary"]
+        assert "total_topics" in summary
+        assert "total_narratives" in summary
+        assert "total_done_narratives" in summary
+        assert "total_full_narratives" in summary
+        assert "total_yes" in summary
+        assert "total_no" in summary
+        assert "total_too_obvious" in summary
+        assert "total_problem" in summary
+        assert "total_missing_narratives" in summary
+
+        # Verify data structure
+        assert isinstance(data["data"], list)
+
+        # If data exists, verify structure
+        if data["data"]:
+            item = data["data"][0]
+            assert "sheet" in item
+            assert "narrative" in item
+            assert "initial_count" in item
+            assert "yes_count" in item
+            assert "no_count" in item
+            assert "too_obvious_count" in item
+            assert "problem_count" in item
+            assert "missing" in item
+
     # POST Endpoint Tests
 
     def test_auth_report_endpoint_success(self):

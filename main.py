@@ -337,6 +337,113 @@ def serve_report():
     return FileResponse("static/report.html")
 
 
+@app.get("/tagging-management")
+def serve_tagging_management():
+    """Serve the tagging management UI"""
+    return FileResponse("static/tagging-management.html")
+
+
+@app.get("/tagging-stats")
+def get_tagging_stats():
+    """Get aggregated tagging statistics by sheet and narrative"""
+    if db.df.empty:
+        return {
+            "summary": {
+                "total_topics": 0,
+                "total_narratives": 0,
+                "total_full_narratives": 0,
+                "total_initial": 0,
+                "total_yes": 0,
+                "total_no": 0,
+                "total_too_obvious": 0,
+                "total_problem": 0,
+                "total_missing_narratives": 0,
+            },
+            "data": [],
+        }
+
+    # Group by Sheet and Narrative to get statistics
+    grouped_stats = []
+
+    # Get unique sheet/narrative combinations
+    unique_combinations = (
+        db.df.groupby(["Sheet", "Narrative"]).size().reset_index(name="total_count")
+    )
+
+    for _, group in unique_combinations.iterrows():
+        sheet = group["Sheet"]
+        narrative = group["Narrative"]
+
+        # Filter records for this sheet/narrative combination
+        subset = db.df[(db.df["Sheet"] == sheet) & (db.df["Narrative"] == narrative)]
+
+        # Count initial records (untagged records: no Tagger_1_Result or Tagger_1_Result = 0)
+        initial_count = len(
+            subset[
+                (subset["Tagger_1_Result"].isna()) | (subset["Tagger_1_Result"] == 0)
+            ]
+        )
+
+        # Count different tag results (1=Yes, 2=No, 3=Too Obvious, 4=Problem)
+        yes_count = len(subset[subset["Tagger_1_Result"] == 1])
+        no_count = len(subset[subset["Tagger_1_Result"] == 2])
+        too_obvious_count = len(subset[subset["Tagger_1_Result"] == 3])
+        problem_count = len(subset[subset["Tagger_1_Result"] == 4])
+
+        # Calculate missing (5 - yes - initial)
+        missing = max(0, 5 - yes_count - initial_count)
+
+        stat_entry = {
+            "sheet": sheet,
+            "narrative": (
+                narrative[:100] + "..." if len(narrative) > 100 else narrative
+            ),  # Truncate long narratives
+            "initial_count": initial_count,
+            "yes_count": yes_count,
+            "no_count": no_count,
+            "too_obvious_count": too_obvious_count,
+            "problem_count": problem_count,
+            "missing": missing,
+        }
+
+        grouped_stats.append(stat_entry)
+
+    # Calculate new 9 summary statistics
+    total_topics = len(db.df["Sheet"].unique())  # Total unique sheets (topics)
+    total_narratives = len(unique_combinations)  # Total unique narratives
+
+    # Total full narratives (narratives with >5 yes responses)
+    total_full_narratives = sum(1 for stat in grouped_stats if stat["yes_count"] > 5)
+
+    # Total done narratives (narratives with >=5 yes responses)
+    total_done_narratives = sum(1 for stat in grouped_stats if stat["yes_count"] >= 5)
+
+    # Total counts across all narratives
+    total_initial = sum(stat["initial_count"] for stat in grouped_stats)
+    total_yes = sum(stat["yes_count"] for stat in grouped_stats)
+    total_no = sum(stat["no_count"] for stat in grouped_stats)
+    total_too_obvious = sum(stat["too_obvious_count"] for stat in grouped_stats)
+    total_problem = sum(stat["problem_count"] for stat in grouped_stats)
+
+    # Missing narratives (narratives with <5 yes responses)
+    total_missing_narratives = sum(1 for stat in grouped_stats if stat["yes_count"] < 5)
+
+    summary = {
+        "total_topics": total_topics,
+        "total_narratives": total_narratives,
+        "total_done_narratives": total_done_narratives,
+        "total_full_narratives": total_full_narratives,
+        "total_initial": total_initial,
+        "total_yes": total_yes,
+        "total_no": total_no,
+        "total_too_obvious": total_too_obvious,
+        "total_problem": total_problem,
+        "total_missing_narratives": total_missing_narratives,
+    }
+
+    return {"summary": summary, "data": grouped_stats}
+
+
 if __name__ == "__main__":
     # Use environment PORT for Cloud Run compatibility
     reload_setting = ENVIRONMENT != "production"
