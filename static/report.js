@@ -86,14 +86,48 @@ async function loadTaggedRecords() {
     // Calculate statistics
     const totalRecords = records.length;
     const tagger1Count = records.filter(
-      (r) => r.Tagger_1 && r.Tagger_1 !== "Init"
+      (r) => r.Tagger_1 && r.Tagger_1 !== ""
     ).length;
+    
+    // Count unique narratives that have been tagged (individual narratives, not records)
+    const uniqueNarrativesTagged = new Set(
+      records
+        .filter(r => r.Narrative && r.Narrative.trim() !== "" && r.Tagger_1 && r.Tagger_1 !== "")
+        .map(r => r.Narrative.trim())
+    ).size;
+    
+    // Count unique taggers
+    const uniqueTaggers = new Set(
+      records
+        .filter(r => r.Tagger_1 && r.Tagger_1 !== "")
+        .map(r => r.Tagger_1)
+    ).size;
+    
+    // Count narratives with more than 5 "Yes" records
+    const narrativeYesCounts = {};
+    records.forEach(record => {
+      if (record.Narrative && record.Narrative.trim() !== "" && 
+          (record.Tagger_1_Result === 1 || record.Tagger_1_Result === "1")) {
+        const narrative = record.Narrative.trim();
+        narrativeYesCounts[narrative] = (narrativeYesCounts[narrative] || 0) + 1;
+      }
+    });
+    
+    const fullNarrativesTagged = Object.values(narrativeYesCounts).filter(count => count > 5).length;
 
     // Display statistics
     statsInfo.innerHTML = `
       <div class="stat-card">
-        <div class="stat-number">${totalRecords}</div>
-        <div class="stat-label">Total Tagged</div>
+        <div class="stat-number">${uniqueNarrativesTagged}</div>
+        <div class="stat-label">Narratives Tagged</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">${fullNarrativesTagged}</div>
+        <div class="stat-label">Full Narratives Tagged</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">${uniqueTaggers}</div>
+        <div class="stat-label">Taggers</div>
       </div>
       <div class="stat-card">
         <div class="stat-number">${tagger1Count}</div>
@@ -109,6 +143,7 @@ async function loadTaggedRecords() {
             <th>Sheet</th>
             <th>Video Link</th>
             <th>Narrative</th>
+            <th>Story</th>
             <th>Tagger</th>
             <th>Result</th>
           </tr>
@@ -119,16 +154,15 @@ async function loadTaggedRecords() {
     records.forEach((record) => {
       // Helper function to get result label with color class
       function getResultLabel(result) {
-        // If result is null, undefined, empty string, "Init", or 0, keep as "Init"
+        // If result is null, undefined, empty string, or 0, keep as "Not Tagged"
         if (
           result === null ||
           result === undefined ||
           result === "" ||
-          result === "Init" ||
           result === 0 ||
           result === "0"
         ) {
-          return '<span class="result-init">Init</span>';
+          return '<span class="result-init">Not Tagged</span>';
         }
 
         // Map values to labels with color classes
@@ -159,7 +193,10 @@ async function loadTaggedRecords() {
           <td class="narrative-cell" title="${record.Narrative || ""}">${
         record.Narrative || ""
       }</td>
-          <td>${record.Tagger_1 || "Init"}</td>
+          <td class="story-cell" title="${record.Story || ""}">${
+        record.Story || ""
+      }</td>
+          <td>${record.Tagger_1 || "Not Tagged"}</td>
           <td>${getResultLabel(record.Tagger_1_Result)}</td>
         </tr>
       `;

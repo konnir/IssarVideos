@@ -14,13 +14,10 @@ class TagRecordRequest(BaseModel):
 class VideoRecord(BaseModel):
     Sheet: str
     Narrative: str
-    Platform: str
-    Title: str
-    Hebrew_Title: Optional[str] = None
-    Tagger_1: str
+    Story: Optional[str] = None
+    Tagger_1: Optional[str] = None
     Tagger_1_Result: Optional[int] = None
     Link: str
-    Length: Optional[float] = None
 
 
 class VideoRecordUpdate(BaseModel):
@@ -28,13 +25,10 @@ class VideoRecordUpdate(BaseModel):
 
     Sheet: Optional[str] = None
     Narrative: Optional[str] = None
-    Platform: Optional[str] = None
-    Title: Optional[str] = None
-    Hebrew_Title: Optional[str] = None
+    Story: Optional[str] = None
     Tagger_1: Optional[str] = None
     Tagger_1_Result: Optional[int] = None
     Link: Optional[str] = None
-    Length: Optional[float] = None
 
 
 class VideoRecordCreate(BaseModel):
@@ -42,10 +36,7 @@ class VideoRecordCreate(BaseModel):
 
     Sheet: str
     Narrative: str
-    Platform: str
-    Title: str
-    Hebrew_Title: Optional[str] = None
-    Tagger_1: str = "Init"
-    Tagger_1_Result: Optional[int] = 0
+    Story: Optional[str] = None
+    Tagger_1: Optional[str] = None
+    Tagger_1_Result: Optional[int] = None
     Link: str
-    Length: Optional[float] = None

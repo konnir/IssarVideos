@@ -95,6 +95,13 @@
   white-space: nowrap;
 }
 
+.story-cell {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .download-section {
   text-align: center;
   margin-top: 30px;
@@ -146,6 +153,13 @@
   font-size: 0.9em;
   color: #ccc;
   margin-top: 5px;
+}
+
+.stats-info h2 {
+  color: #4caf50;
+  margin-bottom: 20px;
+  text-align: center;
+  font-size: 1.5em;
 }
 
 .back-link {

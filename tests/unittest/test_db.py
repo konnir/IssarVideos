@@ -51,8 +51,8 @@ class TestNarrativesDB:
             assert isinstance(random_row, dict), "Should return a dictionary"
             assert "Link" in random_row, "Should have Link field"
             assert (
-                random_row["Tagger_1"] == "Init"
-            ), "Should have 'Init' tagger"
+                random_row["Tagger_1"] is None or random_row["Tagger_1"] == ""
+            ), "Should have empty/null tagger"
 
             print(f"✅ Found untagged record: {random_row['Link']}")
 
@@ -71,7 +71,7 @@ class TestNarrativesDB:
 
             # Check that the record was added correctly
             new_record = db.df[db.df["Link"] == test_record["Link"]].iloc[0]
-            assert new_record["Title"] == test_record["Title"], "Title should match"
+            assert new_record["Story"] == test_record["Story"], "Story should match"
             assert (
                 new_record["Narrative"] == test_record["Narrative"]
             ), "Narrative should match"
@@ -103,7 +103,9 @@ class TestNarrativesDB:
             ), "Tagger_1_Result should be updated"
             # Tagger_2 fields no longer exist
             assert "Tagger_2" not in updated_record.index, "Tagger_2 should not exist"
-            assert "Tagger_2_Result" not in updated_record.index, "Tagger_2_Result should not exist"
+            assert (
+                "Tagger_2_Result" not in updated_record.index
+            ), "Tagger_2_Result should not exist"
 
             print(f"✅ Successfully updated record: {test_record['Link']}")
 

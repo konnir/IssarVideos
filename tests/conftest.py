@@ -38,26 +38,28 @@ class DBTestManager:
         import pandas as pd
 
         # Create test data with proper structure (without Tagger_2 columns)
+        # Create test data with proper structure (without old fields, with empty Tagger_1)
         test_data = [
             {
                 "Narrative": "Test narrative for unit testing",
-                "Platform": "YouTube",
-                "Title": "Unit Test Video",
-                "Hebrew_Title": "וידאו בדיקת יחידה",
+                "Story": "Test story content",
                 "Link": "https://youtube.com/test-unit-12345",
-                "Tagger_1": "Init",
-                "Tagger_1_Result": 0,
-                "Length": 120.5,
+                "Tagger_1": None,  # Empty instead of "Init"
+                "Tagger_1_Result": None,
             },
             {
-                "Narrative": "Another test narrative",
-                "Platform": "TikTok",
-                "Title": "Another Test Video",
-                "Hebrew_Title": "עוד וידאו בדיקה",
-                "Link": "https://tiktok.com/test-unit-67890",
-                "Tagger_1": "Init",
-                "Tagger_1_Result": 0,
-                "Length": 60.0,
+                "Narrative": "Second test narrative",
+                "Story": "Another test story",
+                "Link": "https://youtube.com/test-unit-67890",
+                "Tagger_1": "TestUser",
+                "Tagger_1_Result": 1,
+            },
+            {
+                "Narrative": "Third test narrative for filtering",
+                "Story": None,  # Test empty story
+                "Link": "https://youtube.com/test-unit-11111",
+                "Tagger_1": None,  # Empty for testing untagged records
+                "Tagger_1_Result": None,
             },
         ]
 
@@ -112,13 +114,10 @@ def get_test_record_data():
     return {
         "Sheet": "TestSheet",
         "Narrative": "Test narrative for unit testing",
-        "Platform": "YouTube",
-        "Title": "Unit Test Video",
-        "Hebrew_Title": "וידאו בדיקת יחידה",
+        "Story": "Test story content",
         "Link": "https://youtube.com/test-unit-12345",
         "Tagger_1": "TestUser1",
         "Tagger_1_Result": 1,
-        "Length": 120.5,
     }
 
 

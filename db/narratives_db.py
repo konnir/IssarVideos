@@ -50,8 +50,10 @@ class NarrativesDB:
     def get_random_not_fully_tagged_row(self):
         if self.df.empty:
             return None
-        # Filter rows where Tagger_1 is 'Init'
-        filtered_df = self.df[(self.df["Tagger_1"] == "Init")]
+        # Filter rows where Tagger_1 is empty/null
+        filtered_df = self.df[
+            (self.df["Tagger_1"].isna()) | (self.df["Tagger_1"] == "")
+        ]
         if filtered_df.empty:
             return None
         random_row = filtered_df.sample()
@@ -110,9 +112,10 @@ class NarrativesDB:
         if self.df.empty:
             return None
 
-        # Filter rows where Tagger_1 is 'Init' AND the user is not already a tagger
+        # Filter rows where Tagger_1 is empty/null AND the user is not already a tagger
         filtered_df = self.df[
-            (self.df["Tagger_1"] == "Init") & (self.df["Tagger_1"] != username)
+            ((self.df["Tagger_1"].isna()) | (self.df["Tagger_1"] == ""))
+            & (self.df["Tagger_1"] != username)
         ]
 
         if filtered_df.empty:
@@ -146,8 +149,11 @@ class NarrativesDB:
 
         row_idx = record_index[0]
 
-        # Check if Tagger_1 field is available
-        if self.df.loc[row_idx, "Tagger_1"] == "Init":
+        # Check if Tagger_1 field is available (empty/null)
+        if (
+            pd.isna(self.df.loc[row_idx, "Tagger_1"])
+            or self.df.loc[row_idx, "Tagger_1"] == ""
+        ):
             self.df.loc[row_idx, "Tagger_1"] = username
             self.df.loc[row_idx, "Tagger_1_Result"] = result
         else:

@@ -8,67 +8,104 @@ Run all tests from the project root:
 
 ```bash
 # Comprehensive test suite (recommended)
-python run_tests.py
+python tests/run_all_tests.py
 
-# Or run directly
-python tests/test_runner.py
+# Or run from tests directory
+cd tests
+python run_all_tests.py
 ```
 
 ## Test Structure
 
-### Core Test Files
+The test suite is organized into three main categories:
 
-- `test_runner.py` - **Main comprehensive test runner** with isolated database testing
-- `test_api.py` - API integration tests for all FastAPI endpoints
-- `test_db.py` - Unit tests for the NarrativesDB class
-- `test_protection.py` - Production database protection tests
-- `conftest.py` - Test configuration and utilities (DBTestManager)
+### Directory Structure
 
-### Legacy/Compatibility
-
-- `run_tests.py` - Legacy test runner (redirects to test_runner.py)
-
-### Test Organization
-
-- `debug/` - Debug and development test files
-- `html_tests/` - HTML/UI test files and validation
-- `integration/` - Integration test demos and utilities
-
-## Test Types
-
-### 1. Comprehensive Test Suite (Default)
-
-```bash
-python tests/test_runner.py
-# or
-python run_tests.py
+```
+tests/
+├── unittest/           # Database unit tests
+│   └── test_db.py     # NarrativesDB class unit tests
+├── integration/        # API integration tests
+│   └── test_api_endpoints.py  # FastAPI endpoint tests
+├── ui/                # UI validation tests
+│   └── test_ui_validation.py  # HTML/UI component tests
+├── run_all_tests.py   # Unified test runner
+├── conftest.py        # Test configuration and utilities
+└── README.md          # This file
 ```
 
-Runs all tests in the correct order with full isolation and cleanup.
+### Core Files
 
-### 2. Individual Test Types
+- `run_all_tests.py` - **Main unified test runner** with comprehensive test execution
+- `conftest.py` - Test configuration and utilities (DBTestManager for safe database testing)
+
+## Test Categories
+
+### 1. Unit Tests (`unittest/`)
+
+Database layer tests focusing on the NarrativesDB class:
+
+- CRUD operations
+- Query methods
+- Data validation
+- Empty/null value handling
+
+### 2. Integration Tests (`integration/`)
+
+API endpoint tests for the FastAPI application:
+
+- All REST endpoints
+- Request/response validation
+- Error handling
+- Authentication flows
+
+### 3. UI Tests (`ui/`)
+
+User interface validation tests:
+
+- HTML structure validation
+- CSS styling checks
+- JavaScript functionality
+- Form validation
+
+## Running Tests
+
+### 1. All Tests (Recommended)
 
 ```bash
-# Database unit tests only
-python tests/test_runner.py --type db
-
-# API integration tests only
-python tests/test_runner.py --type api
-
-# UI/HTML validation tests only
-python tests/test_runner.py --type ui
-
-# Production protection tests only
-python tests/test_runner.py --type protection
-
-# All tests individually
-python tests/test_runner.py --type all
+python tests/run_all_tests.py
 ```
 
-### 3. Non-Interactive Mode
+### 2. Individual Test Categories
 
 ```bash
-python tests/test_runner.py --no-prompt
+# Unit tests only
+python tests/run_all_tests.py --type unittest
+
+# Integration tests only
+python tests/run_all_tests.py --type integration
+
+# UI tests only
+python tests/run_all_tests.py --type ui
+```
+
+### 3. Specific Test Files
+
+```bash
+# Database unit tests
+python -m pytest tests/unittest/test_db.py -v
+
+# API integration tests
+python -m pytest tests/integration/test_api_endpoints.py -v
+
+# UI validation tests
+python -m pytest tests/ui/test_ui_validation.py -v
+```
+
+### 4. Non-Interactive Mode
+
+```bash
+python tests/run_all_tests.py --no-prompt
 ```
 
 ## Features
@@ -94,6 +131,12 @@ python tests/test_runner.py --no-prompt
 - Safe test isolation
 - Automatic cleanup on failures
 
+### ✅ New Data Structure Support
+
+- **Empty Value Handling**: Tests validate empty/null values instead of "Init"
+- **Story Field**: Tests include the new Story field validation
+- **Updated Tagging**: Tests validate 1-4 tag values (removed 0/"Init")
+
 ## Test Results
 
 The test runner provides detailed results:
@@ -108,10 +151,12 @@ The test runner provides detailed results:
 
 ### Adding New Tests
 
-1. Add test functions to appropriate test files
-2. Follow the existing naming convention (`test_*`)
-3. Use the logging methods for consistent output
-4. Ensure proper cleanup and isolation
+1. **Unit Tests**: Add to `tests/unittest/` for database layer testing
+2. **Integration Tests**: Add to `tests/integration/` for API endpoint testing
+3. **UI Tests**: Add to `tests/ui/` for frontend validation
+4. Follow the existing naming convention (`test_*`)
+5. Use the logging methods for consistent output
+6. Ensure proper cleanup and isolation
 
 ### Test Database Management
 
@@ -120,13 +165,15 @@ The `DBTestManager` in `conftest.py` provides:
 - Temporary database creation
 - Automatic cleanup
 - Safe isolation from production data
+- Support for new data structure (empty Tagger_1, Story field)
 
 ### Best Practices
 
-- Always use the test runner for comprehensive testing
+- Always use the unified test runner for comprehensive testing
 - Test individual components during development
 - Verify production protection before deploying
 - Keep test data separate from production data
+- Test both empty and populated field values
 
 ## Troubleshooting
 
@@ -143,11 +190,18 @@ The `DBTestManager` in `conftest.py` provides:
    - Ensure no other instances are running
 
 3. **Import errors**
+
    - Run tests from the project root directory
    - Ensure all dependencies are installed
+
+4. **Data validation errors**
+   - Verify test data matches new structure (no Platform, Hebrew_Title, Length, Title fields)
+   - Check that Story field is properly handled as optional
+   - Ensure Tagger_1 empty values are correctly processed
 
 ### Getting Help
 
 - Check test output for specific error messages
 - Verify your environment setup
-- Run individual test types to isolate issues
+- Run individual test categories to isolate issues
+- Review the unified test runner logs for detailed execution flow

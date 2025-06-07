@@ -197,8 +197,10 @@ def get_leaderboard():
     if db.df.empty:
         return []
 
-    # Get all unique users who have tagged records
-    tagger1_users = db.df[db.df["Tagger_1"] != "Init"]["Tagger_1"].tolist()
+    # Get all unique users who have tagged records (not empty/null)
+    tagger1_users = db.df[~(db.df["Tagger_1"].isna() | (db.df["Tagger_1"] == ""))][
+        "Tagger_1"
+    ].tolist()
     all_users = list(set(tagger1_users))
 
     # Calculate statistics for each user
@@ -223,8 +225,8 @@ def tag_record(request: TagRecordRequest):
     decoded_link = urllib.parse.unquote(request.link)
 
     # Validate result value
-    if request.result not in [0, 1, 2, 3, 4]:
-        raise HTTPException(status_code=400, detail="Result must be 0, 1, 2, 3, or 4")
+    if request.result not in [1, 2, 3, 4]:
+        raise HTTPException(status_code=400, detail="Result must be 1, 2, 3, or 4")
 
     success = db.tag_record(decoded_link, request.username, request.result)
     if not success:
@@ -262,13 +264,21 @@ def serve_tagger_alt():
 @app.post("/auth-report")
 def authenticate_report(request: dict):
     """Authenticate user for report access"""
-    username = request.get("username", "").strip()
-    password = request.get("password", "").strip()
+    username = request.get("username")
+    password = request.get("password")
 
-    allowed_users = ["Nir Kon", "Issar Tzachor"]
-    correct_password = "originai"
+    # Handle None values
+    if username is None or password is None:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    if username in allowed_users and password == correct_password:
+    # Convert to string - must match exactly
+    username_str = str(username)
+    password_str = str(password)
+
+    # Exact match authentication - no modifications allowed
+    valid_users = {"Nir Kon": "originai", "Issar Tzachor": "originai"}
+
+    if username_str in valid_users and valid_users[username_str] == password_str:
         return {"success": True, "message": "Authentication successful"}
     else:
         raise HTTPException(status_code=401, detail="Invalid credentials")
@@ -280,8 +290,8 @@ def get_tagged_records():
     if db.df.empty:
         return []
 
-    # Filter records where Tagger_1 is not "Init"
-    tagged_df = db.df[(db.df["Tagger_1"] != "Init")].copy()
+    # Filter records where Tagger_1 is not empty/null
+    tagged_df = db.df[~(db.df["Tagger_1"].isna() | (db.df["Tagger_1"] == ""))].copy()
 
     if tagged_df.empty:
         return []

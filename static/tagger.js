@@ -160,7 +160,7 @@ function displayVideo(video) {
 
   if (narrativeEnglish) {
     narrativeEnglish.textContent =
-      video.Narrative || "No English narrative available";
+      video.Narrative || "No narrative available";
   }
 }
 
