@@ -468,8 +468,8 @@ def get_tagging_stats():
     total_too_obvious = sum(stat["too_obvious_count"] for stat in grouped_stats)
     total_problem = sum(stat["problem_count"] for stat in grouped_stats)
 
-    # Missing narratives (narratives with <5 yes responses)
-    total_missing_narratives = sum(1 for stat in grouped_stats if stat["yes_count"] < 5)
+    # Missing narratives (narratives where missing column > 0)
+    total_missing_narratives = sum(1 for stat in grouped_stats if stat["missing"] > 0)
 
     summary = {
         "total_topics": total_topics,
