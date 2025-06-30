@@ -220,6 +220,9 @@ function showAddNarrativeModal() {
   // Reset to single form line
   resetFormContainer();
   
+  // Load available topics into dropdown
+  loadTopics();
+  
   // Clear any previous messages
   document.getElementById('addNarrativeError').style.display = 'none';
 }
@@ -248,10 +251,10 @@ function resetFormContainer() {
 function createFormLineHTML(lineId, copyTopic = '', copyNarrative = '') {
   return `
     <div class="narrative-form-line" id="formLine${lineId}" data-line-id="${lineId}">
-      <div class="form-row" style="display: grid !important; grid-template-columns: 0.42fr 1.5fr 3fr 1.5fr auto !important; grid-template-rows: 1fr !important; gap: 30px !important; align-items: start !important; background: #2d2d2d !important; border: 2px solid #404040 !important; border-radius: 12px !important; padding: 20px !important; width: 100% !important; min-width: 0 !important; overflow: visible !important; flex-direction: row !important; flex-wrap: nowrap !important; margin-bottom: 20px !important;">
+      <div class="form-row" style="display: grid !important; grid-template-columns: 1.5fr 1.5fr 2fr 1fr auto !important; grid-template-rows: 1fr !important; gap: 30px !important; align-items: start !important; background: #2d2d2d !important; border: 2px solid #404040 !important; border-radius: 12px !important; padding: 20px !important; width: 100% !important; min-width: 0 !important; overflow: visible !important; flex-direction: row !important; flex-wrap: nowrap !important; margin-bottom: 20px !important;">
         <div class="form-field" style="grid-column: 1 !important; grid-row: 1 !important; display: flex !important; flex-direction: column !important; min-width: 0 !important; width: 100% !important;">
           <label for="sheet${lineId}">Topic:</label>
-          <input type="text" id="sheet${lineId}" class="form-input topic-input" placeholder="Enter Topic" value="${copyTopic}" />
+          <input type="text" id="sheet${lineId}" class="form-input topic-input" placeholder="Enter Topic" value="${copyTopic}" list="topicsList"/>
         </div>
         <div class="form-field" style="grid-column: 2 !important; grid-row: 1 !important; display: flex !important; flex-direction: column !important; min-width: 0 !important; width: 100% !important;">
           <label for="narrative${lineId}">Narrative:</label>
@@ -776,4 +779,36 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
+});
+
+/**
+ * Load all available topics into the dropdown
+ */
+async function loadTopics() {
+  try {
+    const response = await fetch('/topics');
+    if (response.ok) {
+      const data = await response.json();
+      const topicsList = document.getElementById('topicsList');
+      
+      // Clear existing options
+      topicsList.innerHTML = '';
+      
+      // Add options for each topic
+      data.topics.forEach(topic => {
+        const option = document.createElement('option');
+        option.value = topic;
+        topicsList.appendChild(option);
+      });
+    } else {
+      console.error('Failed to load topics:', response.statusText);
+    }
+  } catch (error) {
+    console.error('Error loading topics:', error);
+  }
+}
+
+// Load topics on initial page load
+document.addEventListener('DOMContentLoaded', function() {
+  loadTopics();
 });

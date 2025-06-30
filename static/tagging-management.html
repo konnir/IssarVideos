@@ -167,7 +167,7 @@
                     class="form-row"
                     style="
                       display: grid !important;
-                      grid-template-columns: 0.42fr 1.5fr 3fr 1.5fr auto !important;
+                      grid-template-columns: 1.5fr 1.5fr 2fr 1fr auto !important;
                       grid-template-rows: 1fr !important;
                       gap: 30px !important;
                       align-items: start !important;
@@ -199,8 +199,13 @@
                         type="text"
                         id="sheet1"
                         class="form-input topic-input"
-                        placeholder="Enter Topic"
+                        placeholder="Enter or select Topic"
+                        list="topicsList"
+                        autocomplete="off"
                       />
+                      <datalist id="topicsList">
+                        <!-- Topics will be populated by JavaScript -->
+                      </datalist>
                     </div>
                     <div
                       class="form-field"

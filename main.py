@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import pandas as pd
 import os
+import logging
 from typing import List, Dict, Any
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
@@ -25,6 +26,9 @@ from data.video_record import (
 from db.sheets_narratives_db import SheetsNarrativesDB
 from llm.get_story import StoryGenerator
 from llm.get_videos import VideoSearcher
+
+# Initialize logger
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -659,6 +663,18 @@ def refresh_data():
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to refresh data: {str(e)}")
+
+
+@app.get("/topics")
+def get_all_topics():
+    """Get all available topics (worksheets) from the spreadsheet"""
+    try:
+        # Get all worksheets from the Google Sheets
+        topics = db.sheets_client.get_all_worksheets()
+        return {"topics": topics}
+    except Exception as e:
+        logger.error(f"Error getting topics: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get topics: {str(e)}")
 
 
 if __name__ == "__main__":
