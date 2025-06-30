@@ -1163,3 +1163,99 @@ html body .modal .modal-content .modal-body .narrative-form-single-line .form-ro
   gap: 8px !important;
 }
 
+/* YouTube Section Styles */
+.youtube-section {
+  border-top: 2px solid #333;
+  background: #1a1a1a;
+  padding: 16px;
+  margin-top: 16px;
+  border-radius: 0 0 12px 12px;
+}
+
+.youtube-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #333;
+}
+
+.youtube-header h4 {
+  margin: 0;
+  color: #ff0000;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.close-youtube-btn {
+  background: #333 !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 50% !important;
+  width: 28px !important;
+  height: 28px !important;
+  cursor: pointer !important;
+  font-size: 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s ease !important;
+}
+
+.close-youtube-btn:hover {
+  background: #555 !important;
+  transform: scale(1.1) !important;
+}
+
+/* Modal adjustments when YouTube is open */
+.modal-content.youtube-expanded {
+  max-height: 90vh !important;
+  height: 90vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.modal-body.youtube-expanded {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  max-height: 50vh !important;
+}
+
+/* YouTube Search Button Styles */
+.youtube-search-btn {
+  margin-top: 8px !important;
+  padding: 6px 12px !important;
+  background: #ff0000 !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  min-height: 32px !important;
+}
+
+.youtube-search-btn:hover {
+  background: #cc0000 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 8px rgba(255, 0, 0, 0.3) !important;
+}
+
+.youtube-search-btn:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 1px 4px rgba(255, 0, 0, 0.3) !important;
+}
+
+.youtube-search-btn:disabled {
+  background: #666 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+

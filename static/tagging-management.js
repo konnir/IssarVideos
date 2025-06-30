@@ -246,6 +246,7 @@ async function showAddNarrativeModal() {
  * Hide the Add Narrative modal
  */
 function hideAddNarrativeModal() {
+  // Hide the modal
   document.getElementById('addNarrativeModal').style.display = 'none';
 }
 
@@ -289,6 +290,7 @@ function createFormLineHTML(lineId, copyTopic = '', copyNarrative = '') {
         <div class="form-field" style="grid-column: 4 !important; grid-row: 1 !important; display: flex !important; flex-direction: column !important; min-width: 0 !important; width: 100% !important;">
           <label for="link${lineId}">Link:</label>
           <input type="url" id="link${lineId}" class="form-input link-input" placeholder="https://example.com" />
+          <button class="youtube-search-btn" onclick="openYouTubeSearch(${lineId})" data-line-id="${lineId}" type="button" style="margin-top: 8px; padding: 6px 12px; background: #ff0000; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">🎬 Search YouTube</button>
         </div>
         <div class="form-field form-field-button" style="grid-column: 5 !important; grid-row: 1 !important; display: flex !important; flex-direction: column !important; align-items: flex-start !important; padding-bottom: 0 !important;">
           <label>Actions:</label>
@@ -303,15 +305,16 @@ function createFormLineHTML(lineId, copyTopic = '', copyNarrative = '') {
 }
 
 /**
- * Add a new form line, copying sheet and narrative if filled
+ * Add a new form line, copying sheet, narrative, and story if filled
  */
 function addNewFormLine(sourceLineId) {
   formLineCounter++;
   const newLineId = formLineCounter;
   
-  // Get values to copy from source line - Sheet and Narrative
+  // Get values to copy from source line - Sheet, Narrative, and Story
   const sourceTopic = document.getElementById(`sheet${sourceLineId}`).value.trim();
   const sourceNarrative = document.getElementById(`narrative${sourceLineId}`).value.trim();
+  const sourceStory = document.getElementById(`story${sourceLineId}`).value.trim();
   
   // Copy custom prompt if it exists for the source line
   if (customPrompts[sourceLineId]) {
@@ -325,6 +328,14 @@ function addNewFormLine(sourceLineId) {
   const container = document.getElementById('narrativeFormContainer');
   container.insertAdjacentHTML('beforeend', newLineHTML);
   
+  // Copy the story content to the new line if it exists
+  if (sourceStory) {
+    const newStoryTextarea = document.getElementById(`story${newLineId}`);
+    if (newStoryTextarea) {
+      newStoryTextarea.value = sourceStory;
+    }
+  }
+  
   // Add event listeners for the new sheet input
   addTopicEventListeners(newLineId);
   
@@ -335,8 +346,8 @@ function addNewFormLine(sourceLineId) {
     editBtn.style.background = '#357abd'; // Darker blue to indicate custom
   }
   
-  // Focus on the story field of the new line (since Sheet and Narrative are pre-filled)
-  document.getElementById(`story${newLineId}`).focus();
+  // Focus on the link field of the new line (since Sheet, Narrative, and Story are pre-filled)
+  document.getElementById(`link${newLineId}`).focus();
 }
 
 /**
@@ -1014,3 +1025,82 @@ function addTopicEventListeners(lineId) {
 document.addEventListener('DOMContentLoaded', function() {
   loadAllTopics();
 });
+
+/**
+ * Open YouTube search in a popup window with the story content
+ */
+function openYouTubeSearch(lineId) {
+  const storyTextarea = document.getElementById(`story${lineId}`);
+  if (!storyTextarea) {
+    alert('Story field not found');
+    return;
+  }
+  
+  const storyContent = storyTextarea.value.trim();
+  if (!storyContent) {
+    alert('Please enter a story first to search on YouTube');
+    return;
+  }
+  
+  // Encode the story content for URL
+  const searchQuery = encodeURIComponent(storyContent);
+  const youtubeSearchUrl = `https://www.youtube.com/results?search_query=${searchQuery}`;
+  
+  // Get screen dimensions for 90% size and center positioning
+  const screenWidth = window.screen.availWidth;
+  const screenHeight = window.screen.availHeight;
+  const popupWidth = Math.floor(screenWidth * 0.9);
+  const popupHeight = Math.floor(screenHeight * 0.9);
+  
+  // Calculate center position
+  const left = Math.floor((screenWidth - popupWidth) / 2) + window.screen.availLeft;
+  const top = Math.floor((screenHeight - popupHeight) / 2) + window.screen.availTop;
+  
+  // Open YouTube search in popup window
+  const popup = window.open(
+    youtubeSearchUrl,
+    'youtubeSearch',
+    `width=${popupWidth},height=${popupHeight},left=${left},top=${top},scrollbars=yes,resizable=yes,toolbar=yes,location=yes,menubar=no,status=no`
+  );
+  
+  if (popup) {
+    popup.focus();
+  } else {
+    // Fallback if popup is blocked
+    alert('Popup blocked. Please allow popups and try again, or manually search YouTube for: ' + storyContent);
+  }
+}
+
+/**
+ * Close YouTube search section and restore modal to normal size
+ */
+function closeYouTubeSearch() {
+  const youtubeSection = document.getElementById('youtubeSection');
+  const youtubeFrame = document.getElementById('youtubeFrame');
+  const modalContent = document.querySelector('.modal-content');
+  const modalBody = document.getElementById('modalBody');
+  
+  if (youtubeSection) {
+    youtubeSection.style.display = 'none';
+  }
+  
+  if (youtubeFrame) {
+    youtubeFrame.src = ''; // Clear the iframe
+    youtubeFrame.srcdoc = ''; // Clear the iframe content
+  }
+  
+  if (modalContent) {
+    // Restore modal to normal size
+    modalContent.style.maxHeight = '';
+    modalContent.style.height = '';
+    modalContent.style.display = '';
+    modalContent.style.flexDirection = '';
+  }
+  
+  if (modalBody) {
+    // Restore modal body styling
+    modalBody.style.flex = '';
+    modalBody.style.overflowY = '';
+    modalBody.style.maxHeight = '';
+  }
+}
