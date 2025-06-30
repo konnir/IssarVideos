@@ -291,6 +291,7 @@ function createFormLineHTML(lineId, copyTopic = '', copyNarrative = '') {
           <label for="link${lineId}">Link:</label>
           <input type="url" id="link${lineId}" class="form-input link-input" placeholder="https://example.com" />
           <button class="youtube-search-btn" onclick="openYouTubeSearch(${lineId})" data-line-id="${lineId}" type="button" style="margin-top: 8px; padding: 6px 12px; background: #ff0000; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">🎬 Search YouTube</button>
+          <button class="tiktok-search-btn" onclick="openTikTokSearch(${lineId})" data-line-id="${lineId}" type="button" style="margin-top: 4px; padding: 6px 12px; background: #000000; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">📱 Search TikTok</button>
         </div>
         <div class="form-field form-field-button" style="grid-column: 5 !important; grid-row: 1 !important; display: flex !important; flex-direction: column !important; align-items: flex-start !important; padding-bottom: 0 !important;">
           <label>Actions:</label>
@@ -1068,6 +1069,51 @@ function openYouTubeSearch(lineId) {
   } else {
     // Fallback if popup is blocked
     alert('Popup blocked. Please allow popups and try again, or manually search YouTube for: ' + storyContent);
+  }
+}
+
+/**
+ * Open TikTok search in a popup window with the story content
+ */
+function openTikTokSearch(lineId) {
+  const storyTextarea = document.getElementById(`story${lineId}`);
+  if (!storyTextarea) {
+    alert('Story field not found');
+    return;
+  }
+  
+  const storyContent = storyTextarea.value.trim();
+  if (!storyContent) {
+    alert('Please enter a story first to search on TikTok');
+    return;
+  }
+  
+  // Encode the story content for URL
+  const searchQuery = encodeURIComponent(storyContent);
+  const tiktokSearchUrl = `https://www.tiktok.com/search?q=${searchQuery}`;
+  
+  // Get screen dimensions for 90% size and center positioning
+  const screenWidth = window.screen.availWidth;
+  const screenHeight = window.screen.availHeight;
+  const popupWidth = Math.floor(screenWidth * 0.9);
+  const popupHeight = Math.floor(screenHeight * 0.9);
+  
+  // Calculate center position
+  const left = Math.floor((screenWidth - popupWidth) / 2) + window.screen.availLeft;
+  const top = Math.floor((screenHeight - popupHeight) / 2) + window.screen.availTop;
+  
+  // Open TikTok search in popup window
+  const popup = window.open(
+    tiktokSearchUrl,
+    'tiktokSearch',
+    `width=${popupWidth},height=${popupHeight},left=${left},top=${top},scrollbars=yes,resizable=yes,toolbar=yes,location=yes,menubar=no,status=no`
+  );
+  
+  if (popup) {
+    popup.focus();
+  } else {
+    // Fallback if popup is blocked
+    alert('Popup blocked. Please allow popups and try again, or manually search TikTok for: ' + storyContent);
   }
 }
 

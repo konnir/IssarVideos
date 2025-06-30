@@ -1259,3 +1259,40 @@ html body .modal .modal-content .modal-body .narrative-form-single-line .form-ro
   box-shadow: none !important;
 }
 
+/* TikTok Search Button Styles */
+.tiktok-search-btn {
+  margin-top: 4px !important;
+  padding: 6px 12px !important;
+  background: #000000 !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  min-height: 32px !important;
+}
+
+.tiktok-search-btn:hover {
+  background: #333333 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+}
+
+.tiktok-search-btn:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4) !important;
+}
+
+.tiktok-search-btn:disabled {
+  background: #666 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+

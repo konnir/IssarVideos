@@ -105,6 +105,10 @@ def update_record(link: str, updated_data: VideoRecordUpdate):
 
     # Convert the update model to dict, excluding None values
     update_dict = {k: v for k, v in updated_data.model_dump().items() if v is not None}
+    
+    # Convert YouTube Shorts URLs to regular YouTube URLs if Link is being updated
+    if "Link" in update_dict:
+        update_dict["Link"] = convert_youtube_shorts_url(update_dict["Link"])
 
     if not update_dict:
         raise HTTPException(status_code=400, detail="No data provided for update")
@@ -133,6 +137,10 @@ def add_record(record_data: VideoRecordCreate):
     try:
         # Convert to dict for database insertion
         record_dict = record_data.model_dump()
+        
+        # Convert YouTube Shorts URLs to regular YouTube URLs
+        if "Link" in record_dict:
+            record_dict["Link"] = convert_youtube_shorts_url(record_dict["Link"])
 
         # Check if record with same link already exists
         existing_records = db.df[db.df["Link"] == record_dict["Link"]]
@@ -162,12 +170,15 @@ def add_record(record_data: VideoRecordCreate):
 def add_narrative(narrative_data: AddNarrativeRequest):
     """Add a new narrative record to the database"""
     try:
+        # Convert YouTube Shorts URLs to regular YouTube URLs
+        converted_link = convert_youtube_shorts_url(narrative_data.Link)
+        
         # Convert to dict for database insertion
         record_dict = {
             "Sheet": narrative_data.Sheet,
             "Narrative": narrative_data.Narrative,
             "Story": narrative_data.Story,
-            "Link": narrative_data.Link,
+            "Link": converted_link,
             "Tagger_1": None,  # Empty as specified
             "Tagger_1_Result": 0,  # Set to 0 as specified
         }
@@ -694,6 +705,30 @@ def get_narratives_by_topic(topic: str):
     except Exception as e:
         logger.error(f"Error getting narratives for topic {topic}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to get narratives: {str(e)}")
+
+
+def convert_youtube_shorts_url(url: str) -> str:
+    """Convert YouTube Shorts URL to regular YouTube URL if applicable"""
+    if not url or not isinstance(url, str):
+        return url
+    
+    # Check if it's a YouTube Shorts URL
+    if "youtube.com/shorts/" in url:
+        # Extract the video ID from the shorts URL
+        # Format: https://www.youtube.com/shorts/VIDEO_ID
+        try:
+            video_id = url.split("/shorts/")[1]
+            # Remove any query parameters or fragments
+            video_id = video_id.split("?")[0].split("#")[0]
+            # Convert to regular YouTube URL
+            converted_url = f"https://www.youtube.com/watch?v={video_id}"
+            logger.info(f"Converted YouTube Shorts URL: {url} -> {converted_url}")
+            return converted_url
+        except (IndexError, AttributeError):
+            logger.warning(f"Failed to convert YouTube Shorts URL: {url}")
+            return url
+    
+    return url
 
 
 if __name__ == "__main__":

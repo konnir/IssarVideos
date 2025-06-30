@@ -176,7 +176,7 @@ class SheetsNarrativesDB:
                 # If sheet doesn't exist or is empty, create new DataFrame
                 logger.info(f"Creating new sheet or sheet is empty: {target_sheet}")
                 sheet_df = pd.DataFrame(columns=[
-                    "Narrative", "Story", "Tagger_1", "Tagger_1_Result", "Link", "Sheet"
+                    "Sheet", "Narrative", "Story", "Link", "Tagger_1", "Tagger_1_Result"
                 ])
             
             # Ensure the Sheet column has the correct value

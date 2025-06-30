@@ -70,6 +70,7 @@ class SheetsClient:
     def get_worksheet(self, sheet_name: str = None):
         """
         Get a specific worksheet by name, or the first worksheet if no name provided.
+        If the named worksheet doesn't exist, it will be created.
 
         Args:
             sheet_name: Name of the worksheet
@@ -83,8 +84,12 @@ class SheetsClient:
             else:
                 return self.spreadsheet.sheet1  # First sheet
         except gspread.WorksheetNotFound:
-            logger.error(f"Worksheet '{sheet_name}' not found")
-            raise
+            if sheet_name:
+                logger.info(f"Worksheet '{sheet_name}' not found. Creating new worksheet.")
+                return self.create_worksheet(sheet_name)
+            else:
+                logger.error(f"Default worksheet not found")
+                raise
 
     def read_sheet_to_dataframe(self, sheet_name: str = None) -> pd.DataFrame:
         """

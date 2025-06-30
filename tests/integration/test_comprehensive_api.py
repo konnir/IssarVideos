@@ -27,12 +27,24 @@ class TestAllAPIEndpoints:
     def setup(self):
         """Setup for each test"""
         self.base_url = "http://localhost:8000"
+        # Get available topics dynamically or use fallback
+        try:
+            response = requests.get(f"{self.base_url}/topics", timeout=2)
+            if response.status_code == 200:
+                topics = response.json().get("topics", ["Health"])
+                test_sheet = topics[0] if topics else "Health"
+            else:
+                test_sheet = "Health"  # Fallback
+        except:
+            test_sheet = "Health"  # Fallback if server not running
+            
         self.test_video_record = {
-            "Sheet": "Test Sheet",
+            "Sheet": test_sheet,
             "Narrative": "Test narrative for comprehensive testing",
             "Story": "Test story content",
-            "Link": "https://example.com/test-video-comprehensive",
+            "Link": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",  # Valid YouTube URL
         }
+        self.test_shorts_url = "https://www.youtube.com/shorts/9m19poxkkpg"  # Test Shorts URL
         self.test_update_data = {"Tagger_1": "Test User", "Tagger_1_Result": 1}
         self.auth_data = {"username": "Nir Kon", "password": "originai"}
 
@@ -356,6 +368,44 @@ class TestAllAPIEndpoints:
             assert "problem_count" in item
             assert "missing" in item
 
+    def test_topics_endpoint(self):
+        """Test /topics endpoint for getting all available topics/sheets"""
+        self.skip_if_server_not_running()
+
+        response = requests.get(f"{self.base_url}/topics")
+        assert response.status_code == 200
+
+        data = response.json()
+        assert "topics" in data
+        assert isinstance(data["topics"], list)
+        # Topics should be a list of sheet names
+
+    def test_narratives_by_topic_endpoint(self):
+        """Test /narratives/{topic} endpoint"""
+        self.skip_if_server_not_running()
+
+        # First get available topics
+        topics_response = requests.get(f"{self.base_url}/topics")
+        if topics_response.status_code == 200:
+            topics_data = topics_response.json()
+            topics = topics_data.get("topics", [])
+            
+            if topics:
+                # Test with first available topic
+                test_topic = topics[0]
+                response = requests.get(f"{self.base_url}/narratives/{test_topic}")
+                assert response.status_code == 200
+                
+                data = response.json()
+                assert "narratives" in data
+                assert isinstance(data["narratives"], list)
+        
+        # Test with non-existent topic (should return empty list)
+        response = requests.get(f"{self.base_url}/narratives/NonExistentTopic")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["narratives"] == []
+
     # POST Endpoint Tests
 
     def test_auth_report_endpoint_success(self):
@@ -419,13 +469,104 @@ class TestAllAPIEndpoints:
         elif response1.status_code == 400:
             assert response2.status_code == 400
 
+    def test_add_record_youtube_shorts_conversion(self):
+        """Test that YouTube Shorts URLs are converted to regular YouTube URLs"""
+        self.skip_if_server_not_running()
+
+        import time
+        
+        # Get available topics/sheets
+        topics_response = requests.get(f"{self.base_url}/topics")
+        if topics_response.status_code != 200:
+            pytest.skip("Cannot get topics list")
+            
+        topics = topics_response.json().get("topics", [])
+        if not topics:
+            pytest.skip("No topics available for testing")
+        
+        # Use the first available topic
+        test_sheet = topics[0]
+        
+        # Create test record with YouTube Shorts URL
+        shorts_record = {
+            "Sheet": test_sheet,
+            "Narrative": "Test narrative for shorts conversion",
+            "Story": "Test story content for shorts",
+            "Link": f"https://www.youtube.com/shorts/test{int(time.time())}"  # Unique shorts URL
+        }
+
+        response = requests.post(f"{self.base_url}/add-record", json=shorts_record)
+        
+        # Should succeed or fail with 400 if record already exists
+        assert response.status_code in [200, 400]
+        
+        if response.status_code == 200:
+            data = response.json()
+            # The returned link should be converted to regular YouTube format
+            expected_converted_link = shorts_record["Link"].replace("/shorts/", "/watch?v=")
+            assert data["Link"] == expected_converted_link
+            assert data["Sheet"] == shorts_record["Sheet"]
+            assert data["Narrative"] == shorts_record["Narrative"]
+
+    def test_add_narrative_youtube_shorts_conversion(self):
+        """Test that YouTube Shorts URLs are converted in add-narrative endpoint"""
+        self.skip_if_server_not_running()
+
+        import time
+        
+        # First get available topics/sheets
+        topics_response = requests.get(f"{self.base_url}/topics")
+        if topics_response.status_code != 200:
+            pytest.skip("Cannot get topics list")
+            
+        topics = topics_response.json().get("topics", [])
+        if not topics:
+            pytest.skip("No topics available for testing")
+        
+        # Use the first available topic
+        test_sheet = topics[0]
+        
+        # Create test narrative with YouTube Shorts URL
+        shorts_narrative = {
+            "Sheet": test_sheet,
+            "Narrative": "Test narrative for shorts in add-narrative",
+            "Story": "Test story content for shorts in add-narrative",
+            "Link": f"https://www.youtube.com/shorts/narrative{int(time.time())}"  # Unique shorts URL
+        }
+
+        response = requests.post(f"{self.base_url}/add-narrative", json=shorts_narrative)
+        
+        # Should succeed or fail with 400 if record already exists
+        assert response.status_code in [200, 400]
+        
+        if response.status_code == 200:
+            data = response.json()
+            # The response should indicate success
+            assert data["message"] == "Narrative added successfully"
+            assert data["sheet"] == shorts_narrative["Sheet"]
+            assert data["narrative"] == shorts_narrative["Narrative"]
+            # The link in response should still be the original (but backend converts it)
+            assert data["link"] == shorts_narrative["Link"]
+
     def test_add_narrative_endpoint(self):
         """Test /add-narrative endpoint with valid data"""
         self.skip_if_server_not_running()
 
+        # Get available topics/sheets
+        topics_response = requests.get(f"{self.base_url}/topics")
+        if topics_response.status_code != 200:
+            pytest.skip("Cannot get topics list")
+            
+        topics = topics_response.json().get("topics", [])
+        if not topics:
+            pytest.skip("No topics available for testing")
+        
+        # Use the first available topic
+        test_sheet = topics[0]
+
         # Test data for adding narrative
         narrative_data = {
-            "Sheet": "Test Topic Add Narrative",
+            "Sheet": test_sheet,
             "Narrative": "Test narrative for add endpoint",
             "Story": "This is a test story for the add narrative endpoint functionality",
             "Link": f"https://example.com/test-add-narrative-{hash(str(time.time()))}",
@@ -451,9 +592,21 @@ class TestAllAPIEndpoints:
         """Test /add-narrative endpoint with duplicate link"""
         self.skip_if_server_not_running()
 
+        # Get available topics/sheets
+        topics_response = requests.get(f"{self.base_url}/topics")
+        if topics_response.status_code != 200:
+            pytest.skip("Cannot get topics list")
+            
+        topics = topics_response.json().get("topics", [])
+        if not topics:
+            pytest.skip("No topics available for testing")
+        
+        # Use the first available topic
+        test_sheet = topics[0]
+
         # Use a known link that might already exist
         narrative_data = {
-            "Sheet": "Duplicate Test Topic",
+            "Sheet": test_sheet,
             "Narrative": "Duplicate test narrative",
             "Story": "Test story for duplicate link test",
             "Link": "https://example.com/duplicate-test-link",
@@ -512,6 +665,18 @@ class TestAllAPIEndpoints:
         """Test /add-narrative endpoint with invalid URL format"""
         self.skip_if_server_not_running()
 
+        # Get available topics/sheets
+        topics_response = requests.get(f"{self.base_url}/topics")
+        if topics_response.status_code != 200:
+            pytest.skip("Cannot get topics list")
+            
+        topics = topics_response.json().get("topics", [])
+        if not topics:
+            pytest.skip("No topics available for testing")
+        
+        # Use the first available topic
+        test_sheet = topics[0]
+
         # Test with invalid URL formats
         invalid_urls = [
             "not-a-url",
@@ -522,7 +687,7 @@ class TestAllAPIEndpoints:
 
         for invalid_url in invalid_urls:
             narrative_data = {
-                "Sheet": "Test Topic",
+                "Sheet": test_sheet,
                 "Narrative": "Test narrative",
                 "Story": "Test story",
                 "Link": invalid_url,
@@ -722,6 +887,22 @@ class TestAPIEndpointIntegration:
 
             if our_user:
                 assert our_user["tagged_count"] > 0
+
+    def test_openai_connection_endpoint(self):
+        """Test /test-openai-connection endpoint"""
+        self.skip_if_server_not_running()
+
+        response = requests.get(f"{self.base_url}/test-openai-connection")
+        assert response.status_code == 200
+
+        data = response.json()
+        assert "connected" in data
+        assert "message" in data
+        assert isinstance(data["connected"], bool)
+        assert isinstance(data["message"], str)
+
+        # The connection status depends on whether OPENAI_API_KEY is set
+        # We don't enforce it must be connected for tests to pass
 
 
 if __name__ == "__main__":

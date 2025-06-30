@@ -145,6 +145,8 @@ function displayVideo(video) {
 
   // Update the video link button
   const videoLinkBtn = document.getElementById("videoLinkBtn");
+  const restartVideoBtn = document.getElementById("restartVideoBtn");
+  
   if (videoLinkBtn && video.Link) {
     // Ensure we have the full URL
     videoLinkBtn.href = video.Link;
@@ -153,6 +155,17 @@ function displayVideo(video) {
     // Enable the button now that we have a valid link
     videoLinkBtn.style.opacity = '1';
     videoLinkBtn.style.pointerEvents = 'auto';
+  }
+  
+  // Enable/disable restart video button based on whether video is embeddable
+  if (restartVideoBtn) {
+    if (embedUrl) {
+      restartVideoBtn.style.opacity = '1';
+      restartVideoBtn.style.pointerEvents = 'auto';
+    } else {
+      restartVideoBtn.style.opacity = '0.5';
+      restartVideoBtn.style.pointerEvents = 'none';
+    }
   }
 
   // Update narrative content
@@ -285,7 +298,36 @@ function toggleLeaderboard() {
   }
 }
 
-
+/**
+ * Restart the current video by reloading the iframe
+ */
+function restartVideo() {
+  if (!currentVideo) {
+    showMessage("No video to restart", "error");
+    return;
+  }
+  
+  const videoContainer = document.getElementById("videoContainer");
+  const embedUrl = getVideoEmbedUrl(currentVideo.Link);
+  
+  if (embedUrl) {
+    // Add a timestamp parameter to force iframe reload
+    const separator = embedUrl.includes('?') ? '&' : '?';
+    const reloadUrl = `${embedUrl}${separator}autoplay=1&t=${Date.now()}`;
+    
+    if (currentVideo.Link.includes("tiktok.com")) {
+      videoContainer.innerHTML = `
+        <iframe src="${reloadUrl}" allowfullscreen></iframe>
+      `;
+    } else {
+      videoContainer.innerHTML = `<iframe src="${reloadUrl}" allowfullscreen></iframe>`;
+    }
+    
+    showMessage("Video restarted", "success");
+  } else {
+    showMessage("Cannot restart video - no embedded player available", "error");
+  }
+}
 
 // Initialize event listeners when DOM is loaded
 document.addEventListener("DOMContentLoaded", function() {
