@@ -50,8 +50,8 @@
           <div class="summary-stats">
             <!-- First line: 4 cards -->
             <div class="stat-card">
-              <div class="stat-number" id="totalTopics">-</div>
-              <div class="stat-label">Total Topics</div>
+              <div class="stat-number" id="totalSheets">-</div>
+              <div class="stat-label">Total Sheets</div>
             </div>
             <div class="stat-card">
               <div class="stat-number" id="totalNarratives">-</div>
@@ -101,7 +101,7 @@
           <table class="management-table" id="managementTable">
             <thead>
               <tr>
-                <th>Topic</th>
+                <th>Sheet</th>
                 <th>Narrative</th>
                 <th>Initial</th>
                 <th>Yes</th>
@@ -167,7 +167,7 @@
                     class="form-row"
                     style="
                       display: grid !important;
-                      grid-template-columns: 1.5fr 1.5fr 2fr 1fr auto !important;
+                      grid-template-columns: 1.5fr 2fr 2fr 1fr auto !important;
                       grid-template-rows: 1fr !important;
                       gap: 30px !important;
                       align-items: start !important;
@@ -194,17 +194,17 @@
                         width: 100% !important;
                       "
                     >
-                      <label for="sheet1">Topic:</label>
+                      <label for="sheet1">Sheet:</label>
                       <input
                         type="text"
                         id="sheet1"
                         class="form-input topic-input"
-                        placeholder="Enter or select Topic"
+                        placeholder="Enter or select Sheet"
                         list="topicsList"
                         autocomplete="off"
                       />
                       <datalist id="topicsList">
-                        <!-- Topics will be populated by JavaScript -->
+                        <!-- Sheets will be populated by JavaScript -->
                       </datalist>
                     </div>
                     <div
@@ -223,8 +223,13 @@
                         type="text"
                         id="narrative1"
                         class="form-input narrative-input"
-                        placeholder="Enter narrative text"
+                        placeholder="Enter or select narrative text"
+                        list="narrativesList"
+                        autocomplete="off"
                       />
+                      <datalist id="narrativesList">
+                        <!-- Narratives will be populated by JavaScript -->
+                      </datalist>
                     </div>
                     <div
                       class="form-field form-field-story"
@@ -262,8 +267,6 @@
                           📝 Edit Prompt
                         </button>
                       </div>
-                    </div>
-                      </button>
                     </div>
                     <div
                       class="form-field"

@@ -27,7 +27,9 @@ class SheetsNarrativesDB:
         self.sheets_client = SheetsClient(credentials_path, sheet_id)
         self.df = pd.DataFrame()
         self.current_sheet_name = None
-        self.load_data()
+        self.last_loaded_time = None
+        # Load data from all sheets by default for tagging management
+        self.load_all_sheets_data()
 
     def load_data(self, sheet_name: str = None):
         """
@@ -70,6 +72,76 @@ class SheetsNarrativesDB:
                 ]
             )
 
+    def load_all_sheets_data(self):
+        """
+        Load data from ALL worksheets and combine them into a single DataFrame.
+        This is needed for the tagging management table to show all sheets.
+        """
+        try:
+            # Get all worksheets
+            worksheets = self.sheets_client.get_all_worksheets()
+            if not worksheets:
+                logger.warning("No worksheets found in the spreadsheet")
+                return
+
+            # List to collect DataFrames from all sheets
+            all_dfs = []
+
+            for sheet_name in worksheets:
+                try:
+                    logger.info(f"Loading data from sheet: {sheet_name}")
+                    sheet_df = self.sheets_client.read_sheet_to_dataframe(sheet_name)
+
+                    if not sheet_df.empty:
+                        # Add/update the Sheet column with the actual sheet name
+                        sheet_df["Sheet"] = sheet_name
+                        all_dfs.append(sheet_df)
+                        logger.info(f"Loaded {len(sheet_df)} records from sheet '{sheet_name}'")
+                    else:
+                        logger.warning(f"Sheet '{sheet_name}' is empty")
+
+                except Exception as e:
+                    logger.error(f"Failed to load data from sheet '{sheet_name}': {str(e)}")
+                    continue
+
+            # Combine all DataFrames
+            if all_dfs:
+                self.df = pd.concat(all_dfs, ignore_index=True)
+                logger.info(
+                    f"Successfully loaded {len(self.df)} total records from {len(all_dfs)} sheets"
+                )
+            else:
+                logger.warning("No data loaded from any sheets")
+                self.df = pd.DataFrame(
+                    columns=[
+                        "Sheet",
+                        "Narrative",
+                        "Story",
+                        "Link",
+                        "Tagger_1",
+                        "Tagger_1_Result",
+                    ]
+                )
+
+            # Update timestamp
+            import time
+
+            self.last_loaded_time = time.time()
+
+        except Exception as e:
+            logger.error(f"Failed to load data from all sheets: {str(e)}")
+            # Initialize empty DataFrame with expected columns
+            self.df = pd.DataFrame(
+                columns=[
+                    "Sheet",
+                    "Narrative",
+                    "Story",
+                    "Link",
+                    "Tagger_1",
+                    "Tagger_1_Result",
+                ]
+            )
+
     def save_changes(self):
         """Save the current DataFrame back to Google Sheets."""
         try:
@@ -85,6 +157,49 @@ class SheetsNarrativesDB:
 
         except Exception as e:
             logger.error(f"Failed to save changes to Google Sheets: {str(e)}")
+            raise
+
+    def add_record_to_specific_sheet(self, record_dict: Dict[str, Any]):
+        """Add a new record to the specific sheet mentioned in the record."""
+        try:
+            target_sheet = record_dict.get('Sheet')
+            if not target_sheet:
+                raise ValueError("Sheet name is required in record_dict")
+            
+            logger.info(f"Adding record to sheet: {target_sheet}")
+            
+            # Read current data from the target sheet
+            try:
+                sheet_df = self.sheets_client.read_sheet_to_dataframe(target_sheet)
+                logger.info(f"Read {len(sheet_df)} existing records from sheet '{target_sheet}'")
+            except Exception as e:
+                # If sheet doesn't exist or is empty, create new DataFrame
+                logger.info(f"Creating new sheet or sheet is empty: {target_sheet}")
+                sheet_df = pd.DataFrame(columns=[
+                    "Narrative", "Story", "Tagger_1", "Tagger_1_Result", "Link", "Sheet"
+                ])
+            
+            # Ensure the Sheet column has the correct value
+            record_dict['Sheet'] = target_sheet
+            
+            # Add the new record
+            new_row = pd.DataFrame([record_dict])
+            sheet_df = pd.concat([sheet_df, new_row], ignore_index=True)
+            
+            # Write back to the specific sheet
+            self.sheets_client.write_dataframe_to_sheet(
+                sheet_df, target_sheet, clear_sheet=True
+            )
+            
+            logger.info(f"Successfully added record to sheet '{target_sheet}'. New total: {len(sheet_df)} records")
+            
+            # Also add to our main DataFrame for immediate consistency
+            self.df = pd.concat([self.df, new_row], ignore_index=True)
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to add record to sheet '{target_sheet}': {str(e)}")
             raise
 
     def get_random_not_fully_tagged_row(self) -> Optional[Dict[str, Any]]:

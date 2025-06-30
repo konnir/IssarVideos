@@ -73,6 +73,7 @@ async function loadTaggingStats() {
   tableBody.innerHTML = "";
 
   try {
+    console.log('Fetching tagging stats...');
     const response = await fetch("/tagging-stats");
     
     if (!response.ok) {
@@ -80,6 +81,7 @@ async function loadTaggingStats() {
     }
 
     const data = await response.json();
+    console.log('Received tagging stats data:', data);
 
     // Update summary statistics
     updateSummaryStats(data.summary);
@@ -100,7 +102,7 @@ async function loadTaggingStats() {
  * Update summary statistics cards
  */
 function updateSummaryStats(summary) {
-  document.getElementById("totalTopics").textContent = summary.total_topics;
+  document.getElementById("totalSheets").textContent = summary.total_sheets;
   document.getElementById("totalNarratives").textContent = summary.total_narratives;
   document.getElementById("totalDoneNarratives").textContent = summary.total_done_narratives;
   document.getElementById("totalMissingNarratives").textContent = summary.total_missing_narratives;
@@ -116,6 +118,8 @@ function updateSummaryStats(summary) {
  */
 function populateTable(data) {
   const tableBody = document.getElementById("managementTableBody");
+  
+  console.log('Populating table with data:', data);
   
   if (data.length === 0) {
     tableBody.innerHTML = `
@@ -136,6 +140,7 @@ function populateTable(data) {
   });
 
   const rows = data.map(item => {
+    console.log('Processing table row item:', item);
     const missingDisplay = item.missing > 0 ? item.missing : '';
     
     // Generate styled numbers - show empty cells for zero values
@@ -169,6 +174,7 @@ function populateTable(data) {
     `;
   }).join('');
 
+  console.log('Generated table rows HTML:', rows);
   tableBody.innerHTML = rows;
 }
 
@@ -209,7 +215,7 @@ let formLineCounter = 1;
 /**
  * Show the Add Narrative modal
  */
-function showAddNarrativeModal() {
+async function showAddNarrativeModal() {
   if (!isAuthenticated) {
     alert('Please authenticate first');
     return;
@@ -220,11 +226,20 @@ function showAddNarrativeModal() {
   // Reset to single form line
   resetFormContainer();
   
-  // Load available topics into dropdown
-  loadTopics();
+  // Always reload sheets list when modal opens to ensure fresh data
+  await loadAllTopics();
+  
+  // Load all available narratives as backup
+  await loadAllNarratives();
   
   // Clear any previous messages
   document.getElementById('addNarrativeError').style.display = 'none';
+  
+  // Focus on the first sheet input to make it ready for user interaction
+  const firstSheetInput = document.getElementById('sheet1');
+  if (firstSheetInput) {
+    setTimeout(() => firstSheetInput.focus(), 100);
+  }
 }
 
 /**
@@ -243,6 +258,9 @@ function resetFormContainer() {
   
   // Clear container and add first line
   container.innerHTML = createFormLineHTML(1);
+  
+  // Add event listeners for the first line's sheet input
+  addTopicEventListeners(1);
 }
 
 /**
@@ -251,14 +269,14 @@ function resetFormContainer() {
 function createFormLineHTML(lineId, copyTopic = '', copyNarrative = '') {
   return `
     <div class="narrative-form-line" id="formLine${lineId}" data-line-id="${lineId}">
-      <div class="form-row" style="display: grid !important; grid-template-columns: 1.5fr 1.5fr 2fr 1fr auto !important; grid-template-rows: 1fr !important; gap: 30px !important; align-items: start !important; background: #2d2d2d !important; border: 2px solid #404040 !important; border-radius: 12px !important; padding: 20px !important; width: 100% !important; min-width: 0 !important; overflow: visible !important; flex-direction: row !important; flex-wrap: nowrap !important; margin-bottom: 20px !important;">
+      <div class="form-row" style="display: grid !important; grid-template-columns: 1.5fr 2fr 2fr 1fr auto !important; grid-template-rows: 1fr !important; gap: 30px !important; align-items: start !important; background: #2d2d2d !important; border: 2px solid #404040 !important; border-radius: 12px !important; padding: 20px !important; width: 100% !important; min-width: 0 !important; overflow: visible !important; flex-direction: row !important; flex-wrap: nowrap !important; margin-bottom: 20px !important;">
         <div class="form-field" style="grid-column: 1 !important; grid-row: 1 !important; display: flex !important; flex-direction: column !important; min-width: 0 !important; width: 100% !important;">
-          <label for="sheet${lineId}">Topic:</label>
-          <input type="text" id="sheet${lineId}" class="form-input topic-input" placeholder="Enter Topic" value="${copyTopic}" list="topicsList"/>
+          <label for="sheet${lineId}">Sheet:</label>
+          <input type="text" id="sheet${lineId}" class="form-input topic-input" placeholder="Enter or select Sheet" value="${copyTopic}" list="topicsList" autocomplete="off"/>
         </div>
         <div class="form-field" style="grid-column: 2 !important; grid-row: 1 !important; display: flex !important; flex-direction: column !important; min-width: 0 !important; width: 100% !important;">
           <label for="narrative${lineId}">Narrative:</label>
-          <input type="text" id="narrative${lineId}" class="form-input narrative-input" placeholder="Enter narrative text" value="${copyNarrative}" />
+          <input type="text" id="narrative${lineId}" class="form-input narrative-input" placeholder="Enter or select narrative text" value="${copyNarrative}" list="narrativesList" autocomplete="off"/>
         </div>
         <div class="form-field form-field-story" style="grid-column: 3 !important; grid-row: 1 !important; display: flex !important; flex-direction: column !important; min-width: 0 !important; width: 100% !important;">
           <label for="story${lineId}">Story:</label>
@@ -285,13 +303,13 @@ function createFormLineHTML(lineId, copyTopic = '', copyNarrative = '') {
 }
 
 /**
- * Add a new form line, copying topic and narrative if filled
+ * Add a new form line, copying sheet and narrative if filled
  */
 function addNewFormLine(sourceLineId) {
   formLineCounter++;
   const newLineId = formLineCounter;
   
-  // Get values to copy from source line - Topic and Narrative only
+  // Get values to copy from source line - Sheet and Narrative
   const sourceTopic = document.getElementById(`sheet${sourceLineId}`).value.trim();
   const sourceNarrative = document.getElementById(`narrative${sourceLineId}`).value.trim();
   
@@ -307,6 +325,9 @@ function addNewFormLine(sourceLineId) {
   const container = document.getElementById('narrativeFormContainer');
   container.insertAdjacentHTML('beforeend', newLineHTML);
   
+  // Add event listeners for the new sheet input
+  addTopicEventListeners(newLineId);
+  
   // Update edit button appearance if custom prompt was copied
   if (customPrompts[newLineId]) {
     const editBtn = document.querySelector(`[data-line-id="${newLineId}"].edit-prompt-btn`);
@@ -314,7 +335,7 @@ function addNewFormLine(sourceLineId) {
     editBtn.style.background = '#357abd'; // Darker blue to indicate custom
   }
   
-  // Focus on the story field of the new line (since Topic and Narrative are pre-filled)
+  // Focus on the story field of the new line (since Sheet and Narrative are pre-filled)
   document.getElementById(`story${newLineId}`).focus();
 }
 
@@ -328,13 +349,13 @@ async function addSingleNarrative(lineId) {
   errorDiv.style.display = 'none';
   
   // Get form values for this specific line
-  const sheet = document.getElementById(`sheet${lineId}`).value.trim();
+  const topic = document.getElementById(`sheet${lineId}`).value.trim();
   const narrative = document.getElementById(`narrative${lineId}`).value.trim();
   const story = document.getElementById(`story${lineId}`).value.trim();
   const link = document.getElementById(`link${lineId}`).value.trim();
   
   // Validate required fields
-  if (!sheet || !narrative || !story || !link) {
+  if (!topic || !narrative || !story || !link) {
     errorDiv.innerHTML = '<div class="error">Please fill in all fields</div>';
     errorDiv.style.display = 'block';
     return;
@@ -361,7 +382,7 @@ async function addSingleNarrative(lineId) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        Sheet: sheet,
+        Sheet: topic,
         Narrative: narrative,
         Story: story,
         Link: link
@@ -782,33 +803,214 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 /**
- * Load all available topics into the dropdown
+ * Load all available sheets for the sheet dropdown
  */
-async function loadTopics() {
+async function loadAllTopics() {
   try {
+    console.log('Loading all sheets...');
     const response = await fetch('/topics');
     if (response.ok) {
       const data = await response.json();
-      const topicsList = document.getElementById('topicsList');
       
-      // Clear existing options
+      console.log('Sheets received:', data.topics);
+      
+      // Ensure sheets datalist exists
+      let topicsList = document.getElementById('topicsList');
+      if (!topicsList) {
+        console.log('Creating new sheets datalist element');
+        topicsList = document.createElement('datalist');
+        topicsList.id = 'topicsList';
+        // Add it to the modal body so it's always available
+        const modalBody = document.querySelector('#addNarrativeModal .modal-body');
+        if (modalBody) {
+          modalBody.appendChild(topicsList);
+        } else {
+          console.error('Modal body not found');
+          return;
+        }
+      }
+      
+      // Always clear and rebuild the options to ensure fresh data
       topicsList.innerHTML = '';
       
-      // Add options for each topic
+      // Add options for each sheet
       data.topics.forEach(topic => {
         const option = document.createElement('option');
         option.value = topic;
+        option.textContent = topic; // Ensure text content is set
         topicsList.appendChild(option);
+        console.log('Added sheet option:', topic);
       });
+      
+      console.log('All sheets loaded successfully, total options:', topicsList.children.length);
+      
+      // Store the topics globally for easy access
+      window.availableSheets = data.topics;
+      
     } else {
-      console.error('Failed to load topics:', response.statusText);
+      console.error('Failed to load sheets:', response.statusText);
     }
   } catch (error) {
-    console.error('Error loading topics:', error);
+    console.error('Error loading sheets:', error);
   }
 }
 
-// Load topics on initial page load
+/**
+ * Load narratives for a specific sheet
+ */
+async function loadNarratives(topic) {
+  if (!topic || topic.trim() === '') {
+    return;
+  }
+  
+  try {
+    console.log('Loading narratives for sheet:', topic);
+    const response = await fetch(`/narratives/${encodeURIComponent(topic)}`);
+    if (response.ok) {
+      const data = await response.json();
+      
+      console.log('Narratives received for sheet:', topic, data.narratives);
+      
+      // Ensure narratives datalist exists
+      let narrativesList = document.getElementById('narrativesList');
+      if (!narrativesList) {
+        console.log('Creating new narratives datalist element');
+        narrativesList = document.createElement('datalist');
+        narrativesList.id = 'narrativesList';
+        // Add it to the modal body so it's always available
+        const modalBody = document.querySelector('#addNarrativeModal .modal-body');
+        if (modalBody) {
+          modalBody.appendChild(narrativesList);
+        } else {
+          console.error('Modal body not found');
+          return;
+        }
+      }
+      
+      // Clear existing options
+      narrativesList.innerHTML = '';
+      
+      // Add options for each narrative
+      data.narratives.forEach(narrative => {
+        const option = document.createElement('option');
+        option.value = narrative;
+        narrativesList.appendChild(option);
+        console.log('Added narrative option for sheet:', narrative);
+      });
+      
+      console.log('Narratives loaded successfully for sheet:', topic, 'total options:', narrativesList.children.length);
+    } else {
+      console.error('Failed to load narratives for sheet:', topic, response.statusText);
+    }
+  } catch (error) {
+    console.error('Error loading narratives for sheet:', topic, error);
+  }
+}
+
+/**
+ * Load all available narratives
+ */
+async function loadAllNarratives() {
+  try {
+    console.log('Loading all narratives...');
+    const response = await fetch('/all-records');
+    if (response.ok) {
+      const data = await response.json();
+      
+      // Extract unique narratives from all records
+      const narratives = [...new Set(data.map(record => record.Narrative).filter(narrative => narrative && narrative.trim() !== ''))];
+      console.log('All narratives received:', narratives);
+      
+      // Ensure narratives datalist exists
+      let narrativesList = document.getElementById('narrativesList');
+      if (!narrativesList) {
+        console.log('Creating new narratives datalist element');
+        narrativesList = document.createElement('datalist');
+        narrativesList.id = 'narrativesList';
+        // Add it to the modal body so it's always available
+        const modalBody = document.querySelector('#addNarrativeModal .modal-body');
+        if (modalBody) {
+          modalBody.appendChild(narrativesList);
+        } else {
+          console.error('Modal body not found');
+          return;
+        }
+      }
+      
+      // Clear existing options
+      narrativesList.innerHTML = '';
+      
+      // Add options for each narrative
+      narratives.forEach(narrative => {
+        const option = document.createElement('option');
+        option.value = narrative;
+        narrativesList.appendChild(option);
+        console.log('Added narrative option:', narrative);
+      });
+      
+      console.log('All narratives loaded successfully, total options:', narrativesList.children.length);
+    } else {
+      console.error('Failed to load narratives:', response.statusText);
+    }
+  } catch (error) {
+    console.error('Error loading narratives:', error);
+  }
+}
+
+/**
+ * Add event listeners to a form line for sheet selection
+ */
+function addTopicEventListeners(lineId) {
+  const topicInput = document.getElementById(`sheet${lineId}`);
+  if (topicInput) {
+    let timeoutId;
+    
+    // Handle input change with debouncing to avoid interfering with dropdown
+    topicInput.addEventListener('input', function() {
+      const selectedTopic = this.value.trim();
+      
+      // Clear previous timeout
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      
+      // Only load narratives if there's a complete sheet name and after a short delay
+      if (selectedTopic.length > 0) {
+        timeoutId = setTimeout(() => {
+          // Check if the value is still the same and appears to be a complete selection
+          if (this.value.trim() === selectedTopic) {
+            loadNarratives(selectedTopic);
+          }
+        }, 500); // Wait 500ms before loading narratives
+      }
+    });
+    
+    // Handle change event (when user definitely selects from dropdown)
+    topicInput.addEventListener('change', function() {
+      const selectedTopic = this.value.trim();
+      if (selectedTopic) {
+        // Clear any pending timeout
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+        // Load narratives immediately on selection
+        loadNarratives(selectedTopic);
+      }
+    });
+    
+    // Handle focus event to ensure the full list is available
+    topicInput.addEventListener('focus', function() {
+      // Clear any pending timeout when focusing
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      // Make sure the sheets list is fully loaded
+      loadAllTopics();
+    });
+  }
+}
+
+// Load all topics on initial page load
 document.addEventListener('DOMContentLoaded', function() {
-  loadTopics();
+  loadAllTopics();
 });

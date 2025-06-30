@@ -179,11 +179,10 @@ def add_narrative(narrative_data: AddNarrativeRequest):
                 status_code=400, detail="Record with this link already exists"
             )
 
-        # Add the record
-        db.add_new_record(record_dict)
+        # Add the record to the specific sheet
+        db.add_record_to_specific_sheet(record_dict)
 
-        # Save changes to Google Sheets (this will create new sheet if needed)
-        db.save_changes()
+        logger.info(f"Successfully added narrative to sheet '{narrative_data.Sheet}': {narrative_data.Narrative}")
 
         return {
             "message": "Narrative added successfully",
@@ -195,6 +194,7 @@ def add_narrative(narrative_data: AddNarrativeRequest):
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Error adding narrative: {str(e)}")
         raise HTTPException(
             status_code=500, detail=f"Failed to add narrative: {str(e)}"
         )
@@ -655,7 +655,7 @@ def test_openai_connection():
 def refresh_data():
     """Refresh data from Google Sheets (useful after manual edits)"""
     try:
-        db.load_data()
+        db.load_all_sheets_data()
         return {
             "message": "Data refreshed successfully",
             "total_records": len(db.df),
@@ -675,6 +675,25 @@ def get_all_topics():
     except Exception as e:
         logger.error(f"Error getting topics: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to get topics: {str(e)}")
+
+
+@app.get("/narratives/{topic}")
+def get_narratives_by_topic(topic: str):
+    """Get all narratives for a specific topic"""
+    try:
+        # Filter dataframe by the specified topic/sheet
+        topic_df = db.df[db.df["Sheet"] == topic]
+        
+        if topic_df.empty:
+            return {"narratives": []}
+        
+        # Get unique narratives for this topic
+        narratives = topic_df["Narrative"].dropna().unique().tolist()
+        
+        return {"narratives": narratives}
+    except Exception as e:
+        logger.error(f"Error getting narratives for topic {topic}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get narratives: {str(e)}")
 
 
 if __name__ == "__main__":
