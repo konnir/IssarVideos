@@ -13,8 +13,9 @@ import sys
 import time
 from pathlib import Path
 from unittest.mock import patch
+import os
 
-# Add the project root to the Python path
+# Add the project root to Python path
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -41,6 +42,121 @@ class TestAllAPIEndpoints:
             requests.get(f"{self.base_url}/health", timeout=2)
         except requests.exceptions.ConnectionError:
             pytest.skip("Server not running - skipping API tests")
+
+    # Google Sheets Integration Tests
+
+    def test_google_sheets_environment_variables(self):
+        """Test that required Google Sheets environment variables are set"""
+        credentials_path = os.getenv("GOOGLE_SHEETS_CREDENTIALS_PATH")
+        sheet_id = os.getenv("GOOGLE_SHEETS_ID")
+
+        # These should be set for the application to work (no Excel fallback)
+        assert (
+            credentials_path is not None
+        ), "GOOGLE_SHEETS_CREDENTIALS_PATH must be set"
+        assert sheet_id is not None, "GOOGLE_SHEETS_ID must be set"
+
+        # If credentials path is set, verify the file exists
+        if credentials_path:
+            assert os.path.exists(
+                credentials_path
+            ), f"Credentials file not found: {credentials_path}"
+
+    def test_google_sheets_connection(self):
+        """Test Google Sheets client connection"""
+        try:
+            from clients.sheets_client import SheetsClient
+
+            credentials_path = os.getenv("GOOGLE_SHEETS_CREDENTIALS_PATH")
+            sheet_id = os.getenv("GOOGLE_SHEETS_ID")
+
+            if not credentials_path or not sheet_id:
+                pytest.skip("Google Sheets credentials not configured")
+
+            # Test client initialization
+            client = SheetsClient(credentials_path, sheet_id)
+
+            # Test connection validation
+            is_valid = client.validate_connection()
+            assert is_valid, "Google Sheets connection should be valid"
+
+            # Test listing worksheets
+            worksheets = client.get_all_worksheets()
+            assert isinstance(worksheets, list), "Should return list of worksheets"
+
+            # If worksheets exist, test reading data
+            if worksheets:
+                df = client.read_sheet_to_dataframe(worksheets[0])
+                assert df is not None, "Should return a DataFrame"
+
+        except ImportError:
+            pytest.skip("Google Sheets client not available")
+        except Exception as e:
+            pytest.fail(f"Google Sheets connection test failed: {str(e)}")
+
+    def test_google_sheets_database_operations(self):
+        """Test Google Sheets database operations"""
+        try:
+            from db.sheets_narratives_db import SheetsNarrativesDB
+
+            credentials_path = os.getenv("GOOGLE_SHEETS_CREDENTIALS_PATH")
+            sheet_id = os.getenv("GOOGLE_SHEETS_ID")
+
+            if not credentials_path or not sheet_id:
+                pytest.skip("Google Sheets credentials not configured")
+
+            # Test database initialization
+            db = SheetsNarrativesDB(credentials_path, sheet_id)
+
+            # Test getting all records
+            records = db.get_all_records()
+            assert isinstance(records, list), "Should return list of records"
+
+            # Test getting random not fully tagged row (if records exist)
+            if records:
+                random_record = db.get_random_not_fully_tagged_row()
+                if random_record:  # May be None if all are tagged
+                    assert isinstance(random_record, dict), "Should return dict or None"
+                    assert "Link" in random_record, "Should have Link field"
+                    assert "Narrative" in random_record, "Should have Narrative field"
+
+        except ImportError:
+            pytest.skip("Google Sheets database not available")
+        except Exception as e:
+            pytest.fail(f"Google Sheets database test failed: {str(e)}")
+
+    def test_refresh_data_endpoint(self):
+        """Test /refresh-data endpoint for refreshing Google Sheets data"""
+        self.skip_if_server_not_running()
+
+        response = requests.post(f"{self.base_url}/refresh-data")
+        assert response.status_code == 200
+
+        data = response.json()
+        assert "message" in data
+        assert "total_records" in data
+        assert "timestamp" in data
+        assert "refreshed successfully" in data["message"].lower()
+        assert isinstance(data["total_records"], int)
+        assert data["total_records"] >= 0
+
+    def test_openai_client_env_loading(self):
+        """Test OpenAI client environment variable loading"""
+        try:
+            from clients.openai_client import OpenAIClient
+
+            # Test that client can be initialized (will fail if no API key)
+            try:
+                client = OpenAIClient()
+                # If successful, API key should be loaded
+                assert client.api_key is not None, "API key should be loaded"
+                assert len(client.api_key) > 0, "API key should not be empty"
+            except ValueError as e:
+                # This is expected if OPENAI_API_KEY is not set
+                assert "API key" in str(e), "Should fail with API key error"
+
+        except ImportError:
+            pytest.skip("OpenAI client not available")
 
     # GET Endpoint Tests
 
@@ -193,22 +309,6 @@ class TestAllAPIEndpoints:
             # Tagger_1 should not be empty for tagged records
             assert record["Tagger_1"] is not None
             assert record["Tagger_1"] != ""
-
-    def test_download_excel_endpoint(self):
-        """Test /download-excel endpoint"""
-        self.skip_if_server_not_running()
-
-        response = requests.get(f"{self.base_url}/download-excel")
-        assert response.status_code == 200
-
-        # Verify it's an Excel file
-        content_type = response.headers.get("content-type", "")
-        assert "spreadsheet" in content_type or "excel" in content_type
-
-        # Verify content disposition header
-        content_disposition = response.headers.get("content-disposition", "")
-        assert "attachment" in content_disposition
-        assert "narratives_report.xlsx" in content_disposition
 
     def test_tagging_management_endpoint(self):
         """Test /tagging-management endpoint (serves tagging-management.html)"""

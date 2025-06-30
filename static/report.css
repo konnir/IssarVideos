@@ -109,23 +109,6 @@
   border-top: 1px solid #333;
 }
 
-.download-button {
-  background-color: #2196f3;
-  color: #ffffff;
-  border: none;
-  padding: 15px 30px;
-  border-radius: 8px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  text-decoration: none;
-  display: inline-block;
-}
-
-.download-button:hover {
-  background-color: #1976d2;
-}
-
 .stats-info {
   display: flex;
   justify-content: space-around;
@@ -237,4 +220,49 @@
   background-color: #1565c0;
   text-decoration: none;
   color: #ffffff;
+}
+
+/* Refresh buttons */
+.refresh-buttons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+  justify-content: center;
+}
+
+.refresh-button {
+  background-color: #007bff;
+  color: #ffffff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.refresh-button:hover {
+  background-color: #0056b3;
+  transform: translateY(-1px);
+}
+
+.refresh-button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.refresh-button:active {
+  transform: translateY(0);
+}
+
+#refreshDataBtn {
+  background-color: #28a745;
+}
+
+#refreshDataBtn:hover {
+  background-color: #1e7e34;
 }

@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import pandas as pd
 import os
-from typing import List
+from typing import List, Dict, Any
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 from data.video_record import (
@@ -22,7 +22,7 @@ from data.video_record import (
     VideoSearchRequest,
     VideoSearchResponse,
 )
-from db.narratives_db import NarrativesDB
+from db.sheets_narratives_db import SheetsNarrativesDB
 from llm.get_story import StoryGenerator
 from llm.get_videos import VideoSearcher
 
@@ -52,21 +52,32 @@ def health_check():
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 PORT = int(os.getenv("PORT", 8000))
 
-# Use environment variable for database path, default to production path
-DB_PATH = os.getenv("NARRATIVES_DB_PATH", "static/db/narratives_db.xlsx")
+# Google Sheets configuration (required)
+GOOGLE_SHEETS_CREDENTIALS = os.getenv("GOOGLE_SHEETS_CREDENTIALS_PATH")
+GOOGLE_SHEETS_ID = os.getenv(
+    "GOOGLE_SHEETS_ID", "1OYF8OH41MiZUEtKA5y8O-vklnVPpYmZUrnNxiIWtryU"
+)
 
-# Production database protection: log which database is being used
-if "test" in DB_PATH.lower() or "temp" in DB_PATH.lower():
-    print(f"🧪 Using test database: {DB_PATH}")
-    print("✅ Safe for testing - production database protected")
+# Validate required environment variables
+if not GOOGLE_SHEETS_CREDENTIALS:
+    raise ValueError(
+        "GOOGLE_SHEETS_CREDENTIALS_PATH environment variable is required. "
+        "Please set it to the path of your service account JSON file."
+    )
+
+# Database initialization - Google Sheets only
+print(f"📊 Using Google Sheets database: {GOOGLE_SHEETS_ID}")
+if ENVIRONMENT == "production":
+    print("🚀 PRODUCTION MODE: Running on Cloud Run with Google Sheets")
 else:
-    print(f"📊 Using production database: {DB_PATH}")
-    if ENVIRONMENT == "production":
-        print("🚀 PRODUCTION MODE: Running on Cloud Run")
-    else:
-        print("⚠️  PRODUCTION MODE: Changes will be saved to the main database!")
+    print("⚠️  DEVELOPMENT MODE: Changes will be saved to Google Sheets!")
 
-db = NarrativesDB(DB_PATH)
+try:
+    db = SheetsNarrativesDB(GOOGLE_SHEETS_CREDENTIALS, GOOGLE_SHEETS_ID)
+    print("✅ Google Sheets connection successful")
+except Exception as e:
+    print(f"❌ Failed to connect to Google Sheets: {str(e)}")
+    raise RuntimeError(f"Unable to initialize Google Sheets database: {str(e)}")
 
 
 @app.get("/random-narrative", response_model=VideoRecord)
@@ -74,7 +85,9 @@ def get_random_narrative():
     random_row = db.get_random_not_fully_tagged_row()
     if random_row is None:
         raise HTTPException(status_code=404, detail="No untagged narratives found")
-    video_record = VideoRecord(**random_row)
+    # Clean the data for Pydantic validation
+    cleaned_row = _clean_row_dict(random_row)
+    video_record = VideoRecord(**cleaned_row)
     return video_record
 
 
@@ -96,18 +109,18 @@ def update_record(link: str, updated_data: VideoRecordUpdate):
     if not success:
         raise HTTPException(
             status_code=404, detail=f"Record not found for link: {decoded_link}"
-        )
-
-    # Save changes to the Excel file
-    try:
-        db.save_changes()
-        return {
-            "message": "Record updated successfully",
-            "updated_fields": list(update_dict.keys()),
-            "link": decoded_link,
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to save changes: {str(e)}")
+        )  # Save changes to Google Sheets
+        try:
+            db.save_changes()
+            return {
+                "message": "Record updated successfully",
+                "updated_fields": list(update_dict.keys()),
+                "link": decoded_link,
+            }
+        except Exception as e:
+            raise HTTPException(
+                status_code=500, detail=f"Failed to save changes: {str(e)}"
+            )
 
 
 @app.post("/add-record", response_model=VideoRecord)
@@ -127,11 +140,12 @@ def add_record(record_data: VideoRecordCreate):
         # Add the record
         db.add_new_record(record_dict)
 
-        # Save changes to the Excel file
+        # Save changes to Google Sheets
         db.save_changes()
 
         # Return the created record
-        created_record = VideoRecord(**record_dict)
+        cleaned_record_dict = _clean_row_dict(record_dict)
+        created_record = VideoRecord(**cleaned_record_dict)
         return created_record
 
     except HTTPException:
@@ -164,7 +178,7 @@ def add_narrative(narrative_data: AddNarrativeRequest):
         # Add the record
         db.add_new_record(record_dict)
 
-        # Save changes to the Excel file (this will create new sheet if needed)
+        # Save changes to Google Sheets (this will create new sheet if needed)
         db.save_changes()
 
         return {
@@ -182,6 +196,30 @@ def add_narrative(narrative_data: AddNarrativeRequest):
         )
 
 
+def _clean_row_dict(row_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """Clean row dictionary for Pydantic validation"""
+    cleaned = {}
+    for key, value in row_dict.items():
+        if pd.isna(value):
+            cleaned[key] = None
+        elif key == "Tagger_1_Result":
+            # Handle Tagger_1_Result specifically - convert empty strings to None
+            if value == "" or value is None:
+                cleaned[key] = None
+            else:
+                try:
+                    cleaned[key] = int(value)
+                except (ValueError, TypeError):
+                    cleaned[key] = None
+        else:
+            # For string fields, convert empty strings to None if appropriate
+            if value == "":
+                cleaned[key] = None if key in ["Tagger_1"] else value
+            else:
+                cleaned[key] = value
+    return cleaned
+
+
 @app.get("/all-records", response_model=List[VideoRecord])
 def get_all_records():
     """Get all video records from the database"""
@@ -191,10 +229,8 @@ def get_all_records():
     records = []
     for _, row in db.df.iterrows():
         row_dict = row.to_dict()
-        # Convert NaN values to None
-        for key, value in row_dict.items():
-            if pd.isna(value):
-                row_dict[key] = None
+        # Clean up the data for Pydantic validation
+        row_dict = _clean_row_dict(row_dict)
         records.append(VideoRecord(**row_dict))
 
     return records
@@ -215,10 +251,8 @@ def get_records_by_sheet(sheet_name: str):
     records = []
     for _, row in filtered_df.iterrows():
         row_dict = row.to_dict()
-        # Convert NaN values to None
-        for key, value in row_dict.items():
-            if pd.isna(value):
-                row_dict[key] = None
+        # Clean up the data for Pydantic validation
+        row_dict = _clean_row_dict(row_dict)
         records.append(VideoRecord(**row_dict))
 
     return records
@@ -232,7 +266,9 @@ def get_random_narrative_for_user(username: str):
         raise HTTPException(
             status_code=404, detail="No untagged narratives found for this user"
         )
-    video_record = VideoRecord(**random_row)
+    # Clean the data for Pydantic validation
+    cleaned_row = _clean_row_dict(random_row)
+    video_record = VideoRecord(**cleaned_row)
     return video_record
 
 
@@ -287,7 +323,7 @@ def tag_record(request: TagRecordRequest):
             detail=f"Record not found or already fully tagged: {decoded_link}",
         )
 
-    # Save changes to the Excel file
+    # Save changes to Google Sheets
     try:
         db.save_changes()
         return {
@@ -358,29 +394,6 @@ def get_tagged_records():
         records.append(row_dict)
 
     return records
-
-
-@app.get("/download-excel")
-def download_excel():
-    """Download the complete Excel file"""
-    try:
-        excel_bytes = db.get_excel_bytes()
-        from fastapi.responses import Response
-
-        headers = {
-            "Content-Disposition": 'attachment; filename="narratives_report.xlsx"',
-            "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        }
-
-        return Response(
-            content=excel_bytes,
-            headers=headers,
-            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to generate Excel file: {str(e)}"
-        )
 
 
 @app.get("/report")
@@ -609,7 +622,7 @@ def generate_story_custom_prompt(request: CustomPromptStoryRequest):
 #         raise HTTPException(
 #             status_code=500,
 #             detail=f"Failed to search videos: {str(e)}",
-        )
+# )
 
 
 @app.get("/test-openai-connection")
@@ -632,6 +645,20 @@ def test_openai_connection():
 
     except Exception as e:
         return {"connected": False, "message": f"OpenAI connection error: {str(e)}"}
+
+
+@app.post("/refresh-data")
+def refresh_data():
+    """Refresh data from Google Sheets (useful after manual edits)"""
+    try:
+        db.load_data()
+        return {
+            "message": "Data refreshed successfully",
+            "total_records": len(db.df),
+            "timestamp": pd.Timestamp.now().isoformat(),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to refresh data: {str(e)}")
 
 
 if __name__ == "__main__":

@@ -214,6 +214,117 @@ async function loadTaggedRecords() {
   }
 }
 
+// Refresh functions
+async function refreshData() {
+  const refreshDataBtn = document.getElementById("refreshDataBtn");
+  const originalText = refreshDataBtn.textContent;
+  
+  try {
+    refreshDataBtn.textContent = "🔄 Refreshing...";
+    refreshDataBtn.disabled = true;
+    
+    const response = await apiCall("/refresh-data", {
+      method: "POST"
+    });
+    
+    const result = await response.json();
+    
+    // Show success message
+    showRefreshMessage(`✅ ${result.message} (${result.total_records} records)`, 'success');
+    
+    // Reload the report data
+    if (isAuthenticated) {
+      loadTaggedRecords();
+    }
+    
+  } catch (error) {
+    showRefreshMessage(`❌ Failed to refresh data: ${error.message}`, 'error');
+  } finally {
+    refreshDataBtn.textContent = originalText;
+    refreshDataBtn.disabled = false;
+  }
+}
+
+async function refreshApp() {
+  const refreshAppBtn = document.getElementById("refreshAppBtn");
+  const originalText = refreshAppBtn.textContent;
+  
+  try {
+    refreshAppBtn.textContent = "♻️ Refreshing...";
+    refreshAppBtn.disabled = true;
+    
+    const response = await apiCall("/refresh-app", {
+      method: "POST"
+    });
+    
+    const result = await response.json();
+    
+    // Show success message
+    showRefreshMessage(`✅ ${result.message} (${result.total_records} records)`, 'success');
+    
+    // Reload the entire page to ensure fresh state
+    setTimeout(() => {
+      if (isAuthenticated) {
+        loadTaggedRecords();
+      }
+    }, 1000);
+    
+  } catch (error) {
+    showRefreshMessage(`❌ Failed to refresh app: ${error.message}`, 'error');
+  } finally {
+    refreshAppBtn.textContent = originalText;
+    refreshAppBtn.disabled = false;
+  }
+}
+
+function showRefreshMessage(message, type) {
+  // Create or update message element
+  let messageEl = document.getElementById("refreshMessage");
+  if (!messageEl) {
+    messageEl = document.createElement("div");
+    messageEl.id = "refreshMessage";
+    messageEl.style.cssText = `
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 4px;
+      font-weight: bold;
+    `;
+    
+    // Insert after refresh buttons
+    const refreshButtons = document.querySelector(".refresh-buttons");
+    refreshButtons.parentNode.insertBefore(messageEl, refreshButtons.nextSibling);
+  }
+  
+  messageEl.className = type;
+  messageEl.textContent = message;
+  
+  if (type === 'success') {
+    messageEl.style.cssText += `
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    `;
+  } else {
+    messageEl.style.cssText += `
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    `;
+  }
+  
+  // Auto-hide after 5 seconds
+  setTimeout(() => {
+    if (messageEl) {
+      messageEl.style.opacity = '0';
+      setTimeout(() => {
+        if (messageEl && messageEl.parentNode) {
+          messageEl.parentNode.removeChild(messageEl);
+        }
+      }, 300);
+    }
+  }, 5000);
+}
+
 // Allow Enter key to submit authentication
 document.addEventListener("DOMContentLoaded", function () {
   const authInputs = document.querySelectorAll("#authUsername, #authPassword");

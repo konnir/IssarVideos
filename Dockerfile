@@ -24,7 +24,7 @@ RUN pip install poetry
 RUN poetry config virtualenvs.create false
 
 # Install dependencies
-RUN poetry install --only=main --no-dev
+RUN poetry install --only main --no-dev --version 1.8.5
 
 # Copy application code
 COPY . .

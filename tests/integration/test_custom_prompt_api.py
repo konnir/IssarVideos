@@ -12,24 +12,7 @@ from fastapi.testclient import TestClient
 from unittest.mock import patch, Mock
 
 # Set test environment before importing main
-os.environ["NARRATIVES_DB_PATH"] = "test_temp_db.xlsx"
-
-# Create test database if it doesn't exist
-test_db_path = "test_temp_db.xlsx"
-if not Path(test_db_path).exists():
-    # Create a minimal test database
-    test_data = pd.DataFrame(
-        {
-            "id": [1, 2],
-            "sheet": ["Test Sheet 1", "Test Sheet 2"],
-            "narrative": ["Test narrative 1", "Test narrative 2"],
-            "story": ["", ""],
-            "link": ["", ""],
-            "user_tagged": [False, False],
-            "ai_tagged": [False, False],
-        }
-    )
-    test_data.to_excel(test_db_path, index=False)
+# Note: Tests now use Google Sheets integration instead of local database files
 
 from main import app
 
@@ -353,14 +336,8 @@ class TestCustomPromptAPIEndpoints:
 
     @classmethod
     def teardown_class(cls):
-        """Clean up test database after all tests"""
-        test_db_path = "test_temp_db.xlsx"
-        if Path(test_db_path).exists():
-            try:
-                os.remove(test_db_path)
-            except (OSError, PermissionError):
-                # Ignore cleanup errors
-                pass
+        """Clean up after all tests - Google Sheets tests don't require file cleanup"""
+        pass
 
 
 if __name__ == "__main__":

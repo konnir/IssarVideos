@@ -1,22 +1,24 @@
 # Video Narratives Application
 
-A comprehensive FastAPI-based platform for managing video narratives and generating AI-powered story concepts for content creators. This application combines manual narrative management with OpenAI-powered story generation capabilities.
+A comprehensive FastAPI-based platform for managing video narratives with Google Sheets integration and AI-powered story generation capabilities for content creators.
 
 ## 🚀 Features
 
 ### Core Functionality
 
-- **Video Narrative Management**: Store and organize video narratives with associated metadata
+- **Google Sheets Integration**: Store and manage video narratives directly in Google Sheets
+- **Real-time Data Sync**: Refresh data from Google Sheets with manual edits
 - **User Management**: Track users and their contributions to the narrative database
 - **Tagging System**: Collaborative tagging system for narrative classification
 - **Leaderboard**: Track top contributors and user statistics
-- **Report Generation**: Export data and generate comprehensive reports
+- **Report Dashboard**: View comprehensive statistics and data insights
 
 ### 🤖 AI-Powered Story Generation
 
 - **Story Generation**: Generate compelling 2-3 sentence story concepts from narrative inputs
 - **Story Variants**: Create multiple story variations for the same narrative
 - **Story Refinement**: Improve existing stories based on specific feedback
+- **Custom Prompts**: Use custom prompts for specialized story generation
 - **Multiple Styles**: Support for various storytelling styles (dramatic, suspenseful, comedic, etc.)
 - **OpenAI Integration**: Powered by GPT-4 for high-quality story generation
 
@@ -24,6 +26,8 @@ A comprehensive FastAPI-based platform for managing video narratives and generat
 
 - Python 3.8+
 - Poetry (for dependency management)
+- Google Cloud Project with Sheets API enabled
+- Service Account with Google Sheets access
 - OpenAI API Key (for story generation features)
 
 ## 🛠️ Installation
@@ -41,7 +45,19 @@ cd IssarVideos
 poetry install
 ```
 
-3. **Set up environment variables**:
+3. **Set up Google Sheets Integration**:
+
+   a. Create a Google Cloud Project and enable the Google Sheets API
+   b. Create a Service Account and download the JSON credentials file
+   c. Share your Google Sheet with the service account email
+   d. Set the environment variables:
+
+   ```bash
+   export GOOGLE_SHEETS_CREDENTIALS_PATH="/path/to/your/credentials.json"
+   export GOOGLE_SHEETS_ID="your_google_sheet_id"
+   ```
+
+4. **Set up OpenAI API Key**:
 
    You have multiple options to configure your OpenAI API key:
 
@@ -49,7 +65,6 @@ poetry install
 
    ```bash
    export OPENAI_API_KEY="your-openai-api-key-here"
-   export NARRATIVES_DB_PATH="path/to/your/database.xlsx"  # Optional
    ```
 
    **Option 2: .env File in Project Root**
@@ -57,7 +72,6 @@ poetry install
    ```bash
    # Create .env file in project root
    echo "OPENAI_API_KEY=your-openai-api-key-here" > .env
-   echo "NARRATIVES_DB_PATH=path/to/your/database.xlsx" >> .env
    ```
 
    **Option 3: .env File in clients Folder**
@@ -80,7 +94,7 @@ poetry install
    # Edit the file and add your actual API key
    ```
 
-4. **Activate the virtual environment**:
+5. **Activate the virtual environment**:
 
 ```bash
 poetry shell
@@ -181,34 +195,128 @@ POST /refine-story
 
 ## 🧪 Testing
 
-The application includes a comprehensive test suite covering all functionality:
+The application includes a comprehensive test suite covering Google Sheets integration, API endpoints, UI components, and AI functionality.
 
-### Run All Tests
+### Quick Start
+
+Run all tests from the project root:
 
 ```bash
-# Run the complete test suite
+# Comprehensive test suite (recommended)
 python tests/run_all_tests.py
 
-# Run specific test categories
+# With verbose output
+python tests/run_all_tests.py --verbose
+```
+
+### Test Categories
+
+The test suite is organized into three main categories:
+
+#### Unit Tests
+
+Tests for individual components and database functionality:
+
+```bash
 python tests/run_all_tests.py --type unit
+```
+
+- **Google Sheets Integration**: SheetsClient and SheetsNarrativesDB functionality
+- **Data Models**: Pydantic model validation and serialization
+- **Story Generation**: AI-powered story creation components
+- **Custom Prompts**: Custom prompt handling and validation
+
+#### Integration Tests
+
+Tests for API endpoints and system integration:
+
+```bash
 python tests/run_all_tests.py --type integration
+```
+
+- **All 21 API Endpoints**: Comprehensive endpoint testing including `/refresh-data`
+- **Authentication**: User login and authorization flows
+- **Google Sheets Operations**: Data synchronization and refresh functionality
+- **Story Generation APIs**: AI story creation endpoints
+- **Error Handling**: Proper error responses and edge cases
+
+#### UI Tests
+
+Tests for frontend components and validation:
+
+```bash
 python tests/run_all_tests.py --type ui
 ```
 
-### Story Generation Testing
+- **HTML Structure**: Page validation and element testing
+- **JavaScript Functionality**: UI interactions and AJAX calls
+- **CSS Validation**: Style consistency and responsive design
+- **Form Validation**: Input handling and user interactions
+
+### Specific Test Commands
 
 ```bash
-# Test story generation components
-python -m pytest tests/unittest/test_story_generation.py -v
+# Test Google Sheets integration specifically
+python -m pytest tests/integration/test_google_sheets_integration.py -v
 
-# Test story generation API endpoints
+# Test story generation functionality
+python -m pytest tests/unittest/test_story_generation.py -v
 python -m pytest tests/integration/test_story_generation.py -v
 
-# Test with actual OpenAI API (requires API key)
-OPENAI_API_KEY=your_key python -m pytest tests/integration/test_story_generation.py -v
+# Test custom prompt functionality
+python -m pytest tests/unittest/test_custom_prompt.py -v
+python -m pytest tests/integration/test_custom_prompt_api.py -v
+
+# Test comprehensive API coverage
+python -m pytest tests/integration/test_comprehensive_api.py -v
 ```
 
-See [tests/README.md](tests/README.md) for detailed testing documentation.
+### Test Coverage
+
+The test suite provides comprehensive coverage for:
+
+- ✅ **Google Sheets Integration**: Connection validation, data operations, environment setup
+- ✅ **All API Endpoints**: Complete coverage of all 21 FastAPI endpoints
+- ✅ **Authentication**: User login and authorization flows
+- ✅ **Database Operations**: CRUD operations with Google Sheets backend
+- ✅ **UI Components**: HTML, CSS, and JavaScript functionality
+- ✅ **Data Models**: Video record and story generation models
+- ✅ **Environment Loading**: `.env` file handling and OpenAI client configuration
+- ✅ **Story Generation**: AI-powered story creation and refinement
+- ✅ **Error Handling**: Comprehensive error scenarios and edge cases
+
+### Environment Setup for Testing
+
+Some integration tests require Google Sheets credentials:
+
+```bash
+export GOOGLE_SHEETS_CREDENTIALS_PATH="/path/to/credentials.json"
+export GOOGLE_SHEETS_ID="your_sheet_id"
+```
+
+Tests will automatically skip Google Sheets functionality if credentials are not configured.
+
+### Test Structure
+
+```
+tests/
+├── conftest.py                 # Test configuration and fixtures
+├── run_all_tests.py           # Comprehensive test runner
+├── integration/               # API and system integration tests
+│   ├── test_comprehensive_api.py    # All endpoint coverage
+│   ├── test_google_sheets_integration.py  # Google Sheets specific tests
+│   ├── test_authentication.py       # Auth and security tests
+│   ├── test_story_generation.py     # Story generation API tests
+│   └── test_custom_prompt_api.py    # Custom prompt API tests
+├── unittest/                  # Component unit tests
+│   ├── test_story_generation.py     # Story generation logic tests
+│   ├── test_custom_prompt.py        # Custom prompt handling tests
+│   └── test_data_models.py         # Pydantic model tests
+└── ui/                       # Frontend validation tests
+    ├── test_ui_validation.py        # HTML/CSS validation
+    ├── test_javascript_functionality.py  # JS functionality tests
+    └── test_edit_prompt_functionality.py # Prompt editing UI tests
+```
 
 ## 📁 Project Structure
 
@@ -219,7 +327,7 @@ IssarVideos/
 ├── data/                       # Data models and schemas
 │   └── video_record.py        # Pydantic models for API
 ├── db/                         # Database utilities
-│   └── narratives_db.py       # Database operations
+│   └── sheets_narratives_db.py # Google Sheets operations
 ├── llm/                        # AI/LLM functionality
 │   └── get_story.py           # Story generation logic
 ├── static/                     # Static web assets
@@ -236,11 +344,12 @@ IssarVideos/
 
 ### Environment Variables
 
-| Variable             | Description                         | Default             | Required |
-| -------------------- | ----------------------------------- | ------------------- | -------- |
-| `OPENAI_API_KEY`     | OpenAI API key for story generation | None                | No\*     |
-| `NARRATIVES_DB_PATH` | Path to the Excel database file     | `Issar_Videos.xlsx` | No       |
-| `PORT`               | Server port                         | `8000`              | No       |
+| Variable                         | Description                         | Default | Required |
+| -------------------------------- | ----------------------------------- | ------- | -------- |
+| `OPENAI_API_KEY`                 | OpenAI API key for story generation | None    | No\*     |
+| `GOOGLE_SHEETS_CREDENTIALS_PATH` | Path to Google service account JSON | None    | Yes      |
+| `GOOGLE_SHEETS_ID`               | Google Sheet ID for data storage    | None    | Yes      |
+| `PORT`                           | Server port                         | `8000`  | No       |
 
 \*Required for story generation functionality to work
 
@@ -356,11 +465,12 @@ refined = generator.refine_story(
    - Check your OpenAI account has sufficient credits
    - Test the connection with `/test-openai-connection`
 
-2. **Database issues**:
+2. **Google Sheets issues**:
 
-   - Ensure the Excel file exists and is readable
-   - Check file permissions
-   - Verify the database schema matches expected format
+   - Verify your service account has access to the Google Sheet
+   - Check that the Google Sheets API is enabled in your Google Cloud project
+   - Ensure the sheet ID is correct and the sheet exists
+   - Test the connection with the Google Sheets integration endpoints
 
 3. **Import errors**:
 

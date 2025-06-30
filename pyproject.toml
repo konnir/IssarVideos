@@ -16,6 +16,11 @@ pytest = "^8.3.5"
 openai = "^1.84.0"
 python-dotenv = "^1.1.0"
 selenium = "^4.33.0"
+google-auth = "^2.40.3"
+google-auth-oauthlib = "^1.2.2"
+google-auth-httplib2 = "^0.2.0"
+google-api-python-client = "^2.174.0"
+gspread = "^6.2.1"
 
 
 [build-system]

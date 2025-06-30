@@ -1,6 +1,6 @@
 # Video Narratives - Test Suite
 
-This directory contains the comprehensive test suite for the Video Narratives FastAPI application.
+This directory contains the comprehensive test suite for the Video Narratives FastAPI application with Google Sheets integration.
 
 ## Quick Start
 
@@ -15,6 +15,18 @@ cd tests
 python run_all_tests.py
 ```
 
+## Test Coverage
+
+The test suite now includes comprehensive coverage for:
+
+- **Google Sheets Integration**: Connection validation, data operations, and environment configuration
+- **API Endpoints**: All 21 FastAPI endpoints including the new `/refresh-data` endpoint
+- **Authentication**: User login and authorization flows
+- **Database Operations**: CRUD operations with Google Sheets backend
+- **UI Components**: HTML, CSS, and JavaScript functionality
+- **Data Models**: Video record and story generation models
+- **Environment Loading**: `.env` file handling and OpenAI client configuration
+
 ## Test Structure
 
 The test suite is organized into three main categories:
@@ -23,36 +35,34 @@ The test suite is organized into three main categories:
 
 ```
 tests/
-├── unittest/           # Database and component unit tests
-│   ├── test_db.py     # NarrativesDB class unit tests
+├── unittest/           # Component unit tests
 │   ├── test_story_generation.py  # Story generation component tests
-│   └── test_data_models.py       # Data model tests
+│   ├── test_data_models.py       # Data model tests
+│   └── test_custom_prompt.py     # Custom prompt functionality tests
 ├── integration/        # API integration tests
-│   ├── test_api_endpoints.py      # Core FastAPI endpoint tests
-│   ├── test_story_generation.py   # Story generation API tests
-│   └── test_comprehensive_api.py  # Comprehensive API tests
+│   ├── test_api_endpoints.py        # Core FastAPI endpoint tests
+│   ├── test_story_generation.py     # Story generation API tests
+│   ├── test_comprehensive_api.py    # Comprehensive API tests
+│   ├── test_custom_prompt_api.py    # Custom prompt API tests
+│   ├── test_authentication.py       # Authentication flow tests
+│   └── test_google_sheets_integration.py  # Google Sheets integration tests
 ├── ui/                # UI validation tests
-│   └── test_ui_validation.py  # HTML/UI component tests
+│   ├── test_ui_validation.py      # HTML/UI component tests
+│   ├── test_javascript_functionality.py  # JavaScript tests
+│   └── test_edit_prompt_functionality.py # UI prompt editing tests
 ├── run_all_tests.py   # Unified test runner
-├── conftest.py        # Test configuration and utilities
+├── conftest.py        # Test configuration and fixtures
 └── README.md          # This file
 ```
 
 ### Core Files
 
 - `run_all_tests.py` - **Main unified test runner** with comprehensive test execution
-- `conftest.py` - Test configuration and utilities (DBTestManager for safe database testing)
+- `conftest.py` - Test configuration and Google Sheets fixtures
 
 ## Test Categories
 
 ### 1. Unit Tests (`unittest/`)
-
-**Database layer tests** (`test_db.py`):
-
-- CRUD operations
-- Query methods
-- Data validation
-- Empty/null value handling
 
 **Story generation component tests** (`test_story_generation.py`):
 
@@ -66,6 +76,12 @@ tests/
 - Pydantic model validation
 - Request/response model structure
 - Field validation and constraints
+
+**Custom prompt tests** (`test_custom_prompt.py`):
+
+- Custom prompt functionality
+- Prompt template validation
+- Custom story generation flows
 
 ### 2. Integration Tests (`integration/`)
 
@@ -90,6 +106,24 @@ tests/
 - Cross-feature integration
 - Performance and reliability tests
 
+**Custom prompt API tests** (`test_custom_prompt_api.py`):
+
+- Custom prompt API endpoints
+- Custom story generation workflows
+- Request validation and error handling
+
+**Authentication tests** (`test_authentication.py`):
+
+- User authentication flows
+- Authorization validation
+- Security testing
+
+**Google Sheets integration tests** (`test_google_sheets_integration.py`):
+
+- Google Sheets API connectivity
+- Data synchronization testing
+- Environment configuration validation
+
 ### 3. UI Tests (`ui/`)
 
 **HTML/UI validation tests** (`test_ui_validation.py`):
@@ -98,6 +132,18 @@ tests/
 - Request/response validation
 - Error handling
 - Authentication flows
+
+**JavaScript functionality tests** (`test_javascript_functionality.py`):
+
+- Interactive UI components
+- Client-side validation
+- Dynamic content updates
+
+**Edit prompt functionality tests** (`test_edit_prompt_functionality.py`):
+
+- Prompt editing interface
+- Real-time prompt validation
+- UI feedback mechanisms
 
 ### 3. UI Tests (`ui/`)
 
@@ -133,7 +179,10 @@ python tests/run_all_tests.py --type ui
 
 ```bash
 # Database unit tests
-python -m pytest tests/unittest/test_db.py -v
+python -m pytest tests/unittest/test_story_generation.py -v
+
+# Custom prompt unit tests
+python -m pytest tests/unittest/test_custom_prompt.py -v
 
 # API integration tests
 python -m pytest tests/integration/test_api_endpoints.py -v
@@ -144,8 +193,23 @@ python -m pytest tests/unittest/test_story_generation.py -v
 # Story generation API tests (requires OpenAI API key for full testing)
 python -m pytest tests/integration/test_story_generation.py -v
 
+# Google Sheets integration tests
+python -m pytest tests/integration/test_google_sheets_integration.py -v
+
+# Custom prompt API tests
+python -m pytest tests/integration/test_custom_prompt_api.py -v
+
+# Authentication tests
+python -m pytest tests/integration/test_authentication.py -v
+
 # UI validation tests
 python -m pytest tests/ui/test_ui_validation.py -v
+
+# JavaScript functionality tests
+python -m pytest tests/ui/test_javascript_functionality.py -v
+
+# Edit prompt functionality tests
+python -m pytest tests/ui/test_edit_prompt_functionality.py -v
 ```
 
 ### 4. Non-Interactive Mode
@@ -156,32 +220,28 @@ python tests/run_all_tests.py --no-prompt
 
 ## Features
 
-### ✅ Safe Database Testing
+## Features
 
-- **Automatic DB Copy**: Tests use temporary copies of the production database
-- **Automatic Cleanup**: Test databases are automatically deleted after completion
-- **Production Protection**: Original database is never modified during tests
-- **Environment Validation**: Prevents accidental production database usage
+### ✅ Google Sheets Integration Testing
+
+- **API Connectivity**: Tests Google Sheets API connection and authentication
+- **Data Synchronization**: Validates data read/write operations with Google Sheets
+- **Environment Configuration**: Ensures proper setup of Google Sheets credentials and configuration
+- **Real-time Updates**: Tests the `/refresh-data` endpoint and data synchronization
 
 ### ✅ Comprehensive Coverage
 
-- **Database Operations**: CRUD operations, queries, validation
+- **Story Generation**: CRUD operations, AI integration, custom prompts
 - **API Endpoints**: All REST endpoints with proper error handling
-- **UI Components**: HTML file validation and structure checks
+- **UI Components**: HTML file validation and interactive functionality
 - **Integration Flows**: End-to-end testing with isolated test server
 
 ### ✅ Production Protection
 
-- Database path validation
-- Environment variable checks
+- Environment variable validation
+- Google Sheets credentials verification
 - Safe test isolation
 - Automatic cleanup on failures
-
-### ✅ New Data Structure Support
-
-- **Empty Value Handling**: Tests validate empty/null values instead of "Init"
-- **Story Field**: Tests include the new Story field validation
-- **Updated Tagging**: Tests validate 1-4 tag values (removed 0/"Init")
 
 ## Test Results
 
@@ -197,38 +257,39 @@ The test runner provides detailed results:
 
 ### Adding New Tests
 
-1. **Unit Tests**: Add to `tests/unittest/` for database layer testing
-2. **Integration Tests**: Add to `tests/integration/` for API endpoint testing
+1. **Unit Tests**: Add to `tests/unittest/` for component testing (story generation, data models, custom prompts)
+2. **Integration Tests**: Add to `tests/integration/` for API endpoint testing (including Google Sheets integration)
 3. **UI Tests**: Add to `tests/ui/` for frontend validation
 4. Follow the existing naming convention (`test_*`)
 5. Use the logging methods for consistent output
 6. Ensure proper cleanup and isolation
 
-### Test Database Management
+### Google Sheets Test Configuration
 
-The `DBTestManager` in `conftest.py` provides:
+The test fixtures in `conftest.py` provide:
 
-- Temporary database creation
-- Automatic cleanup
-- Safe isolation from production data
-- Support for new data structure (empty Tagger_1, Story field)
+- Google Sheets API connectivity testing
+- Environment variable validation
+- Mock data for testing scenarios
+- Safe isolation from production Google Sheets
 
 ### Best Practices
 
 - Always use the unified test runner for comprehensive testing
 - Test individual components during development
-- Verify production protection before deploying
-- Keep test data separate from production data
-- Test both empty and populated field values
+- Verify Google Sheets connectivity before deploying
+- Keep test data separate from production Google Sheets
+- Test both authenticated and unauthenticated scenarios
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **"Production database protection failed"**
+1. **"Google Sheets API connection failed"**
 
-   - Ensure `NARRATIVES_DB_PATH` points to a test database
-   - Use paths containing "test" or "temp"
+   - Verify `GOOGLE_SHEETS_CREDENTIALS_PATH` points to a valid service account JSON file
+   - Ensure `GOOGLE_SHEETS_ID` is set to a valid Google Sheet ID
+   - Check that the service account has access to the specified Google Sheet
 
 2. **"Test server not accessible"**
 
@@ -240,10 +301,10 @@ The `DBTestManager` in `conftest.py` provides:
    - Run tests from the project root directory
    - Ensure all dependencies are installed
 
-4. **Data validation errors**
-   - Verify test data matches new structure (no Platform, Hebrew_Title, Length, Title fields)
-   - Check that Story field is properly handled as optional
-   - Ensure Tagger_1 empty values are correctly processed
+4. **Environment configuration errors**
+   - Verify Google Sheets credentials are properly configured
+   - Check that all required environment variables are set
+   - Ensure the Google Sheet has the correct structure and permissions
 
 ### Getting Help
 

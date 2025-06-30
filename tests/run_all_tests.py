@@ -4,7 +4,7 @@ Comprehensive Test Runner for Video Narratives Project
 =======================================================
 
 This script runs all tests including:
-- Unit tests (database functionality)
+- Unit tests (Google Sheets functionality)
 - Integration tests (API endpoints)
 - UI tests (HTML validation)
 
@@ -50,12 +50,12 @@ class ComprehensiveTestRunner:
 
     def run_unit_tests(self) -> bool:
         """Run unit tests using pytest"""
-        self.log("Running Unit Tests (Database functionality)...", "RUNNING")
+        self.log("Running Unit Tests (Google Sheets functionality)...", "RUNNING")
 
         try:
-            # Set test environment
+            # Set test environment for Google Sheets
             env = os.environ.copy()
-            env["NARRATIVES_DB_PATH"] = "test_temp_db.xlsx"
+            # No longer need NARRATIVES_DB_PATH since we use Google Sheets
 
             # Run pytest on unittest directory
             unittest_dir = self.tests_dir / "unittest"
@@ -86,9 +86,9 @@ class ComprehensiveTestRunner:
         self.log("Running Integration Tests (API endpoints)...", "RUNNING")
 
         try:
-            # Set test environment
+            # Set test environment for Google Sheets
             env = os.environ.copy()
-            env["NARRATIVES_DB_PATH"] = "test_temp_db.xlsx"
+            # No longer need NARRATIVES_DB_PATH since we use Google Sheets
 
             # Check if we need to start the server for integration tests
             integration_dir = self.tests_dir / "integration"
@@ -144,22 +144,22 @@ class ComprehensiveTestRunner:
             self.log(f"Error running UI tests: {e}", "ERROR")
             return False
 
-    def verify_production_protection(self) -> bool:
-        """Ensure production database is protected during testing"""
-        self.log("Verifying production database protection...", "TEST")
+    def verify_google_sheets_environment(self) -> bool:
+        """Ensure Google Sheets environment is properly configured for testing"""
+        self.log("Verifying Google Sheets test environment...", "TEST")
 
-        current_db_path = os.getenv("NARRATIVES_DB_PATH")
-        if current_db_path:
-            if "test" in current_db_path.lower() or "temp" in current_db_path.lower():
-                self.log("✓ Using test database - production protected", "SUCCESS")
-                return True
-            else:
-                self.log("⚠️  WARNING: Production database path detected!", "ERROR")
-                self.log(f"Current path: {current_db_path}", "ERROR")
-                return False
-        else:
-            self.log("✓ No database path set - will use test database", "SUCCESS")
+        # Check if Google Sheets credentials are configured
+        credentials_path = os.getenv("GOOGLE_SHEETS_CREDENTIALS_PATH")
+        sheet_id = os.getenv("GOOGLE_SHEETS_ID")
+
+        if credentials_path and sheet_id:
+            self.log("✓ Google Sheets environment configured", "SUCCESS")
             return True
+        else:
+            self.log(
+                "ℹ️  Google Sheets not configured - some tests may be skipped", "WARNING"
+            )
+            return True  # Don't fail tests if Google Sheets isn't configured
 
     def run_all_tests(self, test_type: str = "all") -> bool:
         """Run all or specific types of tests"""
@@ -167,40 +167,41 @@ class ComprehensiveTestRunner:
         self.log(f"Test Type: {test_type}", "INFO")
         print("=" * 50)
 
-        # Verify production protection first
-        if not self.verify_production_protection():
-            self.log("Production protection check failed - aborting tests", "ERROR")
+        # Verify Google Sheets environment first
+        if not self.verify_google_sheets_environment():
+            self.log("Google Sheets environment check failed - aborting tests", "ERROR")
             return False
 
         all_passed = True
 
         if test_type in ["all", "unit"]:
-            self.results["unit"] = self.run_unit_tests()
-            all_passed &= self.results["unit"]
             print("-" * 30)
+            unit_passed = self.run_unit_tests()
+            self.results["Unit"] = unit_passed
+            all_passed = all_passed and unit_passed
 
         if test_type in ["all", "integration"]:
-            self.results["integration"] = self.run_integration_tests()
-            all_passed &= self.results["integration"]
             print("-" * 30)
+            integration_passed = self.run_integration_tests()
+            self.results["Integration"] = integration_passed
+            all_passed = all_passed and integration_passed
 
         if test_type in ["all", "ui"]:
-            self.results["ui"] = self.run_ui_tests()
-            all_passed &= self.results["ui"]
             print("-" * 30)
+            ui_passed = self.run_ui_tests()
+            self.results["Ui"] = ui_passed
+            all_passed = all_passed and ui_passed
 
-        # Print summary
+        # Summary
         print("=" * 50)
         self.log("Test Results Summary:", "INFO")
-
         for test_name, passed in self.results.items():
             status = "✅ PASSED" if passed else "❌ FAILED"
-            print(f"  {test_name.title():<12}: {status}")
+            self.log(f"  {test_name:<12}: {status}", "INFO")
 
         print("=" * 50)
-
         if all_passed:
-            self.log("All tests passed!", "SUCCESS")
+            self.log("All tests passed! 🎉", "SUCCESS")
         else:
             self.log("Some tests failed!", "ERROR")
 
@@ -210,7 +211,7 @@ class ComprehensiveTestRunner:
 def main():
     """Main entry point"""
     parser = argparse.ArgumentParser(
-        description="Run comprehensive tests for Video Narratives project"
+        description="Run comprehensive tests for Video Narratives API"
     )
     parser.add_argument(
         "--type",
@@ -218,22 +219,15 @@ def main():
         default="all",
         help="Type of tests to run (default: all)",
     )
-    parser.add_argument(
-        "--verbose",
-        action="store_true",
-        help="Enable extra verbose output (shows print statements and more details)",
-    )
+    parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
 
     args = parser.parse_args()
-
-    # Set test environment
-    os.environ["NARRATIVES_DB_PATH"] = "test_temp_db.xlsx"
 
     runner = ComprehensiveTestRunner(verbose=args.verbose)
     success = runner.run_all_tests(args.type)
 
-    return success
+    sys.exit(0 if success else 1)
 
 
 if __name__ == "__main__":
-    sys.exit(0 if main() else 1)
+    main()

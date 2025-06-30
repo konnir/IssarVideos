@@ -299,10 +299,6 @@ class TestAuthenticationIntegration:
         tagged_response = requests.get(f"{self.base_url}/tagged-records")
         assert tagged_response.status_code == 200
 
-        # Step 4: Download Excel (may require auth in future implementations)
-        excel_response = requests.get(f"{self.base_url}/download-excel")
-        assert excel_response.status_code == 200
-
     def test_multiple_authentication_sessions(self):
         """Test multiple authentication sessions"""
         self.skip_if_server_not_running()

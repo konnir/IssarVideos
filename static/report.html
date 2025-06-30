@@ -54,13 +54,16 @@
         </div>
 
         <div class="download-section">
-          <a
-            href="/download-excel"
-            class="download-button"
-            download="tagged_records_report.xlsx"
-          >
-            📥 Download Excel Report
-          </a>
+          <div class="refresh-buttons">
+            <button
+              id="refreshDataBtn"
+              class="refresh-button"
+              onclick="refreshData()"
+              title="Refresh data from Google Sheets"
+            >
+              🔄 Refresh Data
+            </button>
+          </div>
         </div>
       </div>
     </div>
