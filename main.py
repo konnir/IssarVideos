@@ -589,26 +589,26 @@ def generate_story_custom_prompt(request: CustomPromptStoryRequest):
         )
 
 
-@app.post("/search-videos", response_model=VideoSearchResponse)
-def search_videos(request: VideoSearchRequest):
-    """Search for videos based on a story description"""
-    try:
-        # Initialize video searcher
-        searcher = VideoSearcher()
+# @app.post("/search-videos", response_model=VideoSearchResponse)
+# def search_videos(request: VideoSearchRequest):
+#     """Search for videos based on a story description"""
+#     try:
+#         # Initialize video searcher
+#         searcher = VideoSearcher()
 
-        # Search for videos
-        result = searcher.search_videos(
-            story=request.story,
-            max_duration=request.max_duration,
-            platforms=request.platforms,
-        )
+#         # Search for videos
+#         result = searcher.search_videos(
+#             story=request.story,
+#             max_duration=request.max_duration,
+#             platforms=request.platforms,
+#         )
 
-        return VideoSearchResponse(**result)
+#         return VideoSearchResponse(**result)
 
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to search videos: {str(e)}",
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=500,
+#             detail=f"Failed to search videos: {str(e)}",
         )
 
 
