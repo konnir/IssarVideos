@@ -114,3 +114,42 @@ class CustomPromptStoryRequest(BaseModel):
         if not v or not v.strip():
             raise ValueError("Field cannot be empty")
         return v
+
+
+class VideoSearchRequest(BaseModel):
+    """Model for searching videos based on a story"""
+
+    story: str
+    max_duration: Optional[int] = 300  # 5 minutes in seconds
+    platforms: Optional[List[str]] = ["youtube", "tiktok", "instagram"]
+
+    @validator("story")
+    def story_must_not_be_empty(cls, v):
+        if not v or not v.strip():
+            raise ValueError("Story cannot be empty")
+        return v
+
+    @validator("max_duration")
+    def duration_must_be_positive(cls, v):
+        if v is not None and v <= 0:
+            raise ValueError("Max duration must be positive")
+        return v
+
+
+class VideoResult(BaseModel):
+    """Model for a single video search result"""
+
+    title: str
+    url: str
+    platform: str
+    duration: Optional[int] = None  # in seconds
+    description: Optional[str] = None
+    thumbnail_url: Optional[str] = None
+
+
+class VideoSearchResponse(BaseModel):
+    """Model for video search response"""
+
+    query: str
+    results: List[VideoResult]
+    metadata: Dict[str, Any]

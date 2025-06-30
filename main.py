@@ -19,9 +19,12 @@ from data.video_record import (
     StoryRefinementRequest,
     StoryResponse,
     CustomPromptStoryRequest,
+    VideoSearchRequest,
+    VideoSearchResponse,
 )
 from db.narratives_db import NarrativesDB
 from llm.get_story import StoryGenerator
+from llm.get_videos import VideoSearcher
 
 app = FastAPI()
 
@@ -583,6 +586,29 @@ def generate_story_custom_prompt(request: CustomPromptStoryRequest):
         raise HTTPException(
             status_code=500,
             detail=f"Failed to generate story with custom prompt: {str(e)}",
+        )
+
+
+@app.post("/search-videos", response_model=VideoSearchResponse)
+def search_videos(request: VideoSearchRequest):
+    """Search for videos based on a story description"""
+    try:
+        # Initialize video searcher
+        searcher = VideoSearcher()
+
+        # Search for videos
+        result = searcher.search_videos(
+            story=request.story,
+            max_duration=request.max_duration,
+            platforms=request.platforms,
+        )
+
+        return VideoSearchResponse(**result)
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to search videos: {str(e)}",
         )
 
 
