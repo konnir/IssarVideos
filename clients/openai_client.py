@@ -26,25 +26,24 @@ class OpenAIClient:
         # First try the provided api_key or environment variable
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
 
-        # If not found, try loading from .env file in the clients folder
+        # If not found, try loading from .env file in project root first
         if not self.api_key:
             clients_dir = os.path.dirname(os.path.abspath(__file__))
-            env_file_path = os.path.join(clients_dir, ".env")
+            project_root = os.path.dirname(clients_dir)
+            root_env_path = os.path.join(project_root, ".env")
 
-            if os.path.exists(env_file_path):
-                # Load environment variables without overriding existing ones
-                load_dotenv(env_file_path, override=False)
+            if os.path.exists(root_env_path):
+                load_dotenv(root_env_path, override=False)
                 self.api_key = os.getenv("OPENAI_API_KEY")
-                logger.info(f"Loaded environment variables from {env_file_path}")
+                logger.info(f"Loaded environment variables from {root_env_path}")
 
-            # If still not found, try loading from project root .env as fallback
+            # Fallback: try loading from .env file in the clients folder
             if not self.api_key:
-                project_root = os.path.dirname(clients_dir)
-                root_env_path = os.path.join(project_root, ".env")
-                if os.path.exists(root_env_path):
-                    load_dotenv(root_env_path, override=False)
+                env_file_path = os.path.join(clients_dir, ".env")
+                if os.path.exists(env_file_path):
+                    load_dotenv(env_file_path, override=False)
                     self.api_key = os.getenv("OPENAI_API_KEY")
-                    logger.info(f"Loaded environment variables from {root_env_path}")
+                    logger.info(f"Loaded environment variables from {env_file_path}")
 
         if not self.api_key:
             raise ValueError(

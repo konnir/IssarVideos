@@ -20,6 +20,8 @@ from data.video_record import (
     VideoRecordCreate,
     TagRecordRequest,
     AddNarrativeRequest,
+    VideoKeywordRequest,
+    VideoKeywordResponse,
 )
 
 
@@ -393,6 +395,148 @@ class TestAddNarrativeRequest:
         assert "àáâãäå" in request.Narrative
         assert "中文" in request.Story
         assert request.Link == "https://example.com/special-chars-test"
+
+
+class TestVideoKeywordRequest:
+    """Test the VideoKeywordRequest model"""
+
+    def test_valid_video_keyword_request(self):
+        """Test creating a valid VideoKeywordRequest"""
+        request = VideoKeywordRequest(
+            story="A young artist discovers their passion for painting", max_keywords=10
+        )
+
+        assert request.story == "A young artist discovers their passion for painting"
+        assert request.max_keywords == 10
+
+    def test_video_keyword_request_with_default_max_keywords(self):
+        """Test VideoKeywordRequest with default max_keywords"""
+        request = VideoKeywordRequest(story="A chef learns to cook pasta")
+
+        assert request.story == "A chef learns to cook pasta"
+        assert request.max_keywords == 10  # Default value
+
+    def test_video_keyword_request_empty_story_validation(self):
+        """Test that empty story raises validation error"""
+        with pytest.raises(ValidationError) as exc_info:
+            VideoKeywordRequest(story="")
+
+        errors = exc_info.value.errors()
+        assert any(error["loc"] == ("story",) for error in errors)
+
+    def test_video_keyword_request_whitespace_story_validation(self):
+        """Test that whitespace-only story raises validation error"""
+        with pytest.raises(ValidationError) as exc_info:
+            VideoKeywordRequest(story="   ")
+
+        errors = exc_info.value.errors()
+        assert any(error["loc"] == ("story",) for error in errors)
+
+    def test_video_keyword_request_negative_max_keywords_validation(self):
+        """Test that negative max_keywords raises validation error"""
+        with pytest.raises(ValidationError) as exc_info:
+            VideoKeywordRequest(story="A valid story", max_keywords=-1)
+
+        errors = exc_info.value.errors()
+        assert any(error["loc"] == ("max_keywords",) for error in errors)
+
+    def test_video_keyword_request_zero_max_keywords_validation(self):
+        """Test that zero max_keywords raises validation error"""
+        with pytest.raises(ValidationError) as exc_info:
+            VideoKeywordRequest(story="A valid story", max_keywords=0)
+
+        errors = exc_info.value.errors()
+        assert any(error["loc"] == ("max_keywords",) for error in errors)
+
+    def test_video_keyword_request_valid_max_keywords_values(self):
+        """Test various valid max_keywords values"""
+        valid_values = [1, 5, 10, 20, 100]
+
+        for value in valid_values:
+            request = VideoKeywordRequest(story="A test story", max_keywords=value)
+            assert request.max_keywords == value
+
+    def test_video_keyword_request_none_max_keywords(self):
+        """Test that None max_keywords is allowed"""
+        request = VideoKeywordRequest(story="A test story", max_keywords=None)
+        assert request.max_keywords is None  # None is explicitly allowed
+
+    def test_video_keyword_request_long_story(self):
+        """Test VideoKeywordRequest with very long story"""
+        long_story = "A" * 1000 + " story about persistence and determination"
+
+        request = VideoKeywordRequest(story=long_story, max_keywords=5)
+
+        assert request.story == long_story
+        assert request.max_keywords == 5
+
+    def test_video_keyword_request_special_characters(self):
+        """Test VideoKeywordRequest with special characters in story"""
+        story_with_special_chars = "A story with !@#$%^&*() and unicode: 中文 🚀"
+
+        request = VideoKeywordRequest(story=story_with_special_chars, max_keywords=5)
+
+        assert request.story == story_with_special_chars
+
+
+class TestVideoKeywordResponse:
+    """Test the VideoKeywordResponse model"""
+
+    def test_valid_video_keyword_response(self):
+        """Test creating a valid VideoKeywordResponse"""
+        response = VideoKeywordResponse(search_query="artist success story")
+
+        assert response.search_query == "artist success story"
+
+    def test_video_keyword_response_empty_query(self):
+        """Test VideoKeywordResponse with empty search query"""
+        # Empty search query should be allowed (LLM might return empty)
+        response = VideoKeywordResponse(search_query="")
+
+        assert response.search_query == ""
+
+    def test_video_keyword_response_whitespace_query(self):
+        """Test VideoKeywordResponse with whitespace search query"""
+        response = VideoKeywordResponse(search_query="   cooking tutorial   ")
+
+        assert response.search_query == "   cooking tutorial   "
+
+    def test_video_keyword_response_special_characters(self):
+        """Test VideoKeywordResponse with special characters"""
+        response = VideoKeywordResponse(search_query="cooking & baking tips")
+
+        assert response.search_query == "cooking & baking tips"
+
+    def test_video_keyword_response_unicode(self):
+        """Test VideoKeywordResponse with unicode characters"""
+        response = VideoKeywordResponse(search_query="烹饪教程 cooking tutorial")
+
+        assert response.search_query == "烹饪教程 cooking tutorial"
+
+    def test_video_keyword_response_long_query(self):
+        """Test VideoKeywordResponse with long search query"""
+        long_query = "a very long search query that might be generated by an LLM"
+
+        response = VideoKeywordResponse(search_query=long_query)
+
+        assert response.search_query == long_query
+
+    def test_video_keyword_response_typical_queries(self):
+        """Test VideoKeywordResponse with typical YouTube search queries"""
+        typical_queries = [
+            "cooking tutorial",
+            "dog training tips",
+            "artist success story",
+            "family camping adventure",
+            "business startup guide",
+            "fitness workout routine",
+            "travel vlog",
+            "music production",
+        ]
+
+        for query in typical_queries:
+            response = VideoKeywordResponse(search_query=query)
+            assert response.search_query == query
 
 
 if __name__ == "__main__":

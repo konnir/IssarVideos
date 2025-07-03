@@ -1,26 +1,27 @@
-# Video Narratives Application
+# Video Narratives Platform
 
-A comprehensive FastAPI-based platform for managing video narratives with Google Sheets integration and AI-powered story generation capabilities for content creators.
+A comprehensive FastAPI-based platform for managing video narratives with Google Sheets integration, AI-powered story generation, and YouTube search query optimization for content creators.
 
 ## 🚀 Features
 
 ### Core Functionality
 
 - **Google Sheets Integration**: Store and manage video narratives directly in Google Sheets
-- **Real-time Data Sync**: Refresh data from Google Sheets with manual edits
+- **Real-time Data Sync**: Refresh data from Google Sheets after manual edits
 - **User Management**: Track users and their contributions to the narrative database
 - **Tagging System**: Collaborative tagging system for narrative classification
 - **Leaderboard**: Track top contributors and user statistics
 - **Report Dashboard**: View comprehensive statistics and data insights
 
-### 🤖 AI-Powered Story Generation
+### 🤖 AI-Powered Content Generation
 
 - **Story Generation**: Generate compelling 2-3 sentence story concepts from narrative inputs
 - **Story Variants**: Create multiple story variations for the same narrative
 - **Story Refinement**: Improve existing stories based on specific feedback
 - **Custom Prompts**: Use custom prompts for specialized story generation
+- **YouTube Search Optimization**: Generate optimal YouTube search queries from stories
 - **Multiple Styles**: Support for various storytelling styles (dramatic, suspenseful, comedic, etc.)
-- **OpenAI Integration**: Powered by GPT-4 for high-quality story generation
+- **OpenAI Integration**: Powered by GPT-4 for high-quality content generation
 
 ## 📋 Prerequisites
 
@@ -28,7 +29,7 @@ A comprehensive FastAPI-based platform for managing video narratives with Google
 - Poetry (for dependency management)
 - Google Cloud Project with Sheets API enabled
 - Service Account with Google Sheets access
-- OpenAI API Key (for story generation features)
+- OpenAI API Key (for AI-powered features)
 
 ## 🛠️ Installation
 
@@ -47,10 +48,10 @@ poetry install
 
 3. **Set up Google Sheets Integration**:
 
-   a. Create a Google Cloud Project and enable the Google Sheets API
-   b. Create a Service Account and download the JSON credentials file
-   c. Share your Google Sheet with the service account email
-   d. Set the environment variables:
+   - Create a Google Cloud Project and enable the Google Sheets API
+   - Create a Service Account and download the JSON credentials file
+   - Share your Google Sheet with the service account email
+   - Set the environment variables:
 
    ```bash
    export GOOGLE_SHEETS_CREDENTIALS_PATH="/path/to/your/credentials.json"
@@ -58,40 +59,10 @@ poetry install
    ```
 
 4. **Set up OpenAI API Key**:
-
-   You have multiple options to configure your OpenAI API key:
-
-   **Option 1: Environment Variable (Traditional)**
+   Create a `.env` file in the project root:
 
    ```bash
-   export OPENAI_API_KEY="your-openai-api-key-here"
-   ```
-
-   **Option 2: .env File in Project Root**
-
-   ```bash
-   # Create .env file in project root
    echo "OPENAI_API_KEY=your-openai-api-key-here" > .env
-   ```
-
-   **Option 3: .env File in clients Folder**
-
-   ```bash
-   # Create .env file in clients folder (takes priority)
-   echo "OPENAI_API_KEY=your-openai-api-key-here" > clients/.env
-   ```
-
-   > **Note**: The OpenAI client automatically looks for `.env` files in this order:
-   >
-   > 1. `clients/.env` (highest priority)
-   > 2. Project root `.env` (fallback)
-   > 3. System environment variables (fallback)
-
-   You can use the provided example file:
-
-   ```bash
-   cp clients/.env.example clients/.env
-   # Edit the file and add your actual API key
    ```
 
 5. **Activate the virtual environment**:
@@ -105,7 +76,6 @@ poetry shell
 ### Development Server
 
 ```bash
-# Start the FastAPI development server
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
@@ -118,11 +88,7 @@ The application will be available at:
 ### Production Deployment
 
 ```bash
-# Using uvicorn with multiple workers
 uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
-
-# Or using the provided deployment script
-./deploy.sh
 ```
 
 ## 📚 API Documentation
@@ -152,39 +118,80 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
 
 - `POST /tag-record` - Tag a narrative record
 - `GET /tagged-records` - Get all tagged records
-- `POST /auth-report` - Submit authentication report
 
-### 🤖 Story Generation Endpoints
+### 🤖 AI-Powered Content Generation
 
-#### Generate Stories
+#### Story Generation
+
+**Generate a Single Story**
 
 ```bash
-# Generate a single story
 POST /generate-story
 {
     "narrative": "A mysterious package arrives at someone's door",
     "style": "suspenseful",
     "additional_context": "Focus on family secrets"
 }
+```
 
-# Generate multiple story variants
+**Generate Multiple Story Variants**
+
+```bash
 POST /generate-story-variants
 {
     "narrative": "A mysterious package arrives at someone's door",
     "count": 3,
     "style": "varied"
 }
+```
 
-# Refine an existing story
+**Refine an Existing Story**
+
+```bash
 POST /refine-story
 {
-    "current_story": "A simple story about finding something.",
-    "feedback": "Make it more mysterious and add character development",
+    "original_story": "A simple story about finding something.",
+    "refinement_request": "Make it more mysterious and add character development",
+    "narrative": "Original narrative context"
+}
+```
+
+**Custom Prompt Story Generation**
+
+```bash
+POST /generate-story-custom-prompt
+{
+    "narrative": "A mysterious package arrives",
+    "custom_prompt": "Create a thriller story focused on psychological suspense",
     "style": "thriller"
 }
 ```
 
-#### Response Format
+#### YouTube Search Query Generation
+
+**Generate Optimized YouTube Search Query**
+
+```bash
+POST /generate-video-keywords
+{
+    "story": "When Sarah finds an old family photo, she discovers her grandmother had a secret twin sister.",
+    "max_keywords": 5
+}
+```
+
+**Response Format**
+
+```json
+{
+  "search_query": "family secret discovery"
+}
+```
+
+The system generates a single, optimized YouTube search query (typically 2-6 words) that is most likely to find relevant videos for your story.
+
+#### Response Formats
+
+**Story Generation Response**
 
 ```json
 {
@@ -195,127 +202,58 @@ POST /refine-story
 
 ## 🧪 Testing
 
-The application includes a comprehensive test suite covering Google Sheets integration, API endpoints, UI components, and AI functionality.
+The application includes a comprehensive test suite covering all functionality.
 
-### Quick Start
-
-Run all tests from the project root:
+### Run All Tests
 
 ```bash
-# Comprehensive test suite (recommended)
 python tests/run_all_tests.py
-
-# With verbose output
-python tests/run_all_tests.py --verbose
 ```
 
 ### Test Categories
 
-The test suite is organized into three main categories:
-
 #### Unit Tests
-
-Tests for individual components and database functionality:
 
 ```bash
 python tests/run_all_tests.py --type unit
 ```
 
-- **Google Sheets Integration**: SheetsClient and SheetsNarrativesDB functionality
-- **Data Models**: Pydantic model validation and serialization
-- **Story Generation**: AI-powered story creation components
-- **Custom Prompts**: Custom prompt handling and validation
+- Data models validation
+- Story generation logic
+- Video keyword generation
+- Custom prompt handling
 
 #### Integration Tests
-
-Tests for API endpoints and system integration:
 
 ```bash
 python tests/run_all_tests.py --type integration
 ```
 
-- **All 21 API Endpoints**: Comprehensive endpoint testing including `/refresh-data`
-- **Authentication**: User login and authorization flows
-- **Google Sheets Operations**: Data synchronization and refresh functionality
-- **Story Generation APIs**: AI story creation endpoints
-- **Error Handling**: Proper error responses and edge cases
+- API endpoints testing
+- Google Sheets integration
+- Authentication flows
+- AI service integration
 
 #### UI Tests
-
-Tests for frontend components and validation:
 
 ```bash
 python tests/run_all_tests.py --type ui
 ```
 
-- **HTML Structure**: Page validation and element testing
-- **JavaScript Functionality**: UI interactions and AJAX calls
-- **CSS Validation**: Style consistency and responsive design
-- **Form Validation**: Input handling and user interactions
+- HTML structure validation
+- JavaScript functionality
+- Form validation
 
 ### Specific Test Commands
 
 ```bash
-# Test Google Sheets integration specifically
-python -m pytest tests/integration/test_google_sheets_integration.py -v
+# Test video keyword generation
+python -m pytest tests/unittest/test_video_keyword_generator.py -v
+python -m pytest tests/integration/test_video_keyword_generation_api.py -v
 
-# Test story generation functionality
+# Test story generation
 python -m pytest tests/unittest/test_story_generation.py -v
 python -m pytest tests/integration/test_story_generation.py -v
-
-# Test custom prompt functionality
-python -m pytest tests/unittest/test_custom_prompt.py -v
-python -m pytest tests/integration/test_custom_prompt_api.py -v
-
-# Test comprehensive API coverage
-python -m pytest tests/integration/test_comprehensive_api.py -v
-```
-
-### Test Coverage
-
-The test suite provides comprehensive coverage for:
-
-- ✅ **Google Sheets Integration**: Connection validation, data operations, environment setup
-- ✅ **All API Endpoints**: Complete coverage of all 21 FastAPI endpoints
-- ✅ **Authentication**: User login and authorization flows
-- ✅ **Database Operations**: CRUD operations with Google Sheets backend
-- ✅ **UI Components**: HTML, CSS, and JavaScript functionality
-- ✅ **Data Models**: Video record and story generation models
-- ✅ **Environment Loading**: `.env` file handling and OpenAI client configuration
-- ✅ **Story Generation**: AI-powered story creation and refinement
-- ✅ **Error Handling**: Comprehensive error scenarios and edge cases
-
-### Environment Setup for Testing
-
-Some integration tests require Google Sheets credentials:
-
-```bash
-export GOOGLE_SHEETS_CREDENTIALS_PATH="/path/to/credentials.json"
-export GOOGLE_SHEETS_ID="your_sheet_id"
-```
-
-Tests will automatically skip Google Sheets functionality if credentials are not configured.
-
-### Test Structure
-
-```
-tests/
-├── conftest.py                 # Test configuration and fixtures
-├── run_all_tests.py           # Comprehensive test runner
-├── integration/               # API and system integration tests
-│   ├── test_comprehensive_api.py    # All endpoint coverage
-│   ├── test_google_sheets_integration.py  # Google Sheets specific tests
-│   ├── test_authentication.py       # Auth and security tests
-│   ├── test_story_generation.py     # Story generation API tests
-│   └── test_custom_prompt_api.py    # Custom prompt API tests
-├── unittest/                  # Component unit tests
-│   ├── test_story_generation.py     # Story generation logic tests
-│   ├── test_custom_prompt.py        # Custom prompt handling tests
-│   └── test_data_models.py         # Pydantic model tests
-└── ui/                       # Frontend validation tests
-    ├── test_ui_validation.py        # HTML/CSS validation
-    ├── test_javascript_functionality.py  # JS functionality tests
-    └── test_edit_prompt_functionality.py # Prompt editing UI tests
 ```
 
 ## 📁 Project Structure
@@ -323,14 +261,19 @@ tests/
 ```
 IssarVideos/
 ├── clients/                    # External API clients
-│   └── openai_client.py       # OpenAI API wrapper
+│   ├── openai_client.py       # OpenAI API wrapper
+│   └── sheets_client.py       # Google Sheets API client
 ├── data/                       # Data models and schemas
 │   └── video_record.py        # Pydantic models for API
 ├── db/                         # Database utilities
 │   └── sheets_narratives_db.py # Google Sheets operations
 ├── llm/                        # AI/LLM functionality
-│   └── get_story.py           # Story generation logic
+│   ├── get_story.py           # Story generation logic
+│   └── get_videos.py          # YouTube search query generation
 ├── static/                     # Static web assets
+│   ├── tagger.html            # Main UI
+│   ├── report.html            # Analytics dashboard
+│   └── *.js, *.css           # Frontend assets
 ├── tests/                      # Comprehensive test suite
 │   ├── unittest/              # Unit tests
 │   ├── integration/           # API integration tests
@@ -344,14 +287,15 @@ IssarVideos/
 
 ### Environment Variables
 
-| Variable                         | Description                         | Default | Required |
-| -------------------------------- | ----------------------------------- | ------- | -------- |
-| `OPENAI_API_KEY`                 | OpenAI API key for story generation | None    | No\*     |
-| `GOOGLE_SHEETS_CREDENTIALS_PATH` | Path to Google service account JSON | None    | Yes      |
-| `GOOGLE_SHEETS_ID`               | Google Sheet ID for data storage    | None    | Yes      |
-| `PORT`                           | Server port                         | `8000`  | No       |
+| Variable                         | Description                          | Default       | Required |
+| -------------------------------- | ------------------------------------ | ------------- | -------- |
+| `OPENAI_API_KEY`                 | OpenAI API key for AI features       | None          | Yes\*    |
+| `GOOGLE_SHEETS_CREDENTIALS_PATH` | Path to Google service account JSON  | None          | Yes      |
+| `GOOGLE_SHEETS_ID`               | Google Sheet ID for data storage     | None          | Yes      |
+| `PORT`                           | Server port                          | `8000`        | No       |
+| `ENVIRONMENT`                    | Environment (development/production) | `development` | No       |
 
-\*Required for story generation functionality to work
+\*Required for AI-powered story generation and video search features
 
 ### Story Generation Styles
 
@@ -368,92 +312,79 @@ The application supports various storytelling styles:
 
 ## 🚀 Usage Examples
 
-### Story Generation Workflow
+### Complete Workflow: From Narrative to YouTube Search
 
-1. **Test OpenAI Connection**:
+1. **Generate a Story from Narrative**:
 
-```bash
-curl http://localhost:8000/test-openai-connection
+```python
+import requests
+
+# Generate a story
+story_response = requests.post("http://localhost:8000/generate-story", json={
+    "narrative": "A young artist discovers their paintings predict the future",
+    "style": "mysterious",
+    "additional_context": "Focus on the emotional journey"
+})
+
+story = story_response.json()["story"]
+print(f"Generated Story: {story}")
 ```
 
-2. **Generate a Story**:
+2. **Generate YouTube Search Query from Story**:
 
-```bash
-curl -X POST "http://localhost:8000/generate-story" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "narrative": "A time traveler gets stuck in the wrong era",
-       "style": "dramatic",
-       "additional_context": "Focus on the emotional impact of being displaced"
-     }'
+```python
+# Generate YouTube search query
+search_response = requests.post("http://localhost:8000/generate-video-keywords", json={
+    "story": story,
+    "max_keywords": 5
+})
+
+search_query = search_response.json()["search_query"]
+print(f"YouTube Search Query: {search_query}")
+# Output: "artist future prediction mystery"
 ```
 
-3. **Get Multiple Variants**:
+3. **Use the Search Query for YouTube**:
 
-```bash
-curl -X POST "http://localhost:8000/generate-story-variants" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "narrative": "A time traveler gets stuck in the wrong era",
-       "count": 3,
-       "style": "varied"
-     }'
-```
-
-4. **Refine a Story**:
-
-```bash
-curl -X POST "http://localhost:8000/refine-story" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "current_story": "A time traveler gets lost in time.",
-       "feedback": "Add more emotional depth and specific time period details",
-       "style": "dramatic"
-     }'
+```python
+# You can now search YouTube with this optimized query
+youtube_url = f"https://www.youtube.com/results?search_query={search_query.replace(' ', '+')}"
+print(f"YouTube Search URL: {youtube_url}")
 ```
 
 ### Python Integration
 
 ```python
 from llm.get_story import StoryGenerator
+from llm.get_videos import VideoKeywordGenerator
 
-# Initialize the story generator
-generator = StoryGenerator()
+# Initialize generators
+story_gen = StoryGenerator()
+video_gen = VideoKeywordGenerator()
 
 # Generate a story
-story = generator.get_story(
-    narrative="A mysterious old book appears in a library",
-    style="suspenseful",
-    additional_context="The book contains secrets about the town's history"
+story = story_gen.get_story(
+    narrative="A time traveler gets stuck in the wrong era",
+    style="dramatic"
 )
 
-# Generate multiple variants
-variants = generator.get_story_variants(
-    narrative="A mysterious old book appears in a library",
-    count=3,
-    style="varied"
+# Generate YouTube search query from the story
+search_result = video_gen.generate_keywords(
+    story=story["story"],
+    max_keywords=5
 )
 
-# Refine an existing story
-refined = generator.refine_story(
-    current_story="Someone finds an old book with secrets.",
-    feedback="Make it more suspenseful and add character motivation",
-    style="thriller"
-)
+print(f"Story: {story['story']}")
+print(f"YouTube Search: {search_result['search_query']}")
 ```
 
-## 📖 Additional Documentation
-
-- **[Testing Documentation](tests/README.md)** - Comprehensive testing guide
-- **[API Documentation](http://localhost:8000/docs)** - Interactive API documentation (when server is running)
-
-## 🛡️ Security
+## ️ Security
 
 - Environment-based configuration
-- Safe database operations with automatic backups
+- Safe database operations with Google Sheets backend
 - Input validation and sanitization
 - Secure API key management
-- Production database protection in tests
+- CORS middleware for web security
 
 ## 🐛 Troubleshooting
 
@@ -461,52 +392,50 @@ refined = generator.refine_story(
 
 1. **OpenAI API errors**:
 
-   - Verify your API key is set correctly
+   - Verify your API key is set in `.env` file
    - Check your OpenAI account has sufficient credits
-   - Test the connection with `/test-openai-connection`
+   - Test with `/test-openai-connection`
 
 2. **Google Sheets issues**:
 
-   - Verify your service account has access to the Google Sheet
-   - Check that the Google Sheets API is enabled in your Google Cloud project
-   - Ensure the sheet ID is correct and the sheet exists
-   - Test the connection with the Google Sheets integration endpoints
+   - Verify service account has sheet access
+   - Check Google Sheets API is enabled
+   - Ensure correct sheet ID
 
-3. **Import errors**:
-
-   - Make sure you're running from the project root
-   - Activate the Poetry virtual environment
-   - Install dependencies with `poetry install`
-
-4. **Server not starting**:
-   - Check if port 8000 is available
-   - Verify all dependencies are installed
-   - Check for any configuration errors
-
-### Getting Help
-
-- Check the application logs for detailed error messages
-- Review the test suite output for systematic issues
-- Consult the API documentation at `/docs`
-- Verify your environment configuration
+3. **YouTube search queries**:
+   - The system generates 2-6 word queries optimized for YouTube
+   - Queries are designed to be broad enough to find relevant content
+   - If queries seem too general, provide more specific story context
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+2. Create a feature branch (`git checkout -b feature/new-feature`)
 3. Make your changes
 4. Run the test suite (`python tests/run_all_tests.py`)
-5. Commit your changes (`git commit -m 'Add amazing feature'`)
-6. Push to the branch (`git push origin feature/amazing-feature`)
+5. Commit your changes (`git commit -m 'Add new feature'`)
+6. Push to the branch (`git push origin feature/new-feature`)
 7. Open a Pull Request
 
-## 📝 License
+## 📝 Recent Updates
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+### Video Search Optimization (Latest)
+
+- **Simplified YouTube Search**: Now generates single, optimized search queries instead of multiple keyword lists
+- **LLM-Powered Queries**: Uses AI to create effective 2-6 word YouTube search terms
+- **Streamlined API**: Single endpoint `/generate-video-keywords` returns one optimal search string
+- **Clean Codebase**: Removed legacy keyword generation methods and unused models
+
+### Test Coverage
+
+- **Comprehensive Testing**: Full test suite covering unit, integration, and UI tests
+- **Video Keyword Tests**: Updated for new single-query functionality
+- **Story Generation Tests**: Complete coverage of all story generation features
 
 ## 🙏 Acknowledgments
 
 - Built with [FastAPI](https://fastapi.tiangolo.com/) for the web framework
-- Powered by [OpenAI GPT-4](https://openai.com/) for story generation
+- Powered by [OpenAI GPT-4](https://openai.com/) for content generation
 - Uses [Poetry](https://python-poetry.org/) for dependency management
-- Tested with [pytest](https://pytest.org/) for comprehensive testing
+- Google Sheets integration for data management
+- Comprehensive testing with [pytest](https://pytest.org/)

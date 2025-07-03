@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Story Prompt</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            line-height: 1.6;
+        }
+
+        .popup-header {
+            background-color: #333333;
+            margin: -20px -20px 20px -20px;
+            padding: 16px 20px;
+            border-bottom: 1px solid #404040;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .popup-header h2 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: #888;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .close-btn:hover {
+            background-color: #404040;
+            color: #ffffff;
+        }
+
+        .prompt-edit-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .modal-description {
+            color: #b8b8b8;
+            font-size: 14px;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .modal-description code {
+            background-color: #404040;
+            color: #ffa726;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .form-field {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-field label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #ffffff;
+            font-size: 14px;
+        }
+
+        .form-textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #555;
+            border-radius: 8px;
+            background-color: #3d3d3d;
+            color: #ffffff;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 300px;
+            transition: all 0.2s;
+            font-family: 'Courier New', monospace;
+        }
+
+        .form-textarea:focus {
+            outline: none;
+            border-color: #4caf50;
+            background-color: #4d4d4d;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+        }
+
+        .form-textarea::placeholder {
+            color: #888;
+        }
+
+        .prompt-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+
+        .modal-btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .modal-btn.primary {
+            background-color: #4caf50;
+            color: #ffffff;
+        }
+
+        .modal-btn.primary:hover {
+            background-color: #45a049;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+        }
+
+        .modal-btn.secondary {
+            background-color: #555555;
+            color: #ffffff;
+            border: 1px solid #777;
+        }
+
+        .modal-btn.secondary:hover {
+            background-color: #666666;
+            border-color: #888;
+        }
+
+        .modal-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .modal-btn:disabled:hover {
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .prompt-test-result {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            line-height: 1.5;
+            display: none;
+        }
+
+        .prompt-test-result.success {
+            background-color: #1a4a1a;
+            color: #4caf50;
+            border: 1px solid #4caf50;
+        }
+
+        .prompt-test-result.error {
+            background-color: #4a1a1a;
+            color: #ff6b6b;
+            border: 1px solid #ff4444;
+        }
+
+        .error-message {
+            margin-top: 16px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+            display: none;
+        }
+
+        .error-message .error {
+            background-color: #4a1a1a;
+            color: #ff6b6b;
+            border: 1px solid #ff4444;
+        }
+
+        .error-message .success {
+            background-color: #1a4a1a;
+            color: #4caf50;
+            border: 1px solid #4caf50;
+        }
+    </style>
+</head>
+<body>
+    <div class="popup-header">
+        <h2 id="promptHeader">Edit Story Prompt</h2>
+        <button class="close-btn" onclick="window.close()">&times;</button>
+    </div>
+
+    <div class="prompt-edit-section">
+        <p class="modal-description">
+            Customize the prompt used to generate stories. Use <code>{narrative}</code> 
+            as a placeholder for the narrative text.
+        </p>
+        <div class="form-field">
+            <label for="customPrompt">Custom Prompt:</label>
+            <textarea
+                id="customPrompt"
+                class="form-textarea"
+                placeholder="Create a story based on this narrative: {narrative}&#10;&#10;The story should be..."
+                rows="16"
+            ></textarea>
+        </div>
+        <div class="prompt-buttons">
+            <button class="modal-btn primary" onclick="saveCustomPrompt()">
+                💾 Save Prompt
+            </button>
+            <button class="modal-btn secondary" onclick="resetToDefaultPrompt()">
+                🔄 Reset to Default
+            </button>
+            <button class="modal-btn secondary" onclick="testCustomPrompt()">
+                🧪 Test Prompt
+            </button>
+        </div>
+        <div id="promptTestResult" class="prompt-test-result"></div>
+    </div>
+    <div id="editPromptError" class="error-message"></div>
+
+    <script>
+        // Global variables to store popup data
+        let lineId = null;
+        let narrative = '';
+        let DEFAULT_PROMPT = `Create a brief story concept (2-3 sentences) that incorporates this hidden narrative:
+
+Hidden Narrative: "{narrative}"
+
+Provide only a concise story idea that:
+1. Subtly includes the hidden narrative
+2. Is suitable for short video content
+3. Can be expanded into a full video later
+
+Keep it short and focused on the core concept only.`;
+
+        // Initialize the popup
+        window.addEventListener('DOMContentLoaded', function() {
+            // Listen for initialization data from parent window
+            window.addEventListener('message', function(event) {
+                if (event.origin !== window.location.origin) return;
+                
+                const data = event.data;
+                if (data.lineId) {
+                    lineId = data.lineId;
+                    narrative = data.narrative;
+                    DEFAULT_PROMPT = data.defaultPrompt || DEFAULT_PROMPT;
+                    
+                    // Update header with narrative
+                    const truncatedNarrative = narrative.length > 50 ? narrative.substring(0, 50) + '...' : narrative;
+                    document.getElementById('promptHeader').textContent = `Edit Story Prompt (${truncatedNarrative})`;
+                    
+                    // Load existing prompt
+                    const existingPrompt = data.existingPrompt || DEFAULT_PROMPT;
+                    document.getElementById('customPrompt').value = existingPrompt;
+                }
+            });
+        });
+
+        function saveCustomPrompt() {
+            const customPrompt = document.getElementById('customPrompt').value.trim();
+            const errorDiv = document.getElementById('editPromptError');
+            
+            if (!customPrompt) {
+                errorDiv.innerHTML = '<div class="error">Please enter a custom prompt</div>';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            if (!customPrompt.includes('{narrative}')) {
+                errorDiv.innerHTML = '<div class="error">The prompt must include {narrative} as a placeholder</div>';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            // Send prompt back to parent window
+            if (window.opener) {
+                window.opener.postMessage({
+                    action: 'savePrompt',
+                    lineId: lineId,
+                    prompt: customPrompt
+                }, window.location.origin);
+            }
+            
+            // Show success message
+            errorDiv.innerHTML = '<div class="success">Custom prompt saved successfully! Closing window...</div>';
+            errorDiv.style.display = 'block';
+            
+            // Auto-close after 1 second
+            setTimeout(() => {
+                window.close();
+            }, 1000);
+        }
+
+        function resetToDefaultPrompt() {
+            document.getElementById('customPrompt').value = DEFAULT_PROMPT;
+            
+            const errorDiv = document.getElementById('editPromptError');
+            errorDiv.innerHTML = '<div class="success">Prompt reset to default</div>';
+            errorDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 2000);
+        }
+
+        async function testCustomPrompt() {
+            const customPrompt = document.getElementById('customPrompt').value.trim();
+            const testResult = document.getElementById('promptTestResult');
+            const testBtn = document.querySelector('[onclick="testCustomPrompt()"]');
+            
+            if (!customPrompt) {
+                testResult.className = 'prompt-test-result error';
+                testResult.textContent = 'Please enter a custom prompt to test';
+                testResult.style.display = 'block';
+                return;
+            }
+            
+            if (!narrative) {
+                testResult.className = 'prompt-test-result error';
+                testResult.textContent = 'No narrative available for testing';
+                testResult.style.display = 'block';
+                return;
+            }
+            
+            testBtn.disabled = true;
+            testBtn.textContent = '🧪 Testing...';
+            
+            try {
+                // Replace {narrative} placeholder with actual narrative
+                const testPromptText = customPrompt.replace('{narrative}', narrative);
+                
+                testResult.className = 'prompt-test-result success';
+                testResult.innerHTML = `<strong>Test Preview:</strong><br><br>${testPromptText}`;
+                testResult.style.display = 'block';
+                
+            } catch (error) {
+                testResult.className = 'prompt-test-result error';
+                testResult.textContent = 'Error testing prompt: ' + error.message;
+                testResult.style.display = 'block';
+            } finally {
+                testBtn.disabled = false;
+                testBtn.textContent = '🧪 Test Prompt';
+            }
+        }
+
+        // Handle close button
+        function closePopup() {
+            if (window.opener) {
+                window.opener.postMessage({
+                    action: 'closePopup',
+                    lineId: lineId
+                }, window.location.origin);
+            }
+            window.close();
+        }
+
+        // Update close button onclick
+        document.addEventListener('DOMContentLoaded', function() {
+            const closeBtn = document.querySelector('.close-btn');
+            if (closeBtn) {
+                closeBtn.onclick = closePopup;
+            }
+        });
+
+        // Handle keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                if (e.key === 's') {
+                    e.preventDefault();
+                    saveCustomPrompt();
+                } else if (e.key === 'w') {
+                    e.preventDefault();
+                    closePopup();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

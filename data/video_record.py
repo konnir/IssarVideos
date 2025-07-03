@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from pydantic import BaseModel, validator
 from typing import Optional, List, Dict, Any
 
@@ -116,12 +115,11 @@ class CustomPromptStoryRequest(BaseModel):
         return v
 
 
-class VideoSearchRequest(BaseModel):
-    """Model for searching videos based on a story"""
+class VideoKeywordRequest(BaseModel):
+    """Model for generating YouTube search keywords from a story"""
 
     story: str
-    max_duration: Optional[int] = 300  # 5 minutes in seconds
-    platforms: Optional[List[str]] = ["youtube", "tiktok", "instagram"]
+    max_keywords: Optional[int] = 10
 
     @validator("story")
     def story_must_not_be_empty(cls, v):
@@ -129,27 +127,14 @@ class VideoSearchRequest(BaseModel):
             raise ValueError("Story cannot be empty")
         return v
 
-    @validator("max_duration")
-    def duration_must_be_positive(cls, v):
+    @validator("max_keywords")
+    def max_keywords_must_be_positive(cls, v):
         if v is not None and v <= 0:
-            raise ValueError("Max duration must be positive")
+            raise ValueError("Max keywords must be positive")
         return v
 
 
-class VideoResult(BaseModel):
-    """Model for a single video search result"""
+class VideoKeywordResponse(BaseModel):
+    """Model for video keyword generation response"""
 
-    title: str
-    url: str
-    platform: str
-    duration: Optional[int] = None  # in seconds
-    description: Optional[str] = None
-    thumbnail_url: Optional[str] = None
-
-
-class VideoSearchResponse(BaseModel):
-    """Model for video search response"""
-
-    query: str
-    results: List[VideoResult]
-    metadata: Dict[str, Any]
+    search_query: str

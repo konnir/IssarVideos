@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -7,8 +7,6 @@ import pandas as pd
 import os
 import logging
 from typing import List, Dict, Any
-from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel
 from data.video_record import (
     VideoRecord,
     VideoRecordUpdate,
@@ -20,12 +18,12 @@ from data.video_record import (
     StoryRefinementRequest,
     StoryResponse,
     CustomPromptStoryRequest,
-    VideoSearchRequest,
-    VideoSearchResponse,
+    VideoKeywordRequest,
+    VideoKeywordResponse,
 )
 from db.sheets_narratives_db import SheetsNarrativesDB
 from llm.get_story import StoryGenerator
-from llm.get_videos import VideoSearcher
+from llm.get_videos import VideoKeywordGenerator
 
 # Initialize logger
 logger = logging.getLogger(__name__)
@@ -105,7 +103,7 @@ def update_record(link: str, updated_data: VideoRecordUpdate):
 
     # Convert the update model to dict, excluding None values
     update_dict = {k: v for k, v in updated_data.model_dump().items() if v is not None}
-    
+
     # Convert YouTube Shorts URLs to regular YouTube URLs if Link is being updated
     if "Link" in update_dict:
         update_dict["Link"] = convert_youtube_shorts_url(update_dict["Link"])
@@ -137,7 +135,7 @@ def add_record(record_data: VideoRecordCreate):
     try:
         # Convert to dict for database insertion
         record_dict = record_data.model_dump()
-        
+
         # Convert YouTube Shorts URLs to regular YouTube URLs
         if "Link" in record_dict:
             record_dict["Link"] = convert_youtube_shorts_url(record_dict["Link"])
@@ -172,7 +170,7 @@ def add_narrative(narrative_data: AddNarrativeRequest):
     try:
         # Convert YouTube Shorts URLs to regular YouTube URLs
         converted_link = convert_youtube_shorts_url(narrative_data.Link)
-        
+
         # Convert to dict for database insertion
         record_dict = {
             "Sheet": narrative_data.Sheet,
@@ -193,7 +191,9 @@ def add_narrative(narrative_data: AddNarrativeRequest):
         # Add the record to the specific sheet
         db.add_record_to_specific_sheet(record_dict)
 
-        logger.info(f"Successfully added narrative to sheet '{narrative_data.Sheet}': {narrative_data.Narrative}")
+        logger.info(
+            f"Successfully added narrative to sheet '{narrative_data.Sheet}': {narrative_data.Narrative}"
+        )
 
         return {
             "message": "Narrative added successfully",
@@ -617,27 +617,74 @@ def generate_story_custom_prompt(request: CustomPromptStoryRequest):
         )
 
 
-# @app.post("/search-videos", response_model=VideoSearchResponse)
-# def search_videos(request: VideoSearchRequest):
-#     """Search for videos based on a story description"""
-#     try:
-#         # Initialize video searcher
-#         searcher = VideoSearcher()
+# Video Keyword Generation Endpoints
+@app.post("/generate-video-keywords", response_model=VideoKeywordResponse)
+def generate_video_keywords(request: VideoKeywordRequest):
+    """Generate YouTube search keywords based on a story"""
+    try:
+        # Initialize video keyword generator
+        generator = VideoKeywordGenerator()
 
-#         # Search for videos
-#         result = searcher.search_videos(
+        # Generate keywords
+        result = generator.generate_keywords(
+            story=request.story,
+            max_keywords=request.max_keywords,
+        )
+
+        return VideoKeywordResponse(**result)
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate video keywords: {str(e)}",
+        )
+
+
+# Note: These endpoints are disabled as the corresponding methods were removed
+# @app.post("/generate-multiple-keyword-sets")
+# def generate_multiple_keyword_sets(request: MultipleKeywordRequest):
+#     """Generate multiple sets of keywords with different approaches"""
+#     try:
+#         # Initialize video keyword generator
+#         generator = VideoKeywordGenerator()
+
+#         # Generate multiple keyword sets
+#         result = generator.generate_multiple_keyword_sets(
 #             story=request.story,
-#             max_duration=request.max_duration,
-#             platforms=request.platforms,
+#             keyword_types=request.keyword_types,
+#             max_keywords=request.max_keywords,
 #         )
 
-#         return VideoSearchResponse(**result)
+#         return result
 
 #     except Exception as e:
 #         raise HTTPException(
 #             status_code=500,
-#             detail=f"Failed to search videos: {str(e)}",
-# )
+#             detail=f"Failed to generate multiple keyword sets: {str(e)}",
+#         )
+
+
+# @app.post("/refine-keywords")
+# def refine_keywords(request: KeywordRefinementRequest):
+#     """Refine existing keywords based on feedback"""
+#     try:
+#         # Initialize video keyword generator
+#         generator = VideoKeywordGenerator()
+
+#         # Refine keywords
+#         result = generator.refine_keywords(
+#             original_keywords=request.original_keywords,
+#             story=request.story,
+#             refinement_request=request.refinement_request,
+#         )
+
+#         return result
+
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=500,
+#             detail=f"Failed to refine keywords: {str(e)}",
+#         )
 
 
 @app.get("/test-openai-connection")
@@ -694,24 +741,26 @@ def get_narratives_by_topic(topic: str):
     try:
         # Filter dataframe by the specified topic/sheet
         topic_df = db.df[db.df["Sheet"] == topic]
-        
+
         if topic_df.empty:
             return {"narratives": []}
-        
+
         # Get unique narratives for this topic
         narratives = topic_df["Narrative"].dropna().unique().tolist()
-        
+
         return {"narratives": narratives}
     except Exception as e:
         logger.error(f"Error getting narratives for topic {topic}: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to get narratives: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get narratives: {str(e)}"
+        )
 
 
 def convert_youtube_shorts_url(url: str) -> str:
     """Convert YouTube Shorts URL to regular YouTube URL if applicable"""
     if not url or not isinstance(url, str):
         return url
-    
+
     # Check if it's a YouTube Shorts URL
     if "youtube.com/shorts/" in url:
         # Extract the video ID from the shorts URL
@@ -727,7 +776,7 @@ def convert_youtube_shorts_url(url: str) -> str:
         except (IndexError, AttributeError):
             logger.warning(f"Failed to convert YouTube Shorts URL: {url}")
             return url
-    
+
     return url
 
 
