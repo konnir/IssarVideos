@@ -285,13 +285,13 @@ function createFormLineHTML(lineId, copyTopic = '', copyNarrative = '') {
           <div class="story-buttons">
             <button class="suggest-story-btn" onclick="suggestStory(${lineId})" data-line-id="${lineId}" type="button">✨ Suggest Story</button>
             <button class="edit-prompt-btn" onclick="editPrompt(${lineId})" data-line-id="${lineId}" type="button">📝 Edit Prompt</button>
+            <button class="youtube-search-btn" onclick="openYouTubeSearch(${lineId})" data-line-id="${lineId}" type="button">🎬 Search YouTube</button>
           </div>
         </div>
         <div class="form-field" style="grid-column: 4 !important; grid-row: 1 !important; display: flex !important; flex-direction: column !important; min-width: 0 !important; width: 100% !important;">
           <label for="link${lineId}">Link:</label>
           <input type="url" id="link${lineId}" class="form-input link-input" placeholder="https://example.com" />
-          <button class="youtube-search-btn" onclick="openYouTubeSearch(${lineId})" data-line-id="${lineId}" type="button" style="margin-top: 8px; padding: 6px 12px; background: #ff0000; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">🎬 Search YouTube</button>
-          <button class="tiktok-search-btn" onclick="openTikTokSearch(${lineId})" data-line-id="${lineId}" type="button" style="margin-top: 4px; padding: 6px 12px; background: #000000; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">📱 Search TikTok</button>
+          <div id="video-info-${lineId}" class="video-info" style="margin-top: 8px; padding: 8px; background: #404040; color: #fff; border-radius: 4px; font-size: 12px; display: none;"></div>
         </div>
         <div class="form-field form-field-button" style="grid-column: 5 !important; grid-row: 1 !important; display: flex !important; flex-direction: column !important; align-items: flex-start !important; padding-bottom: 0 !important;">
           <label>Actions:</label>
@@ -1028,10 +1028,13 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 /**
- * Open YouTube search in a popup window with the story content
+ * Open YouTube search using API and populate link field
  */
-function openYouTubeSearch(lineId) {
+async function openYouTubeSearch(lineId) {
   const storyTextarea = document.getElementById(`story${lineId}`);
+  const linkInput = document.getElementById(`link${lineId}`);
+  const videoInfoDiv = document.getElementById(`video-info-${lineId}`);
+  
   if (!storyTextarea) {
     alert('Story field not found');
     return;
@@ -1043,32 +1046,157 @@ function openYouTubeSearch(lineId) {
     return;
   }
   
-  // Encode the story content for URL
-  const searchQuery = encodeURIComponent(storyContent);
-  const youtubeSearchUrl = `https://www.youtube.com/results?search_query=${searchQuery}`;
-  
-  // Get screen dimensions for 90% size and center positioning
-  const screenWidth = window.screen.availWidth;
-  const screenHeight = window.screen.availHeight;
-  const popupWidth = Math.floor(screenWidth * 0.9);
-  const popupHeight = Math.floor(screenHeight * 0.9);
-  
-  // Calculate center position
-  const left = Math.floor((screenWidth - popupWidth) / 2) + window.screen.availLeft;
-  const top = Math.floor((screenHeight - popupHeight) / 2) + window.screen.availTop;
-  
-  // Open YouTube search in popup window
-  const popup = window.open(
-    youtubeSearchUrl,
-    'youtubeSearch',
-    `width=${popupWidth},height=${popupHeight},left=${left},top=${top},scrollbars=yes,resizable=yes,toolbar=yes,location=yes,menubar=no,status=no`
-  );
-  
-  if (popup) {
-    popup.focus();
-  } else {
-    // Fallback if popup is blocked
-    alert('Popup blocked. Please allow popups and try again, or manually search YouTube for: ' + storyContent);
+  try {
+    // Show loading state
+    if (videoInfoDiv) {
+      videoInfoDiv.style.display = 'block';
+      videoInfoDiv.innerHTML = '<div style="text-align: center;">🔄 Generating search query...</div>';
+    }
+    
+    // Step 1: Generate video keywords from the story
+    const keywordsResponse = await fetch('/generate-video-keywords', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        story: storyContent,
+        max_keywords: 5
+      })
+    });
+    
+    if (!keywordsResponse.ok) {
+      throw new Error(`Failed to generate keywords: ${keywordsResponse.status}`);
+    }
+    
+    const keywordsData = await keywordsResponse.json();
+    const searchQuery = keywordsData.search_query;
+    
+    if (!searchQuery) {
+      throw new Error('No search query generated from the story');
+    }
+    
+    // Update loading state
+    if (videoInfoDiv) {
+      videoInfoDiv.innerHTML = '<div style="text-align: center;">🔍 Searching for videos...</div>';
+    }
+    
+    // Step 2: Search for videos using the generated query
+    const searchResponse = await fetch(`/search-videos?query=${encodeURIComponent(searchQuery)}&max_results=1&max_duration=300`, {
+      method: 'POST'
+    });
+    
+    if (!searchResponse.ok) {
+      throw new Error(`Failed to search videos: ${searchResponse.status}`);
+    }
+    
+    const searchData = await searchResponse.json();
+    
+    if (!searchData.videos || !Array.isArray(searchData.videos)) {
+      throw new Error('Invalid response format from video search');
+    }
+    
+    if (searchData.videos && searchData.videos.length > 0) {
+      const video = searchData.videos[0];
+      
+      // Set the URL in the link input field
+      if (linkInput) {
+        linkInput.value = video.url;
+      }
+      
+      // Display video information
+      if (videoInfoDiv) {
+        const duration = Math.floor(video.duration / 60) + ':' + String(video.duration % 60).padStart(2, '0');
+        videoInfoDiv.innerHTML = `
+          <div style="
+            background: #3a3a3a;
+            border: 1px solid #555;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 4px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          ">
+            <div style="
+              background: rgba(255,255,255,0.05);
+              border-radius: 6px;
+              padding: 8px;
+              margin-bottom: 8px;
+            ">
+              <div style="
+                color: #60a5fa;
+                font-weight: 600;
+                margin-bottom: 4px;
+                line-height: 1.3;
+                font-size: 12px;
+                cursor: pointer;
+                transition: color 0.2s ease;
+              " 
+              onclick="openVideoInPopup('${video.url.replace(/'/g, "\\'")}', '${video.title.replace(/'/g, "\\'")}')"
+              onmouseover="this.style.color='#3b82f6'"
+              onmouseout="this.style.color='#60a5fa'"
+              title="Click to open video in popup window"
+              >${video.title}</div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px;">
+              <div style="
+                background: rgba(255,255,255,0.03);
+                padding: 6px 8px;
+                border-radius: 4px;
+                border-left: 3px solid #60a5fa;
+              ">
+                <div style="color: #9ca3af; margin-bottom: 2px;">📺 Channel</div>
+                <div style="color: #e5e7eb; font-weight: 500;">${video.uploader}</div>
+              </div>
+              
+              <div style="
+                background: rgba(255,255,255,0.03);
+                padding: 6px 8px;
+                border-radius: 4px;
+                border-left: 3px solid #f59e0b;
+              ">
+                <div style="color: #9ca3af; margin-bottom: 2px;">⏱️ Duration</div>
+                <div style="color: #e5e7eb; font-weight: 500;">${duration}</div>
+              </div>
+              
+              <div style="
+                background: rgba(255,255,255,0.03);
+                padding: 6px 8px;
+                border-radius: 4px;
+                border-left: 3px solid #ef4444;
+              ">
+                <div style="color: #9ca3af; margin-bottom: 2px;">👁️ Views</div>
+                <div style="color: #e5e7eb; font-weight: 500;">${video.view_count?.toLocaleString() || 'N/A'}</div>
+              </div>
+              
+              <div style="
+                background: rgba(255,255,255,0.03);
+                padding: 6px 8px;
+                border-radius: 4px;
+                border-left: 3px solid #8b5cf6;
+              ">
+                <div style="color: #9ca3af; margin-bottom: 2px;">🔍 Query</div>
+                <div style="color: #e5e7eb; font-weight: 500;">"${searchQuery}"</div>
+              </div>
+            </div>
+          </div>
+        `;
+        videoInfoDiv.style.display = 'block';
+      }
+    } else {
+      if (videoInfoDiv) {
+        videoInfoDiv.innerHTML = '<div style="color: #ff6b6b; text-align: center;">No videos found for this story</div>';
+        videoInfoDiv.style.display = 'block';
+      }
+    }
+    
+  } catch (error) {
+    console.error('Error in YouTube search:', error);
+    if (videoInfoDiv) {
+      videoInfoDiv.innerHTML = `<div style="color: #ff6b6b; text-align: center;">Error: ${error.message}</div>`;
+      videoInfoDiv.style.display = 'block';
+    }
+    alert(`Error searching YouTube: ${error.message}`);
   }
 }
 
@@ -1148,5 +1276,44 @@ function closeYouTubeSearch() {
     modalBody.style.flex = '';
     modalBody.style.overflowY = '';
     modalBody.style.maxHeight = '';
+  }
+}
+
+/**
+ * Open video in a popup window (75% screen size, centered)
+ */
+function openVideoInPopup(videoUrl, videoTitle) {
+  // Get screen dimensions for 75% size and center positioning
+  const screenWidth = window.screen.availWidth;
+  const screenHeight = window.screen.availHeight;
+  const popupWidth = Math.floor(screenWidth * 0.75);
+  const popupHeight = Math.floor(screenHeight * 0.75);
+  
+  // Calculate center position
+  const left = Math.floor((screenWidth - popupWidth) / 2) + window.screen.availLeft;
+  const top = Math.floor((screenHeight - popupHeight) / 2) + window.screen.availTop;
+  
+  // Create popup window name (remove special characters for valid window name)
+  const windowName = 'videoPopup_' + Date.now();
+  
+  // Open video in popup window
+  const popup = window.open(
+    videoUrl,
+    windowName,
+    `width=${popupWidth},height=${popupHeight},left=${left},top=${top},scrollbars=yes,resizable=yes,toolbar=yes,location=yes,menubar=no,status=no`
+  );
+  
+  if (popup) {
+    popup.focus();
+    // Optional: Set the popup title if possible
+    try {
+      popup.document.title = videoTitle || 'Video Player';
+    } catch (e) {
+      // Cross-origin restrictions may prevent this, but it's not critical
+      console.log('Could not set popup title due to cross-origin restrictions');
+    }
+  } else {
+    // Fallback if popup is blocked
+    alert('Popup blocked. Please allow popups and try again, or manually open: ' + videoUrl);
   }
 }

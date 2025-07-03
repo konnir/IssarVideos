@@ -1224,39 +1224,38 @@ html body .modal .modal-content .modal-body .narrative-form-single-line .form-ro
 
 /* YouTube Search Button Styles */
 .youtube-search-btn {
-  margin-top: 8px !important;
-  padding: 6px 12px !important;
-  background: #ff0000 !important;
-  color: white !important;
-  border: none !important;
-  border-radius: 4px !important;
-  cursor: pointer !important;
-  font-size: 12px !important;
-  font-weight: 500 !important;
-  transition: all 0.2s ease !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 4px !important;
-  min-height: 32px !important;
+  padding: 8px 16px;
+  background: #ff0000;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: fit-content !important;
+  align-self: flex-start !important;
+  min-width: auto !important;
+  height: auto !important;
+  box-shadow: 0 2px 4px rgba(255, 0, 0, 0.2);
 }
 
 .youtube-search-btn:hover {
-  background: #cc0000 !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 2px 8px rgba(255, 0, 0, 0.3) !important;
+  background: #cc0000;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(255, 0, 0, 0.3);
 }
 
 .youtube-search-btn:active {
-  transform: translateY(0) !important;
-  box-shadow: 0 1px 4px rgba(255, 0, 0, 0.3) !important;
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(255, 0, 0, 0.2);
 }
 
 .youtube-search-btn:disabled {
-  background: #666 !important;
-  cursor: not-allowed !important;
-  transform: none !important;
-  box-shadow: none !important;
+  background: #999;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 /* TikTok Search Button Styles */
