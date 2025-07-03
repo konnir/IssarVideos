@@ -138,3 +138,17 @@ class VideoKeywordResponse(BaseModel):
     """Model for video keyword generation response"""
 
     search_query: str
+
+
+class YouTubeVideo(BaseModel):
+    title: str
+    url: str
+    id: str
+    uploader: str
+    duration: int
+    view_count: int
+    description: str
+
+
+class YouTubeSearchResponse(BaseModel):
+    videos: List[YouTubeVideo]

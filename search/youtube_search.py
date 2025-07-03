@@ -21,18 +21,22 @@ class YouTubeSearcher:
             "default_search": "ytsearch",  # Use YouTube search
         }
 
-    def search_videos(self, query: str, max_results: int = 10) -> List[Dict[str, Any]]:
+    def search_videos(
+        self, query: str, max_results: int = 3, max_duration: int = 300
+    ) -> List[Dict[str, Any]]:
         """
         Search for videos on YouTube
 
         Args:
             query (str): Search query
             max_results (int): Maximum number of results to return
+            max_duration (int): Maximum video duration in seconds
 
         Returns:
             List[Dict]: List of video information dictionaries
         """
-        search_query = f"ytsearch{max_results}:{query}"
+        # Fetch more results to increase the chance of finding videos with the right duration
+        search_query = f"ytsearch{max_results * 5}:{query}"
 
         try:
             with yt_dlp.YoutubeDL(self.ydl_opts) as ydl:
@@ -42,7 +46,11 @@ class YouTubeSearcher:
                 videos = []
                 if "entries" in search_results:
                     for entry in search_results["entries"]:
-                        if entry:  # Sometimes entries can be None
+                        if (
+                            entry
+                            and entry.get("duration")
+                            and entry["duration"] <= max_duration
+                        ):
                             video_info = {
                                 "title": entry.get("title", "Unknown Title"),
                                 "url": entry.get("url", ""),
@@ -57,6 +65,8 @@ class YouTubeSearcher:
                                 ),
                             }
                             videos.append(video_info)
+                            if len(videos) == max_results:
+                                break
 
                 return videos
 
@@ -105,34 +115,3 @@ class YouTubeSearcher:
                 print(f"   📝 Description: {video['description']}")
 
             print("-" * 80)
-
-
-if __name__ == "__main__":
-    # Create searcher instance
-    searcher = YouTubeSearcher()
-
-    # Search for "positive body image" videos
-    search_query = "positive body image"
-    print(f"🔍 Searching YouTube for: '{search_query}'")
-
-    # Search for videos
-    videos = searcher.search_videos(search_query, max_results=8)
-
-    # Print results
-    searcher.print_results(videos)
-
-    # Also save results to JSON file for later use
-    if videos:
-        import os
-
-        # Create data directory if it doesn't exist
-        data_dir = os.path.join(os.path.dirname(__file__), "data")
-        os.makedirs(data_dir, exist_ok=True)
-
-        output_file = os.path.join(data_dir, "positive_body_image_videos.json")
-        try:
-            with open(output_file, "w", encoding="utf-8") as f:
-                json.dump(videos, f, indent=2, ensure_ascii=False)
-            print(f"\n💾 Results saved to: {output_file}")
-        except Exception as e:
-            print(f"❌ Error saving results: {e}")

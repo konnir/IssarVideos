@@ -7,6 +7,7 @@ Provides shared test utilities and data for Google Sheets based testing.
 import pytest
 import os
 from pathlib import Path
+import sys
 
 
 # Get the project root directory
@@ -116,3 +117,6 @@ def valid_auth_data():
 def invalid_auth_data():
     """Fixture providing invalid authentication data"""
     return {"username": "Invalid User", "password": "wrong_password"}
+
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))

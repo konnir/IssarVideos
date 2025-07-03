@@ -24,6 +24,8 @@ from data.video_record import (
 from db.sheets_narratives_db import SheetsNarrativesDB
 from llm.get_story import StoryGenerator
 from llm.get_videos import VideoKeywordGenerator
+from search.youtube_search import YouTubeSearcher
+from data.video_record import YouTubeSearchResponse
 
 # Initialize logger
 logger = logging.getLogger(__name__)
@@ -637,6 +639,19 @@ def generate_video_keywords(request: VideoKeywordRequest):
         raise HTTPException(
             status_code=500,
             detail=f"Failed to generate video keywords: {str(e)}",
+        )
+
+
+@app.post("/search-videos", response_model=YouTubeSearchResponse)
+def search_videos(query: str, max_results: int = 10, max_duration: int = 300):
+    """Search for videos on YouTube"""
+    try:
+        searcher = YouTubeSearcher()
+        videos = searcher.search_videos(query, max_results, max_duration)
+        return YouTubeSearchResponse(videos=videos)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to search for videos: {str(e)}"
         )
 
 

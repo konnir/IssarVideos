@@ -23,6 +23,14 @@ A comprehensive FastAPI-based platform for managing video narratives with Google
 - **Multiple Styles**: Support for various storytelling styles (dramatic, suspenseful, comedic, etc.)
 - **OpenAI Integration**: Powered by GPT-4 for high-quality content generation
 
+### 🎥 YouTube Video Search
+
+- **Smart Video Search**: Search YouTube videos with duration filtering
+- **Duration Controls**: Filter videos by maximum duration (e.g., under 5 minutes)
+- **Optimized Results**: Fetch more results and filter to ensure quality matches
+- **API Integration**: RESTful API for programmatic video searches
+- **Flexible Parameters**: Customizable result count and duration limits
+
 ## 📋 Prerequisites
 
 - Python 3.8+
@@ -99,6 +107,10 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
 
 - `GET /health` - Application health check
 - `GET /test-openai-connection` - Test OpenAI API connectivity
+
+#### Video Search
+
+- `POST /search-videos` - Search YouTube videos with duration filtering
 
 #### Narrative Management
 
@@ -189,6 +201,38 @@ POST /generate-video-keywords
 
 The system generates a single, optimized YouTube search query (typically 2-6 words) that is most likely to find relevant videos for your story.
 
+#### YouTube Video Search
+
+**Search YouTube Videos with Filtering**
+
+```bash
+POST /search-videos?query=positive%20body%20image&max_results=10&max_duration=300
+```
+
+**Parameters:**
+
+- `query` (required): Search query string
+- `max_results` (optional): Maximum number of videos to return (default: 10)
+- `max_duration` (optional): Maximum video duration in seconds (default: 300 = 5 minutes)
+
+**Response Format**
+
+```json
+{
+  "videos": [
+    {
+      "title": "Video Title",
+      "url": "https://youtube.com/watch?v=VIDEO_ID",
+      "id": "VIDEO_ID",
+      "uploader": "Channel Name",
+      "duration": 180,
+      "view_count": 15000,
+      "description": "Video description preview..."
+    }
+  ]
+}
+```
+
 #### Response Formats
 
 **Story Generation Response**
@@ -251,6 +295,9 @@ python tests/run_all_tests.py --type ui
 python -m pytest tests/unittest/test_video_keyword_generator.py -v
 python -m pytest tests/integration/test_video_keyword_generation_api.py -v
 
+# Test YouTube search functionality
+PYTHONPATH=. pytest tests/unittest/test_youtube_search.py -v
+
 # Test story generation
 python -m pytest tests/unittest/test_story_generation.py -v
 python -m pytest tests/integration/test_story_generation.py -v
@@ -270,6 +317,8 @@ IssarVideos/
 ├── llm/                        # AI/LLM functionality
 │   ├── get_story.py           # Story generation logic
 │   └── get_videos.py          # YouTube search query generation
+├── search/                     # YouTube search functionality
+│   └── youtube_search.py      # YouTube video search using yt-dlp
 ├── static/                     # Static web assets
 │   ├── tagger.html            # Main UI
 │   ├── report.html            # Analytics dashboard
@@ -347,20 +396,29 @@ print(f"YouTube Search Query: {search_query}")
 3. **Use the Search Query for YouTube**:
 
 ```python
-# You can now search YouTube with this optimized query
-youtube_url = f"https://www.youtube.com/results?search_query={search_query.replace(' ', '+')}"
-print(f"YouTube Search URL: {youtube_url}")
+# Search YouTube videos directly using the API
+search_response = requests.post("http://localhost:8000/search-videos", params={
+    "query": search_query,
+    "max_results": 5,
+    "max_duration": 300  # 5 minutes max
+})
+
+videos = search_response.json()["videos"]
+for video in videos:
+    print(f"Video: {video['title']} - {video['url']}")
 ```
 
-### Python Integration
+### Python Integration with Video Search
 
 ```python
 from llm.get_story import StoryGenerator
 from llm.get_videos import VideoKeywordGenerator
+from search.youtube_search import YouTubeSearcher
 
 # Initialize generators
 story_gen = StoryGenerator()
 video_gen = VideoKeywordGenerator()
+searcher = YouTubeSearcher()
 
 # Generate a story
 story = story_gen.get_story(
@@ -374,8 +432,18 @@ search_result = video_gen.generate_keywords(
     max_keywords=5
 )
 
+# Search for videos using the generated query
+videos = searcher.search_videos(
+    query=search_result["search_query"],
+    max_results=5,
+    max_duration=300  # 5 minutes max
+)
+
 print(f"Story: {story['story']}")
 print(f"YouTube Search: {search_result['search_query']}")
+print(f"Found {len(videos)} videos")
+for video in videos:
+    print(f"- {video['title']} ({video['duration']}s)")
 ```
 
 ## ️ Security
@@ -419,7 +487,15 @@ print(f"YouTube Search: {search_result['search_query']}")
 
 ## 📝 Recent Updates
 
-### Video Search Optimization (Latest)
+### YouTube Video Search Integration (Latest)
+
+- **New Video Search API**: Added `/search-videos` endpoint for YouTube video search
+- **Duration Filtering**: Filter videos by maximum duration (e.g., under 5 minutes)
+- **Smart Result Fetching**: Fetch more results and filter to ensure quality matches
+- **Comprehensive Testing**: Full test coverage for YouTube search functionality
+- **yt-dlp Integration**: Uses yt-dlp for reliable YouTube video metadata extraction
+
+### Video Search Optimization
 
 - **Simplified YouTube Search**: Now generates single, optimized search queries instead of multiple keyword lists
 - **LLM-Powered Queries**: Uses AI to create effective 2-6 word YouTube search terms
