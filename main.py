@@ -391,7 +391,9 @@ def authenticate_report(request: dict):
     password_str = str(password)
 
     # Exact match authentication - no modifications allowed
-    valid_users = {"Nir Kon": "originai", "Issar Tzachor": "originai"}
+    valid_users = {
+        "tagmaster": "splinter1960", 
+        }
 
     if username_str in valid_users and valid_users[username_str] == password_str:
         return {"success": True, "message": "Authentication successful"}
@@ -665,53 +667,6 @@ def search_videos(
         raise HTTPException(
             status_code=500, detail=f"Failed to search for videos: {str(e)}"
         )
-
-
-# Note: These endpoints are disabled as the corresponding methods were removed
-# @app.post("/generate-multiple-keyword-sets")
-# def generate_multiple_keyword_sets(request: MultipleKeywordRequest):
-#     """Generate multiple sets of keywords with different approaches"""
-#     try:
-#         # Initialize video keyword generator
-#         generator = VideoKeywordGenerator()
-
-#         # Generate multiple keyword sets
-#         result = generator.generate_multiple_keyword_sets(
-#             story=request.story,
-#             keyword_types=request.keyword_types,
-#             max_keywords=request.max_keywords,
-#         )
-
-#         return result
-
-#     except Exception as e:
-#         raise HTTPException(
-#             status_code=500,
-#             detail=f"Failed to generate multiple keyword sets: {str(e)}",
-#         )
-
-
-# @app.post("/refine-keywords")
-# def refine_keywords(request: KeywordRefinementRequest):
-#     """Refine existing keywords based on feedback"""
-#     try:
-#         # Initialize video keyword generator
-#         generator = VideoKeywordGenerator()
-
-#         # Refine keywords
-#         result = generator.refine_keywords(
-#             original_keywords=request.original_keywords,
-#             story=request.story,
-#             refinement_request=request.refinement_request,
-#         )
-
-#         return result
-
-#     except Exception as e:
-#         raise HTTPException(
-#             status_code=500,
-#             detail=f"Failed to refine keywords: {str(e)}",
-#         )
 
 
 @app.get("/test-openai-connection")
