@@ -211,11 +211,41 @@ body {
   font-weight: 600;
 }
 
-/* Status-based color coding */
-.count-zero {
-  color: #666;
-  font-style: italic;
-  font-weight: normal;
+/* Actions column styling */
+.management-table td:nth-child(9) {
+  text-align: center;
+  width: 60px;
+  padding: 8px 4px;
+}
+
+.action-cell {
+  text-align: center;
+}
+
+.add-row-btn {
+  background: linear-gradient(135deg, #4caf50, #45a049);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.add-row-btn:hover {
+  background: linear-gradient(135deg, #45a049, #4caf50);
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.add-row-btn:active {
+  transform: scale(0.95);
 }
 
 /* Loading spinner */

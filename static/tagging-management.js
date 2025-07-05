@@ -102,7 +102,7 @@ async function loadTaggingStats() {
  * Update summary statistics cards
  */
 function updateSummaryStats(summary) {
-  document.getElementById("totalSheets").textContent = summary.total_sheets;
+  document.getElementById("totalSheets").textContent = summary.total_topics;
   document.getElementById("totalNarratives").textContent = summary.total_narratives;
   document.getElementById("totalDoneNarratives").textContent = summary.total_done_narratives;
   document.getElementById("totalMissingNarratives").textContent = summary.total_missing_narratives;
@@ -124,7 +124,7 @@ function populateTable(data) {
   if (data.length === 0) {
     tableBody.innerHTML = `
       <tr>
-        <td colspan="8" style="text-align: center; padding: 20px; color: #999;">
+        <td colspan="9" style="text-align: center; padding: 20px; color: #999;">
           No tagging data available
         </td>
       </tr>
@@ -170,6 +170,11 @@ function populateTable(data) {
         <td class="number-cell">${obviousNumber}</td>
         <td class="number-cell">${problemNumber}</td>
         <td class="number-cell">${missingNumber}</td>
+        <td class="action-cell">
+          <button class="add-row-btn" onclick="openAddNarrativeWithData('${escapeHtml(item.sheet).replace(/'/g, "\\'")}', '${escapeHtml(item.narrative).replace(/'/g, "\\'")}')">
+            ➕
+          </button>
+        </td>
       </tr>
     `;
   }).join('');
@@ -348,6 +353,48 @@ function addNewFormLine(sourceLineId) {
   }
   
   // Note: Removed automatic focus to prevent scrolling when creating multiple lines during YouTube search
+}
+
+/**
+ * Show the Add Narrative modal with pre-filled Sheet and Narrative data
+ */
+async function openAddNarrativeWithData(sheetName, narrativeText) {
+  if (!isAuthenticated) {
+    alert('Please authenticate first');
+    return;
+  }
+  
+  document.getElementById('addNarrativeModal').style.display = 'block';
+  
+  // Reset to single form line
+  resetFormContainer();
+  
+  // Always reload sheets list when modal opens to ensure fresh data
+  await loadAllTopics();
+  
+  // Load all available narratives as backup
+  await loadAllNarratives();
+  
+  // Pre-fill the Sheet and Narrative fields
+  const sheetInput = document.getElementById('sheet1');
+  const narrativeInput = document.getElementById('narrative1');
+  
+  if (sheetInput) {
+    sheetInput.value = sheetName;
+  }
+  
+  if (narrativeInput) {
+    narrativeInput.value = narrativeText;
+  }
+  
+  // Clear any previous messages
+  document.getElementById('addNarrativeError').style.display = 'none';
+  
+  // Focus on the story input since Sheet and Narrative are already filled
+  const storyInput = document.getElementById('story1');
+  if (storyInput) {
+    setTimeout(() => storyInput.focus(), 100);
+  }
 }
 
 /**

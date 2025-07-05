@@ -96,12 +96,16 @@ class SheetsNarrativesDB:
                         # Add/update the Sheet column with the actual sheet name
                         sheet_df["Sheet"] = sheet_name
                         all_dfs.append(sheet_df)
-                        logger.info(f"Loaded {len(sheet_df)} records from sheet '{sheet_name}'")
+                        logger.info(
+                            f"Loaded {len(sheet_df)} records from sheet '{sheet_name}'"
+                        )
                     else:
                         logger.warning(f"Sheet '{sheet_name}' is empty")
 
                 except Exception as e:
-                    logger.error(f"Failed to load data from sheet '{sheet_name}': {str(e)}")
+                    logger.error(
+                        f"Failed to load data from sheet '{sheet_name}': {str(e)}"
+                    )
                     continue
 
             # Combine all DataFrames
@@ -143,17 +147,27 @@ class SheetsNarrativesDB:
             )
 
     def save_changes(self):
-        """Save the current DataFrame back to Google Sheets."""
+        """Save the current DataFrame back to Google Sheets, distributing records to their respective sheets."""
         try:
             if self.df.empty:
                 logger.warning("No data to save")
                 return
 
-            self.sheets_client.write_dataframe_to_sheet(
-                self.df, self.current_sheet_name, clear_sheet=True
-            )
+            # Group records by their Sheet column and save each group to its respective sheet
+            for sheet_name, group_df in self.df.groupby("Sheet"):
+                logger.info(f"Saving {len(group_df)} records to sheet '{sheet_name}'")
 
-            logger.info(f"Successfully saved {len(self.df)} records to Google Sheets")
+                # Remove the Sheet column before writing since it's redundant
+                # (the sheet name is already determined by where we're writing)
+                save_df = group_df.drop(columns=["Sheet"]).copy()
+
+                self.sheets_client.write_dataframe_to_sheet(
+                    save_df, sheet_name, clear_sheet=True
+                )
+
+            logger.info(
+                f"Successfully saved {len(self.df)} records across {len(self.df.groupby('Sheet'))} sheets"
+            )
 
         except Exception as e:
             logger.error(f"Failed to save changes to Google Sheets: {str(e)}")
@@ -162,42 +176,53 @@ class SheetsNarrativesDB:
     def add_record_to_specific_sheet(self, record_dict: Dict[str, Any]):
         """Add a new record to the specific sheet mentioned in the record."""
         try:
-            target_sheet = record_dict.get('Sheet')
+            target_sheet = record_dict.get("Sheet")
             if not target_sheet:
                 raise ValueError("Sheet name is required in record_dict")
-            
+
             logger.info(f"Adding record to sheet: {target_sheet}")
-            
+
             # Read current data from the target sheet
             try:
                 sheet_df = self.sheets_client.read_sheet_to_dataframe(target_sheet)
-                logger.info(f"Read {len(sheet_df)} existing records from sheet '{target_sheet}'")
+                logger.info(
+                    f"Read {len(sheet_df)} existing records from sheet '{target_sheet}'"
+                )
             except Exception as e:
                 # If sheet doesn't exist or is empty, create new DataFrame
                 logger.info(f"Creating new sheet or sheet is empty: {target_sheet}")
-                sheet_df = pd.DataFrame(columns=[
-                    "Sheet", "Narrative", "Story", "Link", "Tagger_1", "Tagger_1_Result"
-                ])
-            
+                sheet_df = pd.DataFrame(
+                    columns=[
+                        "Sheet",
+                        "Narrative",
+                        "Story",
+                        "Link",
+                        "Tagger_1",
+                        "Tagger_1_Result",
+                    ]
+                )
+
             # Ensure the Sheet column has the correct value
-            record_dict['Sheet'] = target_sheet
-            
+            record_dict["Sheet"] = target_sheet
+
             # Add the new record
             new_row = pd.DataFrame([record_dict])
             sheet_df = pd.concat([sheet_df, new_row], ignore_index=True)
-            
+
             # Write back to the specific sheet
             self.sheets_client.write_dataframe_to_sheet(
                 sheet_df, target_sheet, clear_sheet=True
             )
-            
-            logger.info(f"Successfully added record to sheet '{target_sheet}'. New total: {len(sheet_df)} records")
-            
+
+            logger.info(
+                f"Successfully added record to sheet '{target_sheet}'. New total: {len(sheet_df)} records"
+            )
+
             # Also add to our main DataFrame for immediate consistency
             self.df = pd.concat([self.df, new_row], ignore_index=True)
-            
+
             return True
-            
+
         except Exception as e:
             logger.error(f"Failed to add record to sheet '{target_sheet}': {str(e)}")
             raise
