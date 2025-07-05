@@ -193,6 +193,9 @@ def add_narrative(narrative_data: AddNarrativeRequest):
         # Add the record to the specific sheet
         db.add_record_to_specific_sheet(record_dict)
 
+        # Refresh all data to ensure consistency for immediate queries
+        db.load_all_sheets_data()
+
         logger.info(
             f"Successfully added narrative to sheet '{narrative_data.Sheet}': {narrative_data.Narrative}"
         )
@@ -643,11 +646,13 @@ def generate_video_keywords(request: VideoKeywordRequest):
 
 
 @app.post("/search-videos", response_model=YouTubeSearchResponse)
-def search_videos(query: str, max_results: int = 10, max_duration: int = 300):
-    """Search for videos on YouTube"""
+def search_videos(
+    query: str, max_results: int = 10, max_duration: int = 300, min_duration: int = 45
+):
+    """Search for videos on YouTube with duration filtering"""
     try:
         searcher = YouTubeSearcher()
-        videos = searcher.search_videos(query, max_results, max_duration)
+        videos = searcher.search_videos(query, max_results, max_duration, min_duration)
         return YouTubeSearchResponse(videos=videos)
     except Exception as e:
         raise HTTPException(

@@ -347,8 +347,7 @@ function addNewFormLine(sourceLineId) {
     editBtn.style.background = '#357abd'; // Darker blue to indicate custom
   }
   
-  // Focus on the link field of the new line (since Sheet, Narrative, and Story are pre-filled)
-  document.getElementById(`link${newLineId}`).focus();
+  // Note: Removed automatic focus to prevent scrolling when creating multiple lines during YouTube search
 }
 
 /**
@@ -382,10 +381,26 @@ async function addSingleNarrative(lineId) {
     return;
   }
   
-  // Get the specific Add button for this line
-  const addBtn = document.querySelector(`[data-line-id="${lineId}"].add-btn-inline`);
-  addBtn.disabled = true;
-  addBtn.textContent = 'Adding...';
+  // Disable ALL Add buttons to prevent multiple simultaneous operations
+  const allAddBtns = document.querySelectorAll('.add-btn-inline');
+  const buttonStates = new Map(); // Store original states
+  
+  allAddBtns.forEach(btn => {
+    const btnLineId = btn.getAttribute('data-line-id');
+    // Store the original state
+    buttonStates.set(btnLineId, {
+      disabled: btn.disabled,
+      text: btn.textContent
+    });
+    
+    btn.disabled = true;
+    if (btnLineId === lineId.toString()) {
+      btn.textContent = 'Adding...';
+    } else if (btn.textContent !== 'Added ✓') {
+      // Only change to "Wait..." if it's not already "Added ✓"
+      btn.textContent = 'Wait...';
+    }
+  });
   
   try {
     const response = await fetch('/add-narrative', {
@@ -404,9 +419,28 @@ async function addSingleNarrative(lineId) {
     if (response.ok) {
       const result = await response.json();
       
-      // Change button to "Added ✓" and keep it disabled
-      addBtn.textContent = 'Added ✓';
-      addBtn.disabled = true;
+      // Change the current button to "Added ✓" and keep it disabled
+      const currentAddBtn = document.querySelector(`[data-line-id="${lineId}"].add-btn-inline`);
+      currentAddBtn.textContent = 'Added ✓';
+      currentAddBtn.disabled = true;
+      
+      // Re-enable all other Add buttons and restore their original states
+      const allAddBtns = document.querySelectorAll('.add-btn-inline');
+      allAddBtns.forEach(btn => {
+        const btnLineId = btn.getAttribute('data-line-id');
+        if (btnLineId !== lineId.toString()) {
+          const originalState = buttonStates.get(btnLineId);
+          if (originalState) {
+            // Restore original state
+            btn.disabled = originalState.disabled;
+            btn.textContent = originalState.text;
+          } else {
+            // Fallback to default state
+            btn.disabled = false;
+            btn.textContent = 'Add';
+          }
+        }
+      });
       
       // Refresh the stats table
       await loadTaggingStats();
@@ -426,17 +460,43 @@ async function addSingleNarrative(lineId) {
       
       errorDiv.innerHTML = `<div class="error">${errorMessage}</div>`;
       errorDiv.style.display = 'block';
-      // Reset button on failure
-      addBtn.disabled = false;
-      addBtn.textContent = 'Add';
+      
+      // Re-enable all Add buttons and restore their original states on failure
+      const allAddBtns = document.querySelectorAll('.add-btn-inline');
+      allAddBtns.forEach(btn => {
+        const btnLineId = btn.getAttribute('data-line-id');
+        const originalState = buttonStates.get(btnLineId);
+        if (originalState) {
+          // Restore original state
+          btn.disabled = originalState.disabled;
+          btn.textContent = originalState.text;
+        } else {
+          // Fallback to default state
+          btn.disabled = false;
+          btn.textContent = 'Add';
+        }
+      });
     }
   } catch (error) {
     console.error('Error adding narrative:', error);
     errorDiv.innerHTML = '<div class="error">Connection error. Please try again.</div>';
     errorDiv.style.display = 'block';
-    // Reset button only on error
-    addBtn.disabled = false;
-    addBtn.textContent = 'Add';
+    
+    // Re-enable all Add buttons and restore their original states on error
+    const allAddBtns = document.querySelectorAll('.add-btn-inline');
+    allAddBtns.forEach(btn => {
+      const btnLineId = btn.getAttribute('data-line-id');
+      const originalState = buttonStates.get(btnLineId);
+      if (originalState) {
+        // Restore original state
+        btn.disabled = originalState.disabled;
+        btn.textContent = originalState.text;
+      } else {
+        // Fallback to default state
+        btn.disabled = false;
+        btn.textContent = 'Add';
+      }
+    });
   }
 }
 
@@ -1028,11 +1088,10 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 /**
- * Open YouTube search using API and populate link field
+ * Open YouTube search using API and populate multiple lines with results
  */
 async function openYouTubeSearch(lineId) {
   const storyTextarea = document.getElementById(`story${lineId}`);
-  const linkInput = document.getElementById(`link${lineId}`);
   const videoInfoDiv = document.getElementById(`video-info-${lineId}`);
   
   if (!storyTextarea) {
@@ -1078,11 +1137,11 @@ async function openYouTubeSearch(lineId) {
     
     // Update loading state
     if (videoInfoDiv) {
-      videoInfoDiv.innerHTML = '<div style="text-align: center;">🔍 Searching for videos...</div>';
+      videoInfoDiv.innerHTML = '<div style="text-align: center;">🔍 Searching for 3 videos...</div>';
     }
     
-    // Step 2: Search for videos using the generated query
-    const searchResponse = await fetch(`/search-videos?query=${encodeURIComponent(searchQuery)}&max_results=1&max_duration=300`, {
+    // Step 2: Search for videos using the generated query - request 3 results
+    const searchResponse = await fetch(`/search-videos?query=${encodeURIComponent(searchQuery)}&max_results=3&max_duration=300`, {
       method: 'POST'
     });
     
@@ -1097,92 +1156,128 @@ async function openYouTubeSearch(lineId) {
     }
     
     if (searchData.videos && searchData.videos.length > 0) {
-      const video = searchData.videos[0];
-      
-      // Set the URL in the link input field
-      if (linkInput) {
-        linkInput.value = video.url;
+      // Hide loading state for the original line
+      if (videoInfoDiv) {
+        videoInfoDiv.style.display = 'none';
       }
       
-      // Display video information
-      if (videoInfoDiv) {
-        const duration = Math.floor(video.duration / 60) + ':' + String(video.duration % 60).padStart(2, '0');
-        videoInfoDiv.innerHTML = `
-          <div style="
-            background: #3a3a3a;
-            border: 1px solid #555;
-            border-radius: 8px;
-            padding: 12px;
-            margin: 4px 0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-          ">
+      // Function to populate a line with video data
+      function populateLineWithVideo(targetLineId, video) {
+        const linkInput = document.getElementById(`link${targetLineId}`);
+        const targetVideoInfoDiv = document.getElementById(`video-info-${targetLineId}`);
+        
+        if (linkInput) {
+          linkInput.value = video.url;
+        }
+        
+        if (targetVideoInfoDiv) {
+          const duration = Math.floor(video.duration / 60) + ':' + String(video.duration % 60).padStart(2, '0');
+          targetVideoInfoDiv.innerHTML = `
             <div style="
-              background: rgba(255,255,255,0.05);
-              border-radius: 6px;
-              padding: 8px;
-              margin-bottom: 8px;
+              background: #3a3a3a;
+              border: 1px solid #555;
+              border-radius: 8px;
+              padding: 12px;
+              margin: 4px 0;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.3);
             ">
               <div style="
-                color: #60a5fa;
-                font-weight: 600;
-                margin-bottom: 4px;
-                line-height: 1.3;
-                font-size: 12px;
-                cursor: pointer;
-                transition: color 0.2s ease;
-              " 
-              onclick="openVideoInPopup('${video.url.replace(/'/g, "\\'")}', '${video.title.replace(/'/g, "\\'")}')"
-              onmouseover="this.style.color='#3b82f6'"
-              onmouseout="this.style.color='#60a5fa'"
-              title="Click to open video in popup window"
-              >${video.title}</div>
+                background: rgba(255,255,255,0.05);
+                border-radius: 6px;
+                padding: 8px;
+                margin-bottom: 8px;
+              ">
+                <div style="
+                  color: #60a5fa;
+                  font-weight: 600;
+                  margin-bottom: 4px;
+                  line-height: 1.3;
+                  font-size: 12px;
+                  cursor: pointer;
+                  transition: color 0.2s ease;
+                " 
+                onclick="openVideoInPopup('${video.url.replace(/'/g, "\\'")}', '${video.title.replace(/'/g, "\\'")}')"
+                onmouseover="this.style.color='#3b82f6'"
+                onmouseout="this.style.color='#60a5fa'"
+                title="Click to open video in popup window"
+                >${video.title}</div>
+              </div>
+              
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px;">
+                <div style="
+                  background: rgba(255,255,255,0.03);
+                  padding: 6px 8px;
+                  border-radius: 4px;
+                  border-left: 3px solid #60a5fa;
+                ">
+                  <div style="color: #9ca3af; margin-bottom: 2px;">📺 Channel</div>
+                  <div style="color: #e5e7eb; font-weight: 500;">${video.uploader}</div>
+                </div>
+                
+                <div style="
+                  background: rgba(255,255,255,0.03);
+                  padding: 6px 8px;
+                  border-radius: 4px;
+                  border-left: 3px solid #f59e0b;
+                ">
+                  <div style="color: #9ca3af; margin-bottom: 2px;">⏱️ Duration</div>
+                  <div style="color: #e5e7eb; font-weight: 500;">${duration}</div>
+                </div>
+                
+                <div style="
+                  background: rgba(255,255,255,0.03);
+                  padding: 6px 8px;
+                  border-radius: 4px;
+                  border-left: 3px solid #ef4444;
+                ">
+                  <div style="color: #9ca3af; margin-bottom: 2px;">👁️ Views</div>
+                  <div style="color: #e5e7eb; font-weight: 500;">${video.view_count?.toLocaleString() || 'N/A'}</div>
+                </div>
+                
+                <div style="
+                  background: rgba(255,255,255,0.03);
+                  padding: 6px 8px;
+                  border-radius: 4px;
+                  border-left: 3px solid #8b5cf6;
+                ">
+                  <div style="color: #9ca3af; margin-bottom: 2px;">🔍 Query</div>
+                  <div style="color: #e5e7eb; font-weight: 500;">"${searchQuery}"</div>
+                </div>
+              </div>
             </div>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px;">
-              <div style="
-                background: rgba(255,255,255,0.03);
-                padding: 6px 8px;
-                border-radius: 4px;
-                border-left: 3px solid #60a5fa;
-              ">
-                <div style="color: #9ca3af; margin-bottom: 2px;">📺 Channel</div>
-                <div style="color: #e5e7eb; font-weight: 500;">${video.uploader}</div>
-              </div>
-              
-              <div style="
-                background: rgba(255,255,255,0.03);
-                padding: 6px 8px;
-                border-radius: 4px;
-                border-left: 3px solid #f59e0b;
-              ">
-                <div style="color: #9ca3af; margin-bottom: 2px;">⏱️ Duration</div>
-                <div style="color: #e5e7eb; font-weight: 500;">${duration}</div>
-              </div>
-              
-              <div style="
-                background: rgba(255,255,255,0.03);
-                padding: 6px 8px;
-                border-radius: 4px;
-                border-left: 3px solid #ef4444;
-              ">
-                <div style="color: #9ca3af; margin-bottom: 2px;">👁️ Views</div>
-                <div style="color: #e5e7eb; font-weight: 500;">${video.view_count?.toLocaleString() || 'N/A'}</div>
-              </div>
-              
-              <div style="
-                background: rgba(255,255,255,0.03);
-                padding: 6px 8px;
-                border-radius: 4px;
-                border-left: 3px solid #8b5cf6;
-              ">
-                <div style="color: #9ca3af; margin-bottom: 2px;">🔍 Query</div>
-                <div style="color: #e5e7eb; font-weight: 500;">"${searchQuery}"</div>
-              </div>
-            </div>
-          </div>
-        `;
-        videoInfoDiv.style.display = 'block';
+          `;
+          targetVideoInfoDiv.style.display = 'block';
+        }
       }
+      
+      // Populate the first video in the current line
+      populateLineWithVideo(lineId, searchData.videos[0]);
+      
+      // For additional videos, create new lines and populate them
+      let currentLineId = lineId;
+      for (let i = 1; i < searchData.videos.length; i++) {
+        // Add a new form line (this will copy sheet, narrative, and story from current line)
+        addNewFormLine(currentLineId);
+        
+        // Update currentLineId to the newly created line
+        currentLineId = formLineCounter;
+        
+        // Populate the new line with the video data
+        populateLineWithVideo(currentLineId, searchData.videos[i]);
+      }
+      
+      // Show success message in the error div
+      const errorDiv = document.getElementById('addNarrativeError');
+      if (errorDiv) {
+        errorDiv.innerHTML = `<div class="success">Found ${searchData.videos.length} videos and populated ${searchData.videos.length} lines!</div>`;
+        errorDiv.style.display = 'block';
+        
+        // Hide success message after 4 seconds
+        setTimeout(() => {
+          errorDiv.style.display = 'none';
+        }, 4000);
+      }
+      
     } else {
       if (videoInfoDiv) {
         videoInfoDiv.innerHTML = '<div style="color: #ff6b6b; text-align: center;">No videos found for this story</div>';

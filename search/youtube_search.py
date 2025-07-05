@@ -22,7 +22,11 @@ class YouTubeSearcher:
         }
 
     def search_videos(
-        self, query: str, max_results: int = 3, max_duration: int = 300
+        self,
+        query: str,
+        max_results: int = 3,
+        max_duration: int = 300,
+        min_duration: int = 45,
     ) -> List[Dict[str, Any]]:
         """
         Search for videos on YouTube
@@ -31,6 +35,7 @@ class YouTubeSearcher:
             query (str): Search query
             max_results (int): Maximum number of results to return
             max_duration (int): Maximum video duration in seconds
+            min_duration (int): Minimum video duration in seconds
 
         Returns:
             List[Dict]: List of video information dictionaries
@@ -49,6 +54,7 @@ class YouTubeSearcher:
                         if (
                             entry
                             and entry.get("duration")
+                            and entry["duration"] >= min_duration
                             and entry["duration"] <= max_duration
                         ):
                             video_info = {

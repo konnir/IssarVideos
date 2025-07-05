@@ -1,190 +1,234 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Add New Narrative - Preview</title>
-    <link rel="stylesheet" href="/static/add-narrative-modal.css">
-</head>
-<body>
+    <link rel="stylesheet" href="/static/add-narrative-modal.css" />
+  </head>
+  <body>
     <div class="modal-overlay">
-        <div class="modal" id="addNarrativeModal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>Add New Narrative</h3>
-                    <span class="close-btn" onclick="hideAddNarrativeModal()">&times;</span>
+      <div class="modal" id="addNarrativeModal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>Add New Narrative</h3>
+            <span class="close-btn" onclick="hideAddNarrativeModal()"
+              >&times;</span
+            >
+          </div>
+          <div class="modal-body">
+            <!-- User Tip Section -->
+            <div class="user-tip">
+              <div class="tip-content">
+                <span class="tip-icon">💡</span>
+                <div>
+                  <strong>Tip:</strong> Please ensure you choose a link that is
+                  not already in the database. Duplicate links will be rejected.
                 </div>
-                <div class="modal-body">
-                    <!-- User Tip Section -->
-                    <div class="user-tip">
-                        <div class="tip-content">
-                            <span class="tip-icon">💡</span>
-                            <div>
-                                <strong>Tip:</strong> Please ensure you choose a link that is not already in the database. Duplicate links will be rejected.
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Form Container -->
-                    <div class="narrative-form-container" id="narrativeFormContainer">
-                        <div class="narrative-form-line" id="formLine1" data-line-id="1">
-                            <div class="form-row">
-                                <!-- Topic and Narrative Column -->
-                                <div class="topic-narrative-column">
-                                    <div class="topic-field">
-                                        <label for="sheet1">Topic:</label>
-                                        <input
-                                            type="text"
-                                            id="sheet1"
-                                            class="form-input topic-input"
-                                            placeholder="Enter Topic"
-                                        />
-                                    </div>
-                                    <div class="narrative-field">
-                                        <label for="narrative1">Narrative:</label>
-                                        <input
-                                            type="text"
-                                            id="narrative1"
-                                            class="form-input narrative-input"
-                                            placeholder="Enter narrative text"
-                                        />
-                                    </div>
-                                </div>
-
-                                <!-- Story Column -->
-                                <div class="story-column">
-                                    <label for="story1">Story:</label>
-                                    <textarea
-                                        id="story1"
-                                        class="form-textarea story-input"
-                                        placeholder="Enter story content"
-                                        rows="4"
-                                    ></textarea>
-                                    <div class="story-buttons">
-                                        <button
-                                            class="suggest-story-btn"
-                                            onclick="suggestStory(1)"
-                                            data-line-id="1"
-                                            type="button"
-                                        >
-                                            ✨ Suggest Story
-                                        </button>
-                                        <button
-                                            class="edit-prompt-btn"
-                                            onclick="editPrompt(1)"
-                                            data-line-id="1"
-                                            type="button"
-                                        >
-                                            📝 Edit Prompt
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <!-- Link Column -->
-                                <div class="link-column">
-                                    <label for="link1">Link:</label>
-                                    <input
-                                        type="url"
-                                        id="link1"
-                                        class="form-input link-input"
-                                        placeholder="https://example.com"
-                                    />
-                                    <button
-                                        class="youtube-search-btn"
-                                        onclick="openYouTubeSearch(1)"
-                                        data-line-id="1"
-                                        type="button"
-                                        style="margin-top: 8px; padding: 6px 12px; background: #ff0000; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;"
-                                    >
-                                        🎬 Search YouTube
-                                    </button>
-                                    <div id="video-info-1" class="video-info" style="margin-top: 8px; padding: 8px; background: #f5f5f5; border-radius: 4px; font-size: 12px; display: none;"></div>
-                                </div>
-
-                                <!-- Actions Column -->
-                                <div class="actions-column">
-                                    <label>Actions:</label>
-                                    <div class="button-group">
-                                        <button
-                                            class="add-btn-inline"
-                                            onclick="addSingleNarrative(1)"
-                                            data-line-id="1"
-                                        >
-                                            Add
-                                        </button>
-                                        <button
-                                            class="plus-btn"
-                                            onclick="addNewFormLine(1)"
-                                            title="Add new line"
-                                        >
-                                            +
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div id="addNarrativeError" class="error-message" style="display: none"></div>
-                </div>
+              </div>
             </div>
-        </div>
 
-        <!-- Edit Prompt Modal -->
-        <div class="modal" id="editPromptModal" style="display: none">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>Edit Story Prompt</h3>
-                    <span class="close-btn" onclick="hideEditPromptModal()">&times;</span>
-                </div>
-                <div class="modal-body">
-                    <div class="prompt-edit-section">
-                        <p class="modal-description">
-                            Customize the prompt used to generate stories. Use <code>{narrative}</code> 
-                            as a placeholder for the narrative text.
-                        </p>
-                        <div class="form-field">
-                            <label for="customPrompt">Custom Prompt:</label>
-                            <textarea
-                                id="customPrompt"
-                                class="form-textarea"
-                                placeholder="Create a story based on this narrative: {narrative}&#10;&#10;The story should be..."
-                                rows="16"
-                                style="font-family: monospace; font-size: 14px;"
-                            ></textarea>
-                        </div>
-                        <div class="prompt-buttons">
-                            <button class="modal-btn primary" onclick="saveCustomPrompt()">
-                                💾 Save Prompt
-                            </button>
-                            <button class="modal-btn secondary" onclick="resetToDefaultPrompt()">
-                                🔄 Reset to Default
-                            </button>
-                            <button class="modal-btn secondary" onclick="testCustomPrompt()">
-                                🧪 Test Prompt
-                            </button>
-                        </div>
-                        <div id="promptTestResult" class="prompt-test-result" style="display: none;"></div>
+            <!-- Form Container -->
+            <div class="narrative-form-container" id="narrativeFormContainer">
+              <div class="narrative-form-line" id="formLine1" data-line-id="1">
+                <div class="form-row">
+                  <!-- Topic and Narrative Column -->
+                  <div class="topic-narrative-column">
+                    <div class="topic-field">
+                      <label for="sheet1">Topic:</label>
+                      <input
+                        type="text"
+                        id="sheet1"
+                        class="form-input topic-input"
+                        placeholder="Enter Topic"
+                      />
                     </div>
-                    <div id="editPromptError" class="error-message" style="display: none;"></div>
+                    <div class="narrative-field">
+                      <label for="narrative1">Narrative:</label>
+                      <input
+                        type="text"
+                        id="narrative1"
+                        class="form-input narrative-input"
+                        placeholder="Enter narrative text"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Story Column -->
+                  <div class="story-column">
+                    <label for="story1">Story:</label>
+                    <textarea
+                      id="story1"
+                      class="form-textarea story-input"
+                      placeholder="Enter story content"
+                      rows="4"
+                    ></textarea>
+                    <div class="story-buttons">
+                      <button
+                        class="suggest-story-btn"
+                        onclick="suggestStory(1)"
+                        data-line-id="1"
+                        type="button"
+                      >
+                        ✨ Suggest Story
+                      </button>
+                      <button
+                        class="edit-prompt-btn"
+                        onclick="editPrompt(1)"
+                        data-line-id="1"
+                        type="button"
+                      >
+                        📝 Edit Prompt
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Link Column -->
+                  <div class="link-column">
+                    <label for="link1">Link:</label>
+                    <input
+                      type="url"
+                      id="link1"
+                      class="form-input link-input"
+                      placeholder="https://example.com"
+                    />
+                    <button
+                      class="youtube-search-btn"
+                      onclick="openYouTubeSearch(1)"
+                      data-line-id="1"
+                      type="button"
+                      style="
+                        margin-top: 8px;
+                        padding: 6px 12px;
+                        background: #ff0000;
+                        color: white;
+                        border: none;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-size: 12px;
+                      "
+                    >
+                      🎬 Search YouTube
+                    </button>
+                    <div
+                      id="video-info-1"
+                      class="video-info"
+                      style="
+                        margin-top: 8px;
+                        padding: 8px;
+                        background: #f5f5f5;
+                        border-radius: 4px;
+                        font-size: 12px;
+                        display: none;
+                      "
+                    ></div>
+                  </div>
+
+                  <!-- Actions Column -->
+                  <div class="actions-column">
+                    <label>Actions:</label>
+                    <div class="button-group">
+                      <button
+                        class="add-btn-inline"
+                        onclick="addSingleNarrative(1)"
+                        data-line-id="1"
+                      >
+                        Add
+                      </button>
+                      <button
+                        class="plus-btn"
+                        onclick="addNewFormLine(1)"
+                        title="Add new line"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
                 </div>
+              </div>
             </div>
+
+            <div
+              id="addNarrativeError"
+              class="error-message"
+              style="display: none"
+            ></div>
+          </div>
         </div>
+      </div>
+
+      <!-- Edit Prompt Modal -->
+      <div class="modal" id="editPromptModal" style="display: none">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>Edit Story Prompt</h3>
+            <span class="close-btn" onclick="hideEditPromptModal()"
+              >&times;</span
+            >
+          </div>
+          <div class="modal-body">
+            <div class="prompt-edit-section">
+              <p class="modal-description">
+                Customize the prompt used to generate stories. Use
+                <code>{narrative}</code>
+                as a placeholder for the narrative text.
+              </p>
+              <div class="form-field">
+                <label for="customPrompt">Custom Prompt:</label>
+                <textarea
+                  id="customPrompt"
+                  class="form-textarea"
+                  placeholder="Create a story based on this narrative: {narrative}&#10;&#10;The story should be..."
+                  rows="16"
+                  style="font-family: monospace; font-size: 14px"
+                ></textarea>
+              </div>
+              <div class="prompt-buttons">
+                <button class="modal-btn primary" onclick="saveCustomPrompt()">
+                  💾 Save Prompt
+                </button>
+                <button
+                  class="modal-btn secondary"
+                  onclick="resetToDefaultPrompt()"
+                >
+                  🔄 Reset to Default
+                </button>
+                <button
+                  class="modal-btn secondary"
+                  onclick="testCustomPrompt()"
+                >
+                  🧪 Test Prompt
+                </button>
+              </div>
+              <div
+                id="promptTestResult"
+                class="prompt-test-result"
+                style="display: none"
+              ></div>
+            </div>
+            <div
+              id="editPromptError"
+              class="error-message"
+              style="display: none"
+            ></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Include the actual JavaScript from tagging management -->
     <script src="/static/tagging-management.js"></script>
-    
+
     <script>
-        // Override functions that depend on authentication for demo purposes
-        function hideAddNarrativeModal() {
-            document.getElementById('addNarrativeModal').style.display = 'none';
-        }
-        
-        // Show the modal by default for demo
-        window.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('addNarrativeModal').style.display = 'block';
-        });
+      // Override functions that depend on authentication for demo purposes
+      function hideAddNarrativeModal() {
+        document.getElementById("addNarrativeModal").style.display = "none";
+      }
+
+      // Show the modal by default for demo
+      window.addEventListener("DOMContentLoaded", function () {
+        document.getElementById("addNarrativeModal").style.display = "block";
+      });
     </script>
-</body>
+  </body>
 </html>
