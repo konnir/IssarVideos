@@ -32,15 +32,12 @@ class SheetsClient:
             "GOOGLE_SHEETS_ID", "1OYF8OH41MiZUEtKA5y8O-vklnVPpYmZUrnNxiIWtryU"
         )
 
-        if not self.credentials_path:
-            raise ValueError("Google Sheets credentials path not provided")
-
         self.client = None
         self.spreadsheet = None
         self._authenticate()
 
     def _authenticate(self):
-        """Authenticate with Google Sheets API using service account."""
+        """Authenticate with Google Sheets API using service account or default credentials."""
         try:
             # Define the scope for Google Sheets and Drive APIs
             scope = [
@@ -48,10 +45,17 @@ class SheetsClient:
                 "https://www.googleapis.com/auth/drive",
             ]
 
-            # Load credentials from JSON file
-            creds = Credentials.from_service_account_file(
-                self.credentials_path, scopes=scope
-            )
+            # Use credentials file if provided and exists, otherwise use default credentials
+            if self.credentials_path and os.path.exists(self.credentials_path):
+                logger.info(f"Using credentials file: {self.credentials_path}")
+                creds = Credentials.from_service_account_file(
+                    self.credentials_path, scopes=scope
+                )
+            else:
+                logger.info("Using default credentials (Cloud Run service account)")
+                from google.auth import default
+
+                creds, _ = default(scopes=scope)
 
             # Create the gspread client
             self.client = gspread.authorize(creds)
@@ -85,7 +89,9 @@ class SheetsClient:
                 return self.spreadsheet.sheet1  # First sheet
         except gspread.WorksheetNotFound:
             if sheet_name:
-                logger.info(f"Worksheet '{sheet_name}' not found. Creating new worksheet.")
+                logger.info(
+                    f"Worksheet '{sheet_name}' not found. Creating new worksheet."
+                )
                 return self.create_worksheet(sheet_name)
             else:
                 logger.error(f"Default worksheet not found")

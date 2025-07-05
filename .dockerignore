@@ -74,3 +74,13 @@ test_protection_demo.py
 # Local development
 .env.local
 .env.development
+
+# Credentials and sensitive files
+.env
+gll/
+*.json
+credentials/
+
+# Logs
+*.log
+logs/

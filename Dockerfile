@@ -7,7 +7,7 @@ WORKDIR /app
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
-ENV PORT=8080
+ENV PORT=8000
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -18,13 +18,13 @@ RUN apt-get update && apt-get install -y \
 COPY pyproject.toml poetry.lock ./
 
 # Install Poetry
-RUN pip install poetry
+RUN pip install poetry==1.8.5
 
 # Configure poetry to not create virtual environment
 RUN poetry config virtualenvs.create false
 
 # Install dependencies
-RUN poetry install --only main --no-dev --version 1.8.5
+RUN poetry install --no-dev
 
 # Copy application code
 COPY . .
@@ -35,11 +35,7 @@ RUN chown -R app:app /app
 USER app
 
 # Expose port
-EXPOSE 8080
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8080/docs || exit 1
+EXPOSE 8000
 
 # Run the application
 CMD uvicorn main:app --host 0.0.0.0 --port $PORT

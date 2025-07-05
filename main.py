@@ -77,7 +77,14 @@ else:
     print("⚠️  DEVELOPMENT MODE: Changes will be saved to Google Sheets!")
 
 try:
-    db = SheetsNarrativesDB(GOOGLE_SHEETS_CREDENTIALS, GOOGLE_SHEETS_ID)
+    # Use credentials file if available (local development)
+    # Use default credentials if on Cloud Run with service account
+    credentials_path = (
+        GOOGLE_SHEETS_CREDENTIALS
+        if GOOGLE_SHEETS_CREDENTIALS and os.path.exists(GOOGLE_SHEETS_CREDENTIALS)
+        else None
+    )
+    db = SheetsNarrativesDB(credentials_path, GOOGLE_SHEETS_ID)
     print("✅ Google Sheets connection successful")
 except Exception as e:
     print(f"❌ Failed to connect to Google Sheets: {str(e)}")
