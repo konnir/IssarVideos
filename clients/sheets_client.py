@@ -5,7 +5,7 @@ Google Sheets client for reading and writing data to Google Sheets.
 import os
 import logging
 import pandas as pd
-from typing import Optional, Any, List
+from typing import Optional, Any, List, Dict
 import gspread
 from google.oauth2.service_account import Credentials
 
@@ -200,6 +200,108 @@ class SheetsClient:
             logger.error(f"Failed to update cell: {str(e)}")
             raise
 
+    def update_cells_batch(self, updates: List[dict], sheet_name: str = None):
+        """
+        Update multiple cells in a single batch operation.
+
+        Args:
+            updates: List of dictionaries with 'row', 'col', 'value' keys
+            sheet_name: Name of the worksheet
+        """
+        try:
+            worksheet = self.get_worksheet(sheet_name)
+
+            # Prepare batch update data
+            cell_list = []
+            for update in updates:
+                cell = worksheet.cell(update["row"], update["col"])
+                cell.value = update["value"]
+                cell_list.append(cell)
+
+            # Perform batch update
+            worksheet.update_cells(cell_list)
+
+            logger.info(
+                f"Successfully updated {len(updates)} cells in worksheet '{sheet_name}'"
+            )
+
+        except Exception as e:
+            logger.error(f"Failed to update cells in batch: {str(e)}")
+            raise
+
+    def find_row_by_column_value(
+        self, search_column: str, search_value: Any, sheet_name: str = None
+    ) -> Optional[int]:
+        """
+        Find the row number of a record by searching for a value in a specific column.
+
+        Args:
+            search_column: Column name to search in
+            search_value: Value to search for
+            sheet_name: Name of the worksheet
+
+        Returns:
+            Row number (1-indexed) if found, None otherwise
+        """
+        try:
+            worksheet = self.get_worksheet(sheet_name)
+
+            # Get all values to search through
+            all_values = worksheet.get_all_values()
+            if not all_values:
+                return None
+
+            # Find header row to get column index
+            headers = all_values[0]
+            if search_column not in headers:
+                logger.warning(
+                    f"Column '{search_column}' not found in worksheet '{sheet_name}'"
+                )
+                return None
+
+            col_index = headers.index(search_column)
+
+            # Search for the value (starting from row 2, skipping header)
+            for row_index, row_data in enumerate(all_values[1:], start=2):
+                if col_index < len(row_data) and row_data[col_index] == str(
+                    search_value
+                ):
+                    return row_index
+
+            return None
+
+        except Exception as e:
+            logger.error(f"Failed to find row by column value: {str(e)}")
+            raise
+
+    def get_column_mapping(self, sheet_name: str = None) -> Dict[str, int]:
+        """
+        Get mapping of column names to column numbers for a sheet.
+
+        Args:
+            sheet_name: Name of the worksheet
+
+        Returns:
+            Dictionary mapping column names to column numbers (1-indexed)
+        """
+        try:
+            worksheet = self.get_worksheet(sheet_name)
+
+            # Get the first row (headers)
+            headers = worksheet.row_values(1)
+
+            # Create mapping
+            column_mapping = {}
+            for idx, header in enumerate(headers, start=1):
+                if header:  # Skip empty headers
+                    column_mapping[header] = idx
+
+            return column_mapping
+
+        except Exception as e:
+            logger.error(f"Failed to get column mapping: {str(e)}")
+            return {}
+
     def get_all_worksheets(self) -> List[str]:
         """
         Get list of all worksheet names in the spreadsheet.
@@ -234,6 +336,33 @@ class SheetsClient:
             logger.error(f"Failed to create worksheet '{sheet_name}': {str(e)}")
             raise
 
+    def create_worksheet_with_headers(
+        self, sheet_name: str, headers: list, rows: int = 1000, cols: int = 26
+    ):
+        """
+        Create a new worksheet in the spreadsheet with specified headers.
+
+        Args:
+            sheet_name: Name for the new worksheet
+            headers: List of header names to put in the first row
+            rows: Number of rows (default: 1000)
+            cols: Number of columns (default: 26)
+        """
+        try:
+            # Create the worksheet
+            worksheet = self.create_worksheet(sheet_name, rows, cols)
+
+            # Add headers to the first row
+            if headers:
+                worksheet.update("1:1", [headers])
+                logger.info(f"Added headers to worksheet '{sheet_name}': {headers}")
+
+            return worksheet
+
+        except Exception as e:
+            logger.error(f"Failed to create worksheet '{sheet_name}' with headers: {str(e)}")
+            raise
+
     def validate_connection(self) -> bool:
         """
         Validate the connection to Google Sheets.
@@ -249,3 +378,31 @@ class SheetsClient:
         except Exception as e:
             logger.error(f"Connection validation failed: {str(e)}")
             return False
+
+    def delete_worksheet(self, sheet_name: str):
+        """
+        Delete a worksheet from the spreadsheet.
+
+        Args:
+            sheet_name: Name of the worksheet to delete
+        """
+        try:
+            # Find the worksheet to delete
+            worksheet = None
+            for ws in self.spreadsheet.worksheets():
+                if ws.title == sheet_name:
+                    worksheet = ws
+                    break
+            
+            if worksheet is None:
+                logger.warning(f"Worksheet '{sheet_name}' not found for deletion")
+                return False
+            
+            # Delete the worksheet
+            self.spreadsheet.del_worksheet(worksheet)
+            logger.info(f"Successfully deleted worksheet '{sheet_name}'")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to delete worksheet '{sheet_name}': {str(e)}")
+            raise

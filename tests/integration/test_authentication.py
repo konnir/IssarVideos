@@ -23,14 +23,13 @@ class TestAuthentication:
         """Setup for authentication tests"""
         self.base_url = "http://localhost:8000"
         self.valid_credentials = [
-            {"username": "Nir Kon", "password": "originai"},
-            {"username": "Issar Tzachor", "password": "originai"},
+            {"username": "tagmaster", "password": "splinter1960"},
         ]
         self.invalid_credentials = [
             {"username": "Invalid User", "password": "originai"},
-            {"username": "Nir Kon", "password": "wrong_password"},
-            {"username": "", "password": "originai"},
-            {"username": "Nir Kon", "password": ""},
+            {"username": "tagmaster", "password": "wrong_password"},
+            {"username": "", "password": "splinter1960"},
+            {"username": "tagmaster", "password": ""},
             {"username": "", "password": ""},
             {"username": "admin", "password": "admin"},
             {"username": "test", "password": "test"},
@@ -270,7 +269,7 @@ class TestAuthenticationIntegration:
     def setup(self):
         """Setup for integration tests"""
         self.base_url = "http://localhost:8000"
-        self.valid_auth = {"username": "Nir Kon", "password": "originai"}
+        self.valid_auth = {"username": "tagmaster", "password": "splinter1960"}
 
     def skip_if_server_not_running(self):
         """Skip test if server is not running"""
@@ -305,8 +304,7 @@ class TestAuthenticationIntegration:
 
         # Multiple users authenticating
         users = [
-            {"username": "Nir Kon", "password": "originai"},
-            {"username": "Issar Tzachor", "password": "originai"},
+            {"username": "tagmaster", "password": "splinter1960"},
         ]
 
         for user in users:

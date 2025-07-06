@@ -5,6 +5,7 @@ Comprehensive API Endpoint Tests
 
 Tests for all API endpoints in the FastAPI application.
 This covers all 16 endpoints identified in main.py.
+All tests that write to Google Sheets use temporary test sheets that are cleaned up after each test.
 """
 import pytest
 import requests
@@ -27,26 +28,80 @@ class TestAllAPIEndpoints:
     def setup(self):
         """Setup for each test"""
         self.base_url = "http://localhost:8000"
-        # Get available topics dynamically or use fallback
-        try:
-            response = requests.get(f"{self.base_url}/topics", timeout=2)
-            if response.status_code == 200:
-                topics = response.json().get("topics", ["Health"])
-                test_sheet = topics[0] if topics else "Health"
-            else:
-                test_sheet = "Health"  # Fallback
-        except:
-            test_sheet = "Health"  # Fallback if server not running
-            
+        self.test_sheets_created = []  # Track sheets created during tests
+        
+        # Create a unique test sheet name for this test session
+        import uuid
+        self.test_sheet_name = f"TEST_SHEET_{uuid.uuid4().hex[:8]}"
+        
         self.test_video_record = {
-            "Sheet": test_sheet,
+            "Sheet": self.test_sheet_name,
             "Narrative": "Test narrative for comprehensive testing",
             "Story": "Test story content",
             "Link": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",  # Valid YouTube URL
         }
         self.test_shorts_url = "https://www.youtube.com/shorts/9m19poxkkpg"  # Test Shorts URL
         self.test_update_data = {"Tagger_1": "Test User", "Tagger_1_Result": 1}
-        self.auth_data = {"username": "Nir Kon", "password": "originai"}
+        self.auth_data = {"username": "tagmaster", "password": "splinter1960"}
+
+    def teardown_method(self):
+        """Clean up test sheets after each test"""
+        if hasattr(self, 'test_sheets_created') and self.test_sheets_created:
+            try:
+                from clients.sheets_client import SheetsClient
+                import os
+                
+                credentials_path = os.getenv("GOOGLE_SHEETS_CREDENTIALS_PATH")
+                sheet_id = os.getenv("GOOGLE_SHEETS_ID")
+                
+                if credentials_path and sheet_id:
+                    client = SheetsClient(credentials_path, sheet_id)
+                    for sheet_name in self.test_sheets_created:
+                        try:
+                            client.delete_worksheet(sheet_name)
+                            print(f"✓ Cleaned up test sheet: {sheet_name}")
+                        except Exception as e:
+                            print(f"⚠ Warning: Could not delete test sheet {sheet_name}: {e}")
+            except Exception as e:
+                print(f"⚠ Warning: Error during test sheet cleanup: {e}")
+
+    def create_test_sheet_if_needed(self, sheet_name=None):
+        """Create a test sheet if it doesn't exist and track it for cleanup"""
+        if sheet_name is None:
+            sheet_name = self.test_sheet_name
+            
+        try:
+            from clients.sheets_client import SheetsClient
+            import os
+            
+            credentials_path = os.getenv("GOOGLE_SHEETS_CREDENTIALS_PATH")
+            sheet_id = os.getenv("GOOGLE_SHEETS_ID")
+            
+            if not credentials_path or not sheet_id:
+                pytest.skip("Google Sheets credentials not configured")
+                
+            client = SheetsClient(credentials_path, sheet_id)
+            
+            # Check if sheet exists
+            worksheets = client.get_all_worksheets()
+            existing_sheet_names = [ws.title for ws in worksheets]
+            
+            if sheet_name not in existing_sheet_names:
+                # Create the test sheet with standard headers
+                headers = [
+                    "Sheet", "Narrative", "Story", "Link", "Tagger_1", "Tagger_1_Result",
+                    "Tagger_2", "Tagger_2_Result", "Tagger_3", "Tagger_3_Result",
+                    "Tagger_4", "Tagger_4_Result", "Total_Tags", "Consensus_Score",
+                    "Final_Decision"
+                ]
+                client.create_worksheet_with_headers(sheet_name, headers)
+                self.test_sheets_created.append(sheet_name)
+                print(f"✓ Created test sheet: {sheet_name}")
+                
+        except Exception as e:
+            pytest.skip(f"Could not create test sheet: {e}")
+            
+        return sheet_name
 
     def skip_if_server_not_running(self):
         """Skip test if server is not running"""
@@ -431,6 +486,9 @@ class TestAllAPIEndpoints:
     def test_add_record_endpoint(self):
         """Test /add-record endpoint"""
         self.skip_if_server_not_running()
+        
+        # Create test sheet for this test
+        self.create_test_sheet_if_needed()
 
         # Use a unique link to avoid conflicts
         import time
@@ -452,6 +510,9 @@ class TestAllAPIEndpoints:
     def test_add_record_duplicate_link(self):
         """Test /add-record endpoint with duplicate link"""
         self.skip_if_server_not_running()
+        
+        # Create test sheet for this test
+        self.create_test_sheet_if_needed()
 
         # Try to add the same record twice
         response1 = requests.post(
@@ -472,24 +533,15 @@ class TestAllAPIEndpoints:
     def test_add_record_youtube_shorts_conversion(self):
         """Test that YouTube Shorts URLs are converted to regular YouTube URLs"""
         self.skip_if_server_not_running()
+        
+        # Create test sheet for this test
+        self.create_test_sheet_if_needed()
 
         import time
         
-        # Get available topics/sheets
-        topics_response = requests.get(f"{self.base_url}/topics")
-        if topics_response.status_code != 200:
-            pytest.skip("Cannot get topics list")
-            
-        topics = topics_response.json().get("topics", [])
-        if not topics:
-            pytest.skip("No topics available for testing")
-        
-        # Use the first available topic
-        test_sheet = topics[0]
-        
         # Create test record with YouTube Shorts URL
         shorts_record = {
-            "Sheet": test_sheet,
+            "Sheet": self.test_sheet_name,
             "Narrative": "Test narrative for shorts conversion",
             "Story": "Test story content for shorts",
             "Link": f"https://www.youtube.com/shorts/test{int(time.time())}"  # Unique shorts URL
@@ -511,24 +563,15 @@ class TestAllAPIEndpoints:
     def test_add_narrative_youtube_shorts_conversion(self):
         """Test that YouTube Shorts URLs are converted in add-narrative endpoint"""
         self.skip_if_server_not_running()
+        
+        # Create test sheet for this test
+        self.create_test_sheet_if_needed()
 
         import time
         
-        # First get available topics/sheets
-        topics_response = requests.get(f"{self.base_url}/topics")
-        if topics_response.status_code != 200:
-            pytest.skip("Cannot get topics list")
-            
-        topics = topics_response.json().get("topics", [])
-        if not topics:
-            pytest.skip("No topics available for testing")
-        
-        # Use the first available topic
-        test_sheet = topics[0]
-        
         # Create test narrative with YouTube Shorts URL
         shorts_narrative = {
-            "Sheet": test_sheet,
+            "Sheet": self.test_sheet_name,
             "Narrative": "Test narrative for shorts in add-narrative",
             "Story": "Test story content for shorts in add-narrative",
             "Link": f"https://www.youtube.com/shorts/narrative{int(time.time())}"  # Unique shorts URL
@@ -551,22 +594,13 @@ class TestAllAPIEndpoints:
     def test_add_narrative_endpoint(self):
         """Test /add-narrative endpoint with valid data"""
         self.skip_if_server_not_running()
-
-        # Get available topics/sheets
-        topics_response = requests.get(f"{self.base_url}/topics")
-        if topics_response.status_code != 200:
-            pytest.skip("Cannot get topics list")
-            
-        topics = topics_response.json().get("topics", [])
-        if not topics:
-            pytest.skip("No topics available for testing")
         
-        # Use the first available topic
-        test_sheet = topics[0]
+        # Create test sheet for this test
+        self.create_test_sheet_if_needed()
 
         # Test data for adding narrative
         narrative_data = {
-            "Sheet": test_sheet,
+            "Sheet": self.test_sheet_name,
             "Narrative": "Test narrative for add endpoint",
             "Story": "This is a test story for the add narrative endpoint functionality",
             "Link": f"https://example.com/test-add-narrative-{hash(str(time.time()))}",
@@ -591,22 +625,13 @@ class TestAllAPIEndpoints:
     def test_add_narrative_duplicate_link(self):
         """Test /add-narrative endpoint with duplicate link"""
         self.skip_if_server_not_running()
-
-        # Get available topics/sheets
-        topics_response = requests.get(f"{self.base_url}/topics")
-        if topics_response.status_code != 200:
-            pytest.skip("Cannot get topics list")
-            
-        topics = topics_response.json().get("topics", [])
-        if not topics:
-            pytest.skip("No topics available for testing")
         
-        # Use the first available topic
-        test_sheet = topics[0]
+        # Create test sheet for this test
+        self.create_test_sheet_if_needed()
 
         # Use a known link that might already exist
         narrative_data = {
-            "Sheet": test_sheet,
+            "Sheet": self.test_sheet_name,
             "Narrative": "Duplicate test narrative",
             "Story": "Test story for duplicate link test",
             "Link": "https://example.com/duplicate-test-link",
@@ -812,6 +837,70 @@ class TestAPIEndpointIntegration:
     def setup(self):
         """Setup for integration tests"""
         self.base_url = "http://localhost:8000"
+        self.test_sheets_created = []  # Track sheets created during tests
+        
+        # Create a unique test sheet name for this test session
+        import uuid
+        self.test_sheet_name = f"TEST_INTEGRATION_{uuid.uuid4().hex[:8]}"
+
+    def teardown_method(self):
+        """Clean up test sheets after each test"""
+        if hasattr(self, 'test_sheets_created') and self.test_sheets_created:
+            try:
+                from clients.sheets_client import SheetsClient
+                import os
+                
+                credentials_path = os.getenv("GOOGLE_SHEETS_CREDENTIALS_PATH")
+                sheet_id = os.getenv("GOOGLE_SHEETS_ID")
+                
+                if credentials_path and sheet_id:
+                    client = SheetsClient(credentials_path, sheet_id)
+                    for sheet_name in self.test_sheets_created:
+                        try:
+                            client.delete_worksheet(sheet_name)
+                            print(f"✓ Cleaned up integration test sheet: {sheet_name}")
+                        except Exception as e:
+                            print(f"⚠ Warning: Could not delete integration test sheet {sheet_name}: {e}")
+            except Exception as e:
+                print(f"⚠ Warning: Error during integration test sheet cleanup: {e}")
+
+    def create_test_sheet_if_needed(self, sheet_name=None):
+        """Create a test sheet if it doesn't exist and track it for cleanup"""
+        if sheet_name is None:
+            sheet_name = self.test_sheet_name
+            
+        try:
+            from clients.sheets_client import SheetsClient
+            import os
+            
+            credentials_path = os.getenv("GOOGLE_SHEETS_CREDENTIALS_PATH")
+            sheet_id = os.getenv("GOOGLE_SHEETS_ID")
+            
+            if not credentials_path or not sheet_id:
+                pytest.skip("Google Sheets credentials not configured")
+                
+            client = SheetsClient(credentials_path, sheet_id)
+            
+            # Check if sheet exists
+            worksheets = client.get_all_worksheets()
+            existing_sheet_names = [ws.title for ws in worksheets]
+            
+            if sheet_name not in existing_sheet_names:
+                # Create the test sheet with standard headers
+                headers = [
+                    "Sheet", "Narrative", "Story", "Link", "Tagger_1", "Tagger_1_Result",
+                    "Tagger_2", "Tagger_2_Result", "Tagger_3", "Tagger_3_Result",
+                    "Tagger_4", "Tagger_4_Result", "Total_Tags", "Consensus_Score",
+                    "Final_Decision"
+                ]
+                client.create_worksheet_with_headers(sheet_name, headers)
+                self.test_sheets_created.append(sheet_name)
+                print(f"✓ Created integration test sheet: {sheet_name}")
+                
+        except Exception as e:
+            pytest.skip(f"Could not create integration test sheet: {e}")
+            
+        return sheet_name
 
     def skip_if_server_not_running(self):
         """Skip test if server is not running"""
@@ -823,11 +912,14 @@ class TestAPIEndpointIntegration:
     def test_add_and_retrieve_record_flow(self):
         """Test adding a record and then retrieving it"""
         self.skip_if_server_not_running()
+        
+        # Create test sheet for this integration test
+        self.create_test_sheet_if_needed()
 
         import time
 
         unique_record = {
-            "Sheet": "Integration Test",
+            "Sheet": self.test_sheet_name,
             "Narrative": "Integration test narrative",
             "Story": "Integration test story",
             "Link": f"https://example.com/integration-test-{int(time.time())}",

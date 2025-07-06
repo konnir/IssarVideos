@@ -28,6 +28,9 @@ class SheetsNarrativesDB:
         self.df = pd.DataFrame()
         self.current_sheet_name = None
         self.last_loaded_time = None
+        # Track row positions for cell-level updates
+        self._row_positions = {}  # {(sheet_name, link): row_number}
+        self._row_mapping_built = False  # Track if mapping has been built
         # Load data from all sheets by default for tagging management
         self.load_all_sheets_data()
 
@@ -49,12 +52,16 @@ class SheetsNarrativesDB:
                     return
 
             self.current_sheet_name = sheet_name
-            self.df = self.sheets_client.read_sheet_to_dataframe(sheet_name)
-
-            # Update timestamp
+            self.df = self.sheets_client.read_sheet_to_dataframe(
+                sheet_name
+            )  # Update timestamp
             import time
 
             self.last_loaded_time = time.time()
+
+            # Don't build row position mapping immediately to reduce startup API calls
+            # It will be built on-demand when needed for cell updates
+            self._row_mapping_built = False
 
             logger.info(f"Loaded {len(self.df)} records from Google Sheets")
 
@@ -125,12 +132,14 @@ class SheetsNarrativesDB:
                         "Tagger_1",
                         "Tagger_1_Result",
                     ]
-                )
-
-            # Update timestamp
+                )  # Update timestamp
             import time
 
             self.last_loaded_time = time.time()
+
+            # Don't build row position mapping immediately to reduce startup API calls
+            # It will be built on-demand when needed for cell updates
+            self._row_mapping_built = False
 
         except Exception as e:
             logger.error(f"Failed to load data from all sheets: {str(e)}")
@@ -145,6 +154,34 @@ class SheetsNarrativesDB:
                     "Tagger_1_Result",
                 ]
             )
+
+    def _build_row_position_mapping(self):
+        """Build mapping of (sheet_name, link) to row positions for cell-level updates using existing DataFrame."""
+        self._row_positions = {}
+
+        if self.df.empty:
+            return
+
+        try:
+            # Group by sheet to get row positions within each sheet
+            for sheet_name, group_df in self.df.groupby("Sheet"):
+                # Sort by index to maintain consistent ordering
+                sorted_group = group_df.sort_index()
+
+                # Calculate row positions based on DataFrame index
+                # Row position = current count of records in this sheet + 2 (for 1-indexing and header)
+                for local_idx, (_, row) in enumerate(sorted_group.iterrows(), start=2):
+                    link = row.get("Link")
+                    if pd.notna(link) and link != "":
+                        self._row_positions[(sheet_name, link)] = local_idx
+
+            logger.info(
+                f"Built row position mapping for {len(self._row_positions)} records (using DataFrame)"
+            )
+
+        except Exception as e:
+            logger.error(f"Failed to build row position mapping: {str(e)}")
+            self._row_positions = {}
 
     def save_changes(self):
         """Save the current DataFrame back to Google Sheets, distributing records to their respective sheets."""
@@ -226,6 +263,62 @@ class SheetsNarrativesDB:
         except Exception as e:
             logger.error(f"Failed to add record to sheet '{target_sheet}': {str(e)}")
             raise
+
+    def add_record_to_specific_sheet_append(self, record_dict: Dict[str, Any]) -> bool:
+        """Add a new record to a specific sheet using append operation."""
+        try:
+            target_sheet = record_dict.get("Sheet")
+            if not target_sheet:
+                raise ValueError("Sheet name is required in record_dict")
+
+            logger.info(f"Adding record to sheet using append: {target_sheet}")
+
+            # Ensure the Sheet column has the correct value
+            record_dict["Sheet"] = target_sheet
+
+            # Prepare row data in the correct column order
+            expected_columns = [
+                "Sheet",
+                "Narrative",
+                "Story",
+                "Link",
+                "Tagger_1",
+                "Tagger_1_Result",
+            ]
+            row_data = []
+
+            for col in expected_columns:
+                value = record_dict.get(col, "")
+                # Convert None to empty string for sheets
+                if value is None:
+                    value = ""
+                row_data.append(value)
+
+            # Append to the specific sheet
+            self.sheets_client.append_row_to_sheet(row_data, target_sheet)
+
+            # Add to our local DataFrame for immediate consistency
+            new_row = pd.DataFrame([record_dict])
+            self.df = pd.concat([self.df, new_row], ignore_index=True)
+
+            # Update row position mapping for this new record
+            # Calculate new row position based on existing records count in this sheet
+            existing_records_in_sheet = len(self.df[self.df["Sheet"] == target_sheet])
+            new_row_position = existing_records_in_sheet + 1  # +1 for header row
+            link = record_dict.get("Link")
+            if link:
+                self._row_positions[(target_sheet, link)] = new_row_position
+
+            logger.info(
+                f"Successfully added record to sheet '{target_sheet}' using append"
+            )
+            return True
+
+        except Exception as e:
+            logger.error(
+                f"Failed to add record to sheet '{target_sheet}' using append: {str(e)}"
+            )
+            return False
 
     def get_random_not_fully_tagged_row(self) -> Optional[Dict[str, Any]]:
         """Get a random row that is not fully tagged."""
@@ -319,6 +412,134 @@ class SheetsNarrativesDB:
 
         return True
 
+    def tag_record_cell_update(self, link: str, username: str, result: int) -> bool:
+        """Tag a record using cell-level updates instead of full sheet rewrite."""
+        if self.df.empty:
+            return False
+
+        # Find the record by link in our DataFrame
+        mask = self.df["Link"] == link
+        matching_rows = self.df[mask]
+
+        if matching_rows.empty:
+            return False
+
+        # Check if already fully tagged
+        row = matching_rows.iloc[0]
+        if not pd.isna(row["Tagger_1"]) and row["Tagger_1"] != "":
+            return False  # Already tagged
+
+        # Get the sheet name for this record
+        sheet_name = row["Sheet"]
+
+        # Ensure row position mapping is built
+        self._ensure_row_mapping_built()
+
+        # Find row position in the sheet
+        row_key = (sheet_name, link)
+        if row_key not in self._row_positions:
+            logger.warning(
+                f"Row position not found for link {link} in sheet {sheet_name}"
+            )
+            return False
+
+        row_position = self._row_positions[row_key]
+
+        try:
+            # Get dynamic column mapping
+            column_mapping = self.sheets_client.get_column_mapping(sheet_name)
+
+            if (
+                "Tagger_1" not in column_mapping
+                or "Tagger_1_Result" not in column_mapping
+            ):
+                logger.error(f"Required columns not found in sheet {sheet_name}")
+                return False
+
+            tagger_col = column_mapping["Tagger_1"]
+            result_col = column_mapping["Tagger_1_Result"]
+
+            # Prepare batch update
+            updates = [
+                {"row": row_position, "col": tagger_col, "value": username},
+                {"row": row_position, "col": result_col, "value": result},
+            ]
+
+            # Perform batch cell update
+            self.sheets_client.update_cells_batch(updates, sheet_name)
+
+            # Update our local DataFrame
+            self.df.loc[mask, "Tagger_1"] = username
+            self.df.loc[mask, "Tagger_1_Result"] = result
+
+            logger.info(f"Successfully tagged record using cell-level update: {link}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to tag record with cell-level update: {str(e)}")
+            return False
+
+    def update_record_cell_update(self, link: str, update_dict: Dict[str, Any]) -> bool:
+        """Update a record using cell-level updates instead of full sheet rewrite."""
+        if self.df.empty:
+            return False
+
+        # Find the record by link
+        mask = self.df["Link"] == link
+        matching_rows = self.df[mask]
+
+        if matching_rows.empty:
+            return False
+
+        # Get the sheet name for this record
+        row = matching_rows.iloc[0]
+        sheet_name = row["Sheet"]
+
+        # Ensure row position mapping is built
+        self._ensure_row_mapping_built()
+
+        # Find row position in the sheet
+        row_key = (sheet_name, link)
+        if row_key not in self._row_positions:
+            logger.warning(
+                f"Row position not found for link {link} in sheet {sheet_name}"
+            )
+            return False
+
+        row_position = self._row_positions[row_key]
+
+        try:
+            # Get dynamic column mapping
+            column_mapping = self.sheets_client.get_column_mapping(sheet_name)
+
+            # Prepare batch update
+            updates = []
+            for column, value in update_dict.items():
+                if column in column_mapping and column in self.df.columns:
+                    col_position = column_mapping[column]
+                    updates.append(
+                        {"row": row_position, "col": col_position, "value": value}
+                    )
+
+            if not updates:
+                logger.warning("No valid columns to update")
+                return False
+
+            # Perform batch cell update
+            self.sheets_client.update_cells_batch(updates, sheet_name)
+
+            # Update our local DataFrame
+            for column, value in update_dict.items():
+                if column in self.df.columns:
+                    self.df.loc[mask, column] = value
+
+            logger.info(f"Successfully updated record using cell-level update: {link}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to update record with cell-level update: {str(e)}")
+            return False
+
     def get_user_tagged_count(self, username: str) -> int:
         """Get count of records tagged by a specific user."""
         if self.df.empty:
@@ -393,3 +614,59 @@ class SheetsNarrativesDB:
             logger.info("Data is stale, refreshing from Google Sheets...")
             self.load_data(self.current_sheet_name)
             self.last_loaded_time = current_time
+
+    def add_new_record_append(self, record_dict: Dict[str, Any]) -> bool:
+        """Add a new record using append operation instead of full sheet rewrite."""
+        try:
+            target_sheet = record_dict.get("Sheet")
+            if not target_sheet:
+                target_sheet = self.current_sheet_name or "Sheet1"
+                record_dict["Sheet"] = target_sheet
+
+            # Prepare row data in the correct column order
+            # Ensure we match the expected column structure
+            expected_columns = [
+                "Sheet",
+                "Narrative",
+                "Story",
+                "Link",
+                "Tagger_1",
+                "Tagger_1_Result",
+            ]
+            row_data = []
+
+            for col in expected_columns:
+                value = record_dict.get(col, "")
+                # Convert None to empty string for sheets
+                if value is None:
+                    value = ""
+                row_data.append(value)
+
+            # Append to the specific sheet
+            self.sheets_client.append_row_to_sheet(row_data, target_sheet)
+
+            # Add to our local DataFrame
+            new_row = pd.DataFrame([record_dict])
+            self.df = pd.concat([self.df, new_row], ignore_index=True)
+
+            # Update row position mapping for this new record
+            # Calculate new row position based on existing records count in this sheet
+            existing_records_in_sheet = len(self.df[self.df["Sheet"] == target_sheet])
+            new_row_position = existing_records_in_sheet + 1  # +1 for header row
+            link = record_dict.get("Link")
+            if link:
+                self._row_positions[(target_sheet, link)] = new_row_position
+
+            logger.info(f"Successfully added new record using append: {link}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to add new record using append: {str(e)}")
+            return False
+
+    def _ensure_row_mapping_built(self):
+        """Ensure row position mapping is built when needed for cell operations."""
+        if not self._row_mapping_built:
+            logger.info("Building row position mapping on-demand...")
+            self._build_row_position_mapping()
+            self._row_mapping_built = True

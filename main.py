@@ -120,22 +120,18 @@ def update_record(link: str, updated_data: VideoRecordUpdate):
     if not update_dict:
         raise HTTPException(status_code=400, detail="No data provided for update")
 
-    success = db.update_record(decoded_link, update_dict)
+    # Use cell-level update instead of full sheet rewrite
+    success = db.update_record_cell_update(decoded_link, update_dict)
     if not success:
         raise HTTPException(
             status_code=404, detail=f"Record not found for link: {decoded_link}"
-        )  # Save changes to Google Sheets
-        try:
-            db.save_changes()
-            return {
-                "message": "Record updated successfully",
-                "updated_fields": list(update_dict.keys()),
-                "link": decoded_link,
-            }
-        except Exception as e:
-            raise HTTPException(
-                status_code=500, detail=f"Failed to save changes: {str(e)}"
-            )
+        )
+
+    return {
+        "message": "Record updated successfully",
+        "updated_fields": list(update_dict.keys()),
+        "link": decoded_link,
+    }
 
 
 @app.post("/add-record", response_model=VideoRecord)
@@ -156,11 +152,10 @@ def add_record(record_data: VideoRecordCreate):
                 status_code=400, detail="Record with this link already exists"
             )
 
-        # Add the record
-        db.add_new_record(record_dict)
-
-        # Save changes to Google Sheets
-        db.save_changes()
+        # Add the record using append operation instead of full sheet rewrite
+        success = db.add_new_record_append(record_dict)
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to add record")
 
         # Return the created record
         cleaned_record_dict = _clean_row_dict(record_dict)
@@ -197,11 +192,10 @@ def add_narrative(narrative_data: AddNarrativeRequest):
                 status_code=400, detail="Record with this link already exists"
             )
 
-        # Add the record to the specific sheet
-        db.add_record_to_specific_sheet(record_dict)
-
-        # Refresh all data to ensure consistency for immediate queries
-        db.load_all_sheets_data()
+        # Add the record to the specific sheet using append operation
+        success = db.add_record_to_specific_sheet_append(record_dict)
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to add narrative")
 
         logger.info(
             f"Successfully added narrative to sheet '{narrative_data.Sheet}': {narrative_data.Narrative}"
@@ -343,24 +337,20 @@ def tag_record(request: TagRecordRequest):
     if request.result not in [1, 2, 3, 4]:
         raise HTTPException(status_code=400, detail="Result must be 1, 2, 3, or 4")
 
-    success = db.tag_record(decoded_link, request.username, request.result)
+    # Use cell-level update instead of full sheet rewrite
+    success = db.tag_record_cell_update(decoded_link, request.username, request.result)
     if not success:
         raise HTTPException(
             status_code=404,
             detail=f"Record not found or already fully tagged: {decoded_link}",
         )
 
-    # Save changes to Google Sheets
-    try:
-        db.save_changes()
-        return {
-            "message": "Record tagged successfully",
-            "link": decoded_link,
-            "username": request.username,
-            "result": request.result,
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to save changes: {str(e)}")
+    return {
+        "message": "Record tagged successfully",
+        "link": decoded_link,
+        "username": request.username,
+        "result": request.result,
+    }
 
 
 @app.get("/")
@@ -392,8 +382,8 @@ def authenticate_report(request: dict):
 
     # Exact match authentication - no modifications allowed
     valid_users = {
-        "tagmaster": "splinter1960", 
-        }
+        "tagmaster": "splinter1960",
+    }
 
     if username_str in valid_users and valid_users[username_str] == password_str:
         return {"success": True, "message": "Authentication successful"}
@@ -709,8 +699,25 @@ def refresh_data():
 def get_all_topics():
     """Get all available topics (worksheets) from the spreadsheet"""
     try:
-        # Get all worksheets from the Google Sheets
+        # Cache topics for 5 minutes to reduce API calls
+        if not hasattr(db, "_cached_topics") or not hasattr(db, "_topics_cache_time"):
+            db._cached_topics = None
+            db._topics_cache_time = 0
+
+        import time
+
+        current_time = time.time()
+        cache_age = current_time - db._topics_cache_time
+
+        # Use cached topics if less than 5 minutes old
+        if db._cached_topics is not None and cache_age < 300:  # 5 minutes
+            return {"topics": db._cached_topics}
+
+        # Get fresh topics and cache them
         topics = db.sheets_client.get_all_worksheets()
+        db._cached_topics = topics
+        db._topics_cache_time = current_time
+
         return {"topics": topics}
     except Exception as e:
         logger.error(f"Error getting topics: {str(e)}")
