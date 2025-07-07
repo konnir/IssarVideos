@@ -92,7 +92,16 @@ class SheetsClient:
                 logger.info(
                     f"Worksheet '{sheet_name}' not found. Creating new worksheet."
                 )
-                return self.create_worksheet(sheet_name)
+                # Create worksheet with proper headers for narrative data
+                headers = [
+                    "Sheet",
+                    "Narrative",
+                    "Story",
+                    "Link",
+                    "Tagger_1",
+                    "Tagger_1_Result",
+                ]
+                return self.create_worksheet_with_headers(sheet_name, headers)
             else:
                 logger.error(f"Default worksheet not found")
                 raise
@@ -170,9 +179,24 @@ class SheetsClient:
         """
         try:
             worksheet = self.get_worksheet(sheet_name)
-            worksheet.append_row(row_data, value_input_option="USER_ENTERED")
 
-            logger.info(f"Successfully appended row to worksheet '{sheet_name}'")
+            # Find the next empty row to ensure we start at column A
+            # Get all values to find the last used row
+            all_values = worksheet.get_all_values()
+            next_row = len(all_values) + 1
+
+            # Update the range starting from column A of the next row
+            start_cell = f"A{next_row}"
+            end_col_letter = chr(ord("A") + len(row_data) - 1)  # Calculate end column
+            end_cell = f"{end_col_letter}{next_row}"
+            range_name = f"{start_cell}:{end_cell}"
+
+            # Update the specific range with our row data
+            worksheet.update(range_name, [row_data], value_input_option="USER_ENTERED")
+
+            logger.info(
+                f"Successfully appended row to worksheet '{sheet_name}' at row {next_row} (range: {range_name})"
+            )
 
         except Exception as e:
             logger.error(f"Failed to append row to sheet: {str(e)}")
@@ -360,7 +384,9 @@ class SheetsClient:
             return worksheet
 
         except Exception as e:
-            logger.error(f"Failed to create worksheet '{sheet_name}' with headers: {str(e)}")
+            logger.error(
+                f"Failed to create worksheet '{sheet_name}' with headers: {str(e)}"
+            )
             raise
 
     def validate_connection(self) -> bool:
@@ -393,11 +419,11 @@ class SheetsClient:
                 if ws.title == sheet_name:
                     worksheet = ws
                     break
-            
+
             if worksheet is None:
                 logger.warning(f"Worksheet '{sheet_name}' not found for deletion")
                 return False
-            
+
             # Delete the worksheet
             self.spreadsheet.del_worksheet(worksheet)
             logger.info(f"Successfully deleted worksheet '{sheet_name}'")

@@ -53,14 +53,17 @@ class SheetsNarrativesDB:
 
             self.current_sheet_name = sheet_name
             self.df = self.sheets_client.read_sheet_to_dataframe(sheet_name)
-            
+
             # Clean up the dataframe - remove empty column names
             if not self.df.empty:
-                valid_columns = [col for col in self.df.columns if col and str(col).strip()]
+                valid_columns = [
+                    col for col in self.df.columns if col and str(col).strip()
+                ]
                 self.df = self.df[valid_columns]
-                
+
             # Update timestamp
             import time
+
             self.last_loaded_time = time.time()
 
             # Don't build row position mapping immediately to reduce startup API calls
@@ -106,9 +109,11 @@ class SheetsNarrativesDB:
                     if not sheet_df.empty:
                         # Clean up the dataframe - remove empty column names
                         # Get column names that are not empty or just whitespace
-                        valid_columns = [col for col in sheet_df.columns if col and str(col).strip()]
+                        valid_columns = [
+                            col for col in sheet_df.columns if col and str(col).strip()
+                        ]
                         sheet_df = sheet_df[valid_columns]
-                        
+
                         # Add/update the Sheet column with the actual sheet name
                         sheet_df["Sheet"] = sheet_name
                         all_dfs.append(sheet_df)
@@ -306,14 +311,17 @@ class SheetsNarrativesDB:
             # Append to the specific sheet
             self.sheets_client.append_row_to_sheet(row_data, target_sheet)
 
+            # Calculate row position BEFORE adding to DataFrame
+            existing_records_in_sheet = len(self.df[self.df["Sheet"] == target_sheet])
+            new_row_position = (
+                existing_records_in_sheet + 2
+            )  # +2 for 1-indexing and header row
+
             # Add to our local DataFrame for immediate consistency
             new_row = pd.DataFrame([record_dict])
             self.df = pd.concat([self.df, new_row], ignore_index=True)
 
             # Update row position mapping for this new record
-            # Calculate new row position based on existing records count in this sheet
-            existing_records_in_sheet = len(self.df[self.df["Sheet"] == target_sheet])
-            new_row_position = existing_records_in_sheet + 1  # +1 for header row
             link = record_dict.get("Link")
             if link:
                 self._row_positions[(target_sheet, link)] = new_row_position
@@ -654,14 +662,17 @@ class SheetsNarrativesDB:
             # Append to the specific sheet
             self.sheets_client.append_row_to_sheet(row_data, target_sheet)
 
+            # Calculate row position BEFORE adding to DataFrame
+            existing_records_in_sheet = len(self.df[self.df["Sheet"] == target_sheet])
+            new_row_position = (
+                existing_records_in_sheet + 2
+            )  # +2 for 1-indexing and header row
+
             # Add to our local DataFrame
             new_row = pd.DataFrame([record_dict])
             self.df = pd.concat([self.df, new_row], ignore_index=True)
 
             # Update row position mapping for this new record
-            # Calculate new row position based on existing records count in this sheet
-            existing_records_in_sheet = len(self.df[self.df["Sheet"] == target_sheet])
-            new_row_position = existing_records_in_sheet + 1  # +1 for header row
             link = record_dict.get("Link")
             if link:
                 self._row_positions[(target_sheet, link)] = new_row_position
