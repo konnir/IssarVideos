@@ -52,11 +52,15 @@ class SheetsNarrativesDB:
                     return
 
             self.current_sheet_name = sheet_name
-            self.df = self.sheets_client.read_sheet_to_dataframe(
-                sheet_name
-            )  # Update timestamp
+            self.df = self.sheets_client.read_sheet_to_dataframe(sheet_name)
+            
+            # Clean up the dataframe - remove empty column names
+            if not self.df.empty:
+                valid_columns = [col for col in self.df.columns if col and str(col).strip()]
+                self.df = self.df[valid_columns]
+                
+            # Update timestamp
             import time
-
             self.last_loaded_time = time.time()
 
             # Don't build row position mapping immediately to reduce startup API calls
@@ -100,6 +104,11 @@ class SheetsNarrativesDB:
                     sheet_df = self.sheets_client.read_sheet_to_dataframe(sheet_name)
 
                     if not sheet_df.empty:
+                        # Clean up the dataframe - remove empty column names
+                        # Get column names that are not empty or just whitespace
+                        valid_columns = [col for col in sheet_df.columns if col and str(col).strip()]
+                        sheet_df = sheet_df[valid_columns]
+                        
                         # Add/update the Sheet column with the actual sheet name
                         sheet_df["Sheet"] = sheet_name
                         all_dfs.append(sheet_df)

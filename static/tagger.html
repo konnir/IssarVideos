@@ -10,25 +10,40 @@
     <div class="container">
       <h1>Narrative Video Tagger</h1>
 
-      <!-- Username Section -->
-      <div class="username-section">
-        <label for="username">Enter Your Full Name:</label>
-        <input type="text" id="username" placeholder="Your full name" />
-        <button onclick="startTagging()">Start Tagging</button>
-      </div>
-
-      <!-- Leaderboard Section -->
-      <div class="leaderboard-section" id="leaderboardSection">
-        <h2>🏆 Leaderboard</h2>
-        <div class="leaderboard-container" id="leaderboardContainer">
-          <div class="loading">Loading leaderboard...</div>
-        </div>
-      </div>
-
       <!-- Video Section -->
       <div class="video-section" id="videoSection">
+        <!-- Question and Narrative Section -->
+        <div class="narrative-question">
+          Does this video imply the following narrative?
+          <span class="narrative-highlight" id="narrativeHighlight">
+            <!-- Narrative will be loaded here -->
+          </span>
+        </div>
+
         <div class="video-container" id="videoContainer">
           <!-- Video will be loaded here -->
+        </div>
+
+        <div class="tagging-section">
+          <div class="radio-group">
+            <div class="radio-option">
+              <input type="radio" id="result1" name="result" value="1" />
+              <label for="result1">1 - Yes</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="result2" name="result" value="2" />
+              <label for="result2">2 - No</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="result3" name="result" value="3" />
+              <label for="result3">3 - Too Obvious</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="result4" name="result" value="4" />
+              <label for="result4">4 - Problem</label>
+            </div>
+            <button class="send-button" onclick="submitTag()">Send</button>
+          </div>
         </div>
 
         <!-- Open Link Button -->
@@ -52,39 +67,27 @@
           </button>
         </div>
 
-        <div class="narrative-question">
-          Does this video imply the following narrative?
-        </div>
-
-        <div class="narrative-container" id="narrativeContainer">
+        <div class="narrative-container" id="narrativeContainer" style="display: none;">
           <div class="narrative-english">
-            <div class="narrative-label">Narrative</div>
+            <div class="narrative-label">Narrative Details</div>
             <div class="narrative-text" id="narrativeEnglish">
               <!-- English narrative will be loaded here -->
             </div>
           </div>
         </div>
+      </div>
 
-        <div class="tagging-section">
-          <div class="radio-group">
-            <div class="radio-option">
-              <input type="radio" id="result1" name="result" value="1" />
-              <label for="result1">1 - Yes</label>
-            </div>
-            <div class="radio-option">
-              <input type="radio" id="result2" name="result" value="2" />
-              <label for="result2">2 - No</label>
-            </div>
-            <div class="radio-option">
-              <input type="radio" id="result3" name="result" value="3" />
-              <label for="result3">3 - Too Obvious</label>
-            </div>
-            <div class="radio-option">
-              <input type="radio" id="result4" name="result" value="4" />
-              <label for="result4">4 - Problem</label>
-            </div>
-            <button class="send-button" onclick="submitTag()">Send</button>
-          </div>
+      <!-- Username Section -->
+      <div class="username-section">
+        <input type="text" id="username" placeholder="Your full name" />
+        <button onclick="startTagging()">Start Tagging</button>
+      </div>
+
+      <!-- Leaderboard Section -->
+      <div class="leaderboard-section" id="leaderboardSection">
+        <h2>🏆 Leaderboard</h2>
+        <div class="leaderboard-container" id="leaderboardContainer">
+          <div class="loading">Loading leaderboard...</div>
         </div>
       </div>
 

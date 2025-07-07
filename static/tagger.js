@@ -170,9 +170,16 @@ function displayVideo(video) {
 
   // Update narrative content
   const narrativeEnglish = document.getElementById("narrativeEnglish");
+  const narrativeHighlight = document.getElementById("narrativeHighlight");
 
   if (narrativeEnglish) {
     narrativeEnglish.textContent =
+      video.Narrative || "No narrative available";
+  }
+  
+  // Update the highlighted narrative in the question section
+  if (narrativeHighlight) {
+    narrativeHighlight.textContent =
       video.Narrative || "No narrative available";
   }
 }

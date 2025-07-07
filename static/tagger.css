@@ -171,8 +171,22 @@ iframe {
 .narrative-question {
   font-weight: bold;
   font-size: 18px;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
   color: #e0e0e0;
+  line-height: 1.4;
+}
+
+.narrative-highlight {
+  display: block;
+  margin-top: 10px;
+  color: #2196F3;
+  font-weight: bold;
+  font-size: 20px;
+  background-color: rgba(33, 150, 243, 0.1);
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 4px solid #2196F3;
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
 }
 
 .narrative-container {

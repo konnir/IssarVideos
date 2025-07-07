@@ -220,7 +220,19 @@ def add_narrative(narrative_data: AddNarrativeRequest):
 def _clean_row_dict(row_dict: Dict[str, Any]) -> Dict[str, Any]:
     """Clean row dictionary for Pydantic validation"""
     cleaned = {}
+    
+    # Define the expected fields for VideoRecord
+    expected_fields = {"Sheet", "Narrative", "Story", "Link", "Tagger_1", "Tagger_1_Result"}
+    
     for key, value in row_dict.items():
+        # Skip empty or invalid column names
+        if not key or key.strip() == "":
+            continue
+            
+        # Only process expected fields
+        if key not in expected_fields:
+            continue
+            
         if pd.isna(value):
             cleaned[key] = None
         elif key == "Tagger_1_Result":
@@ -238,6 +250,14 @@ def _clean_row_dict(row_dict: Dict[str, Any]) -> Dict[str, Any]:
                 cleaned[key] = None if key in ["Tagger_1"] else value
             else:
                 cleaned[key] = value
+    
+    # Ensure all required fields exist
+    for field in expected_fields:
+        if field not in cleaned:
+            if field == "Sheet":
+                # If Sheet is missing, this is a critical error
+                raise ValueError(f"Required field 'Sheet' is missing from data")
+            cleaned[field] = None
     return cleaned
 
 
@@ -287,8 +307,15 @@ def get_random_narrative_for_user(username: str):
         raise HTTPException(
             status_code=404, detail="No untagged narratives found for this user"
         )
+    
+    # Debug logging
+    logger.info(f"Raw row data keys: {list(random_row.keys())}")
+    logger.info(f"Raw row data: {random_row}")
+    
     # Clean the data for Pydantic validation
     cleaned_row = _clean_row_dict(random_row)
+    logger.info(f"Cleaned row data: {cleaned_row}")
+    
     video_record = VideoRecord(**cleaned_row)
     return video_record
 
