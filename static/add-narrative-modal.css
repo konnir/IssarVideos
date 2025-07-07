@@ -337,6 +337,16 @@ body {
     box-shadow: none;
 }
 
+/* Special styling for "Fail" state */
+.add-btn-inline.fail-state {
+    background-color: #d32f2f !important;
+    border-color: #d32f2f !important;
+    color: #ffffff !important;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
 .plus-btn {
     width: 32px;
     height: 32px;
@@ -629,6 +639,46 @@ body {
     border-color: #4caf50;
     box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
     background-color: #4d4d4d;
+}
+
+/* Add All Button Styles */
+.add-all-btn {
+    background: #4a90e2 !important;
+    color: white !important;
+    border: none !important;
+    padding: 12px 24px !important;
+    border-radius: 8px !important;
+    font-size: 16px !important;
+    font-weight: bold !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    opacity: 0.5 !important;
+}
+
+.add-all-btn:enabled {
+    opacity: 1 !important;
+    background: #357abd !important;
+}
+
+.add-all-btn:enabled:hover {
+    background: #2968a3 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3) !important;
+}
+
+.add-all-btn:disabled {
+    cursor: not-allowed !important;
+    opacity: 0.5 !important;
+}
+
+.add-all-btn.processing {
+    background: #ffa500 !important;
+    opacity: 1 !important;
+}
+
+.add-all-btn.completed {
+    background: #28a745 !important;
+    opacity: 1 !important;
 }
 
 /* Responsive Design */

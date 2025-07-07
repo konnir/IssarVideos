@@ -73,7 +73,6 @@ async function loadTaggingStats() {
   tableBody.innerHTML = "";
 
   try {
-    console.log('Fetching tagging stats...');
     const response = await fetch("/tagging-stats");
     
     if (!response.ok) {
@@ -81,7 +80,6 @@ async function loadTaggingStats() {
     }
 
     const data = await response.json();
-    console.log('Received tagging stats data:', data);
 
     // Update summary statistics
     updateSummaryStats(data.summary);
@@ -119,8 +117,6 @@ function updateSummaryStats(summary) {
 function populateTable(data) {
   const tableBody = document.getElementById("managementTableBody");
   
-  console.log('Populating table with data:', data);
-  
   if (data.length === 0) {
     tableBody.innerHTML = `
       <tr>
@@ -140,7 +136,6 @@ function populateTable(data) {
   });
 
   const rows = data.map(item => {
-    console.log('Processing table row item:', item);
     const missingDisplay = item.missing > 0 ? item.missing : '';
     
     // Generate styled numbers - show empty cells for zero values
@@ -179,7 +174,6 @@ function populateTable(data) {
     `;
   }).join('');
 
-  console.log('Generated table rows HTML:', rows);
   tableBody.innerHTML = rows;
 }
 
@@ -253,6 +247,9 @@ async function showAddNarrativeModal() {
 function hideAddNarrativeModal() {
   // Hide the modal
   document.getElementById('addNarrativeModal').style.display = 'none';
+  
+  // Reset Add All button state when modal is closed
+  resetAddAllButton();
 }
 
 /**
@@ -263,13 +260,22 @@ function resetFormContainer() {
   formLineCounter = 1;
   
   // Clear container and add first line
-  container.innerHTML = createFormLineHTML(1);
+  const newHTML = createFormLineHTML(1);
+  container.innerHTML = newHTML;
   
   // Add event listeners for the first line's sheet input
   addTopicEventListeners(1);
   
   // Setup automatic story generation for narrative fields
   setupAutoStoryGeneration();
+  
+  // Reset Add All button to initial state
+  resetAddAllButton();
+  
+  // Check initial validation state
+  setTimeout(() => {
+    checkAllLinesValid();
+  }, 100);
 }
 
 /**
@@ -355,6 +361,9 @@ function addNewFormLine(sourceLineId) {
     editBtn.style.background = '#357abd'; // Darker blue to indicate custom
   }
   
+  // Check validation state after adding new line
+  setTimeout(checkAllLinesValid, 200);
+  
   // Note: Removed automatic focus to prevent scrolling when creating multiple lines during YouTube search
 }
 
@@ -428,6 +437,9 @@ function addTenFormLines(sourceLineId) {
       errorDiv.style.display = 'none';
     }, 3000);
   }
+  
+  // Check validation state after adding multiple lines
+  setTimeout(checkAllLinesValid, 500);
 }
 
 /**
@@ -464,6 +476,12 @@ async function openAddNarrativeWithData(sheetName, narrativeText) {
       narrativeInput.value = narrativeText;
     }
     
+    // Verify the values were actually set
+    setTimeout(() => {
+      const finalSheetValue = document.getElementById('sheet1')?.value;
+      const finalNarrativeValue = document.getElementById('narrative1')?.value;
+    }, 50);
+    
     // Clear any previous messages
     const errorElement = document.getElementById('addNarrativeError');
     if (errorElement) {
@@ -480,8 +498,15 @@ async function openAddNarrativeWithData(sheetName, narrativeText) {
     // Focus on the story input since Sheet and Narrative are already filled
     const storyInput = document.getElementById('story1');
     if (storyInput) {
-      setTimeout(() => storyInput.focus(), 100);
+      setTimeout(() => {
+        storyInput.focus();
+      }, 100);
     }
+    
+    // Check validation state after pre-filling
+    setTimeout(() => {
+      checkAllLinesValid();
+    }, 400);
   }, 100); // Wait for DOM to be updated after innerHTML change
 }
 
@@ -528,13 +553,12 @@ async function addSingleNarrative(lineId) {
       text: btn.textContent
     });
     
-    btn.disabled = true;
+    // Only change the text for the current button being processed
     if (btnLineId === lineId.toString()) {
       btn.textContent = 'Adding...';
-    } else if (btn.textContent !== 'Added ✓') {
-      // Only change to "Wait..." if it's not already "Added ✓"
-      btn.textContent = 'Wait...';
     }
+    // Disable all buttons but don't change text for other buttons
+    btn.disabled = true;
   });
   
   try {
@@ -559,13 +583,19 @@ async function addSingleNarrative(lineId) {
       currentAddBtn.textContent = 'Added ✓';
       currentAddBtn.disabled = true;
       
-      // Re-enable all other Add buttons and restore their original states
+      // Re-enable all other Add buttons and restore their original states (except the current one)
       const allAddBtns = document.querySelectorAll('.add-btn-inline');
       allAddBtns.forEach(btn => {
         const btnLineId = btn.getAttribute('data-line-id');
+        
+        // Skip the current button that was just marked as "Added ✓"
+        if (btnLineId === lineId.toString()) {
+          return;
+        }
+        
         const originalState = buttonStates.get(btnLineId);
         if (originalState) {
-          // Restore original state
+          // Restore exactly what it was before
           btn.disabled = originalState.disabled;
           btn.textContent = originalState.text;
         } else {
@@ -594,10 +624,22 @@ async function addSingleNarrative(lineId) {
       errorDiv.innerHTML = `<div class="error">${errorMessage}</div>`;
       errorDiv.style.display = 'block';
       
-      // Re-enable all Add buttons and restore their original states on failure
+      // Mark the current button as "Fail" and keep it disabled
+      const currentAddBtn = document.querySelector(`[data-line-id="${lineId}"].add-btn-inline`);
+      currentAddBtn.textContent = 'Fail';
+      currentAddBtn.disabled = true;
+      currentAddBtn.classList.add('fail-state');
+      
+      // Re-enable all other Add buttons and restore their original states
       const allAddBtns = document.querySelectorAll('.add-btn-inline');
       allAddBtns.forEach(btn => {
         const btnLineId = btn.getAttribute('data-line-id');
+        
+        // Skip the current button that was just marked as "Fail"
+        if (btnLineId === lineId.toString()) {
+          return;
+        }
+        
         const originalState = buttonStates.get(btnLineId);
         if (originalState) {
           // Restore original state
@@ -615,10 +657,22 @@ async function addSingleNarrative(lineId) {
     errorDiv.innerHTML = '<div class="error">Connection error. Please try again.</div>';
     errorDiv.style.display = 'block';
     
-    // Re-enable all Add buttons and restore their original states on error
+    // Mark the current button as "Fail" and keep it disabled
+    const currentAddBtn = document.querySelector(`[data-line-id="${lineId}"].add-btn-inline`);
+    currentAddBtn.textContent = 'Fail';
+    currentAddBtn.disabled = true;
+    currentAddBtn.classList.add('fail-state');
+    
+    // Re-enable all other Add buttons and restore their original states
     const allAddBtns = document.querySelectorAll('.add-btn-inline');
     allAddBtns.forEach(btn => {
       const btnLineId = btn.getAttribute('data-line-id');
+      
+      // Skip the current button that was just marked as "Fail"
+      if (btnLineId === lineId.toString()) {
+        return;
+      }
+      
       const originalState = buttonStates.get(btnLineId);
       if (originalState) {
         // Restore original state
@@ -631,6 +685,9 @@ async function addSingleNarrative(lineId) {
       }
     });
   }
+  
+  // Check validation state after adding/attempting to add a line
+  setTimeout(checkAllLinesValid, 300);
 }
 
 /**
@@ -696,6 +753,9 @@ async function suggestStory(lineId) {
       
       // Set the generated story in the textarea
       storyTextarea.value = result.story;
+      
+      // Trigger validation check after auto-populating story
+      setTimeout(checkAllLinesValid, 100);
       
       // Reset button
       suggestBtn.disabled = false;
@@ -1012,17 +1072,13 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 async function loadAllTopics() {
   try {
-    console.log('Loading all sheets...');
     const response = await fetch('/topics');
     if (response.ok) {
       const data = await response.json();
       
-      console.log('Sheets received:', data.topics);
-      
       // Ensure sheets datalist exists
       let topicsList = document.getElementById('topicsList');
       if (!topicsList) {
-        console.log('Creating new sheets datalist element');
         topicsList = document.createElement('datalist');
         topicsList.id = 'topicsList';
         // Add it to the modal body so it's always available
@@ -1044,10 +1100,7 @@ async function loadAllTopics() {
         option.value = topic;
         option.textContent = topic; // Ensure text content is set
         topicsList.appendChild(option);
-        console.log('Added sheet option:', topic);
       });
-      
-      console.log('All sheets loaded successfully, total options:', topicsList.children.length);
       
       // Store the topics globally for easy access
       window.availableSheets = data.topics;
@@ -1069,17 +1122,13 @@ async function loadNarratives(topic) {
   }
   
   try {
-    console.log('Loading narratives for sheet:', topic);
     const response = await fetch(`/narratives/${encodeURIComponent(topic)}`);
     if (response.ok) {
       const data = await response.json();
       
-      console.log('Narratives received for sheet:', topic, data.narratives);
-      
       // Ensure narratives datalist exists
       let narrativesList = document.getElementById('narrativesList');
       if (!narrativesList) {
-        console.log('Creating new narratives datalist element');
         narrativesList = document.createElement('datalist');
         narrativesList.id = 'narrativesList';
         // Add it to the modal body so it's always available
@@ -1100,10 +1149,7 @@ async function loadNarratives(topic) {
         const option = document.createElement('option');
         option.value = narrative;
         narrativesList.appendChild(option);
-        console.log('Added narrative option for sheet:', narrative);
       });
-      
-      console.log('Narratives loaded successfully for sheet:', topic, 'total options:', narrativesList.children.length);
     } else {
       console.error('Failed to load narratives for sheet:', topic, response.statusText);
     }
@@ -1117,19 +1163,16 @@ async function loadNarratives(topic) {
  */
 async function loadAllNarratives() {
   try {
-    console.log('Loading all narratives...');
     const response = await fetch('/all-records');
     if (response.ok) {
       const data = await response.json();
       
       // Extract unique narratives from all records
       const narratives = [...new Set(data.map(record => record.Narrative).filter(narrative => narrative && narrative.trim() !== ''))];
-      console.log('All narratives received:', narratives);
       
       // Ensure narratives datalist exists
       let narrativesList = document.getElementById('narrativesList');
       if (!narrativesList) {
-        console.log('Creating new narratives datalist element');
         narrativesList = document.createElement('datalist');
         narrativesList.id = 'narrativesList';
         // Add it to the modal body so it's always available
@@ -1150,10 +1193,7 @@ async function loadAllNarratives() {
         const option = document.createElement('option');
         option.value = narrative;
         narrativesList.appendChild(option);
-        console.log('Added narrative option:', narrative);
       });
-      
-      console.log('All narratives loaded successfully, total options:', narrativesList.children.length);
     } else {
       console.error('Failed to load narratives:', response.statusText);
     }
@@ -1301,6 +1341,8 @@ async function openYouTubeSearch(lineId) {
       const linkInput = document.getElementById(`link${lineId}`);
       if (linkInput) {
         linkInput.value = video.url;
+        // Trigger validation check after auto-populating link
+        setTimeout(checkAllLinesValid, 100);
       }
       
       if (videoInfoDiv) {
@@ -1521,7 +1563,6 @@ function openVideoInPopup(videoUrl, videoTitle) {
       popup.document.title = videoTitle || 'Video Player';
     } catch (e) {
       // Cross-origin restrictions may prevent this, but it's not critical
-      console.log('Could not set popup title due to cross-origin restrictions');
     }
   } else {
     // Fallback if popup is blocked
@@ -1608,6 +1649,9 @@ async function autoGenerateStory(lineId, isBlurTrigger = false) {
       if (!storyTextarea.value.trim()) {
         storyTextarea.value = result.story;
         
+        // Trigger validation check after auto-populating story
+        setTimeout(checkAllLinesValid, 100);
+        
         // Add a subtle visual indication that the story was auto-generated
         storyTextarea.style.backgroundColor = '#f0fff0'; // Very light green
         setTimeout(() => {
@@ -1621,7 +1665,6 @@ async function autoGenerateStory(lineId, isBlurTrigger = false) {
       }
     }
   } catch (error) {
-    console.log('Auto story generation failed silently:', error);
     // We don't show errors for automatic generation to avoid interrupting user flow
   } finally {
     // Mark as no longer in progress
@@ -1718,6 +1761,9 @@ async function autoYouTubeSearch(lineId) {
       // Only populate if link field is still empty (user might have filled it)
       if (!linkInput.value.trim()) {
         linkInput.value = video.url;
+        
+        // Trigger validation check after auto-populating link
+        setTimeout(checkAllLinesValid, 100);
         
         // Add subtle visual indication that the link was auto-populated
         linkInput.style.backgroundColor = '#f0f8ff'; // Very light blue
@@ -1823,7 +1869,6 @@ async function autoYouTubeSearch(lineId) {
     }
     
   } catch (error) {
-    console.log('Auto video search failed silently:', error);
     // Hide loading indicator on error
     if (videoInfoDiv) {
       videoInfoDiv.style.display = 'none';
@@ -1832,39 +1877,6 @@ async function autoYouTubeSearch(lineId) {
   } finally {
     // Mark video search as no longer in progress
     narrativeAutoGeneration.videoSearchInProgress[lineId] = false;
-  }
-}
-
-/**
- * Simple test function to debug modal issues
- */
-function testModalOpen() {
-  console.log('Test function called');
-  
-  // Check if modal exists
-  const modal = document.getElementById('addNarrativeModal');
-  console.log('Modal element:', modal);
-  
-  if (modal) {
-    modal.style.display = 'block';
-    
-    // Check if form elements exist
-    setTimeout(() => {
-      const sheet1 = document.getElementById('sheet1');
-      const narrative1 = document.getElementById('narrative1');
-      console.log('sheet1 element:', sheet1);
-      console.log('narrative1 element:', narrative1);
-      
-      if (sheet1) {
-        sheet1.value = 'TEST TOPIC';
-        console.log('Set sheet1 value to TEST TOPIC');
-      }
-      
-      if (narrative1) {
-        narrative1.value = 'TEST NARRATIVE';
-        console.log('Set narrative1 value to TEST NARRATIVE');
-      }
-    }, 200);
   }
 }
 
@@ -1915,4 +1927,179 @@ function setupAutoStoryGeneration() {
       }
     });
   });
+}
+
+/**
+ * Check if all form lines are valid (have all required fields filled)
+ */
+function checkAllLinesValid() {
+  const formLines = document.querySelectorAll('.narrative-form-line');
+  const addAllButton = document.getElementById('addAllButton');
+  
+  if (!addAllButton || formLines.length === 0) {
+    return;
+  }
+  
+  let allValid = true;
+  let validLines = 0;
+  let addedLines = 0;
+  
+  formLines.forEach(line => {
+    const lineId = line.getAttribute('data-line-id');
+    const topic = document.getElementById(`sheet${lineId}`)?.value.trim() || '';
+    const narrative = document.getElementById(`narrative${lineId}`)?.value.trim() || '';
+    const story = document.getElementById(`story${lineId}`)?.value.trim() || '';
+    const link = document.getElementById(`link${lineId}`)?.value.trim() || '';
+    
+    // Check if the line is already added (button shows "Added ✓") or failed (button shows "Fail")
+    const addBtn = document.querySelector(`[data-line-id="${lineId}"].add-btn-inline`);
+    if (addBtn && (addBtn.textContent === 'Added ✓' || addBtn.textContent === 'Fail')) {
+      if (addBtn.textContent === 'Added ✓') {
+        addedLines++;
+      }
+      return; // Skip validation for already added or failed lines
+    }
+    
+    // Check if any required field is missing for non-added lines
+    if (!topic || !narrative || !story || !link) {
+      allValid = false;
+    } else {
+      validLines++;
+    }
+  });
+  
+  // Enable button if all non-added lines are valid and there's at least one line to process
+  const hasLinesToProcess = (validLines > 0) || (formLines.length > 0 && addedLines < formLines.length);
+  
+  // Only update button if it's in normal state (not processing or completed)
+  if (addAllButton.className === 'add-all-btn' || addAllButton.className === '') {
+    if (allValid && hasLinesToProcess) {
+      addAllButton.disabled = false;
+      addAllButton.style.opacity = '1';
+      addAllButton.style.background = '#357abd';
+    } else {
+      addAllButton.disabled = true;
+      addAllButton.style.opacity = '0.5';
+      addAllButton.style.background = '#4a90e2';
+    }
+  }
+}
+
+/**
+ * Add all narrative lines one by one
+ */
+async function addAllNarratives() {
+  const formLines = document.querySelectorAll('.narrative-form-line');
+  const addAllButton = document.getElementById('addAllButton');
+  const errorDiv = document.getElementById('addNarrativeError');
+  
+  if (!addAllButton || formLines.length === 0) {
+    return;
+  }
+  
+  // Clear previous messages
+  if (errorDiv) {
+    errorDiv.style.display = 'none';
+  }
+  
+  // Change button state to processing
+  addAllButton.disabled = true;
+  addAllButton.textContent = '⏳ Adding All...';
+  addAllButton.className = 'add-all-btn processing';
+  
+  let addedCount = 0;
+  let errorCount = 0;
+  let skippedCount = 0;
+  
+  // Process each line sequentially
+  for (const line of formLines) {
+    const lineId = line.getAttribute('data-line-id');
+    const addBtn = document.querySelector(`[data-line-id="${lineId}"].add-btn-inline`);
+    
+    // Skip if already added or failed
+    if (addBtn && (addBtn.textContent === 'Added ✓' || addBtn.textContent === 'Fail')) {
+      skippedCount++;
+      continue;
+    }
+    
+    // Check if line is valid
+    const topic = document.getElementById(`sheet${lineId}`)?.value.trim() || '';
+    const narrative = document.getElementById(`narrative${lineId}`)?.value.trim() || '';
+    const story = document.getElementById(`story${lineId}`)?.value.trim() || '';
+    const link = document.getElementById(`link${lineId}`)?.value.trim() || '';
+    
+    if (!topic || !narrative || !story || !link) {
+      errorCount++;
+      continue;
+    }
+    
+    try {
+      // Update Add All button to show current progress
+      addAllButton.textContent = `⏳ Adding Line ${parseInt(lineId)}...`;
+      
+      // Call the existing addSingleNarrative function
+      await addSingleNarrative(parseInt(lineId));
+      
+      // Wait for a moment to see the result
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Check if it was successfully added
+      if (addBtn && addBtn.textContent === 'Added ✓') {
+        addedCount++;
+      } else {
+        errorCount++;
+      }
+      
+    } catch (error) {
+      console.error(`Error adding line ${lineId}:`, error);
+      errorCount++;
+    }
+    
+    // Small delay between requests to avoid overwhelming the server
+    await new Promise(resolve => setTimeout(resolve, 200));
+  }
+  
+  // Update button state based on results
+  if (errorCount === 0) {
+    addAllButton.textContent = `✅ All Added (${addedCount})`;
+    addAllButton.className = 'add-all-btn completed';
+    
+    if (errorDiv) {
+      errorDiv.innerHTML = `<div class="success">✅ Successfully added ${addedCount} narratives!</div>`;
+      errorDiv.style.display = 'block';
+    }
+  } else {
+    addAllButton.textContent = `⚠️ Completed (${addedCount} added, ${errorCount} failed)`;
+    addAllButton.className = 'add-all-btn';
+    addAllButton.style.background = '#dc3545';
+    
+    if (errorDiv) {
+      errorDiv.innerHTML = `<div class="error">Added ${addedCount} narratives, but ${errorCount} failed. Check individual line errors.</div>`;
+      errorDiv.style.display = 'block';
+    }
+  }
+  
+  // Hide status message after 5 seconds
+  setTimeout(() => {
+    if (errorDiv) {
+      errorDiv.style.display = 'none';
+    }
+  }, 5000);
+  
+  // Button will stay in final state until modal is closed
+  // No automatic reset - user can see the final results
+}
+
+/**
+ * Reset the Add All button to its initial state
+ */
+function resetAddAllButton() {
+  const addAllButton = document.getElementById('addAllButton');
+  if (addAllButton) {
+    addAllButton.disabled = true;
+    addAllButton.textContent = '➕ Add All Lines';
+    addAllButton.className = 'add-all-btn';
+    addAllButton.style.opacity = '0.5';
+    addAllButton.style.background = '#4a90e2';
+  }
 }
