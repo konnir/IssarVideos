@@ -367,6 +367,46 @@ body {
     box-shadow: 0 1px 4px rgba(33, 150, 243, 0.3);
 }
 
+/* x10 Button Styles */
+.x10-btn {
+    width: 32px;
+    height: 24px;
+    border: 1px solid #ff9800;
+    border-radius: 4px;
+    background-color: #ff9800;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    padding: 0;
+}
+
+.x10-btn:hover {
+    background-color: #f57c00;
+    border-color: #f57c00;
+    transform: scale(1.05);
+    box-shadow: 0 2px 6px rgba(255, 152, 0, 0.3);
+}
+
+.x10-btn:active {
+    transform: scale(1.02);
+    box-shadow: 0 1px 3px rgba(255, 152, 0, 0.3);
+}
+
+.x10-btn:disabled {
+    background-color: #666;
+    border-color: #666;
+    color: #999;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
 /* Edit Prompt Modal Styles */
 .prompt-edit-section {
     display: flex;

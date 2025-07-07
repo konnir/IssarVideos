@@ -41,7 +41,9 @@ class YouTubeSearcher:
             List[Dict]: List of video information dictionaries
         """
         # Fetch more results to increase the chance of finding videos with the right duration
-        search_query = f"ytsearch{max_results * 5}:{query}"
+        # Minimum of 15 videos, or max_results * 5 if user asks for more than 15
+        search_count = max(15, max_results * 5)
+        search_query = f"ytsearch{search_count}:{query}"
 
         try:
             with yt_dlp.YoutubeDL(self.ydl_opts) as ydl:

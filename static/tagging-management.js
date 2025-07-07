@@ -267,6 +267,9 @@ function resetFormContainer() {
   
   // Add event listeners for the first line's sheet input
   addTopicEventListeners(1);
+  
+  // Setup automatic story generation for narrative fields
+  setupAutoStoryGeneration();
 }
 
 /**
@@ -277,7 +280,7 @@ function createFormLineHTML(lineId, copyTopic = '', copyNarrative = '') {
     <div class="narrative-form-line" id="formLine${lineId}" data-line-id="${lineId}">
       <div class="form-row" style="display: grid !important; grid-template-columns: 1.5fr 2fr 2fr 1fr auto !important; grid-template-rows: 1fr !important; gap: 30px !important; align-items: start !important; background: #2d2d2d !important; border: 2px solid #404040 !important; border-radius: 12px !important; padding: 20px !important; width: 100% !important; min-width: 0 !important; overflow: visible !important; flex-direction: row !important; flex-wrap: nowrap !important; margin-bottom: 20px !important;">
         <div class="form-field" style="grid-column: 1 !important; grid-row: 1 !important; display: flex !important; flex-direction: column !important; min-width: 0 !important; width: 100% !important;">
-          <label for="sheet${lineId}">Sheet:</label>
+          <label for="sheet${lineId}">Topic:</label>
           <input type="text" id="sheet${lineId}" class="form-input topic-input" placeholder="Enter or select Sheet" value="${copyTopic}" list="topicsList" autocomplete="off"/>
         </div>
         <div class="form-field" style="grid-column: 2 !important; grid-row: 1 !important; display: flex !important; flex-direction: column !important; min-width: 0 !important; width: 100% !important;">
@@ -300,9 +303,10 @@ function createFormLineHTML(lineId, copyTopic = '', copyNarrative = '') {
         </div>
         <div class="form-field form-field-button" style="grid-column: 5 !important; grid-row: 1 !important; display: flex !important; flex-direction: column !important; align-items: flex-start !important; padding-bottom: 0 !important;">
           <label>Actions:</label>
-          <div class="button-group" style="display: flex; gap: 5px; align-items: center;">
+          <div class="button-group" style="display: flex; flex-direction: column; gap: 5px; align-items: stretch;">
             <button class="add-btn-inline" onclick="addSingleNarrative(${lineId})" data-line-id="${lineId}">Add</button>
             <button class="plus-btn" onclick="addNewFormLine(${lineId})" title="Add new line">+</button>
+            <button class="x10-btn" onclick="addTenFormLines(${lineId})" title="Add 9 duplicate lines" data-line-id="${lineId}">x10</button>
           </div>
         </div>
       </div>
@@ -311,16 +315,15 @@ function createFormLineHTML(lineId, copyTopic = '', copyNarrative = '') {
 }
 
 /**
- * Add a new form line, copying sheet, narrative, and story if filled
+ * Add a new form line, copying sheet and narrative (story will be auto-generated)
  */
 function addNewFormLine(sourceLineId) {
   formLineCounter++;
   const newLineId = formLineCounter;
   
-  // Get values to copy from source line - Sheet, Narrative, and Story
+  // Get values to copy from source line - Sheet and Narrative only
   const sourceTopic = document.getElementById(`sheet${sourceLineId}`).value.trim();
   const sourceNarrative = document.getElementById(`narrative${sourceLineId}`).value.trim();
-  const sourceStory = document.getElementById(`story${sourceLineId}`).value.trim();
   
   // Copy custom prompt if it exists for the source line
   if (customPrompts[sourceLineId]) {
@@ -334,12 +337,12 @@ function addNewFormLine(sourceLineId) {
   const container = document.getElementById('narrativeFormContainer');
   container.insertAdjacentHTML('beforeend', newLineHTML);
   
-  // Copy the story content to the new line if it exists
-  if (sourceStory) {
-    const newStoryTextarea = document.getElementById(`story${newLineId}`);
-    if (newStoryTextarea) {
-      newStoryTextarea.value = sourceStory;
-    }
+  // Don't copy story content - always generate fresh story if narrative exists
+  if (sourceNarrative) {
+    // If there's a narrative, trigger auto generation after a brief delay
+    setTimeout(() => {
+      autoGenerateStory(newLineId, false);
+    }, 500); // Small delay to ensure DOM is fully updated
   }
   
   // Add event listeners for the new sheet input
@@ -353,6 +356,78 @@ function addNewFormLine(sourceLineId) {
   }
   
   // Note: Removed automatic focus to prevent scrolling when creating multiple lines during YouTube search
+}
+
+/**
+ * Add nine form lines, copying sheet and narrative from source line (stories will be auto-generated)
+ */
+function addTenFormLines(sourceLineId) {
+  // Get values to copy from source line - Sheet and Narrative only
+  const sourceTopic = document.getElementById(`sheet${sourceLineId}`).value.trim();
+  const sourceNarrative = document.getElementById(`narrative${sourceLineId}`).value.trim();
+  
+  // Get the x10 button for this line to show progress
+  const x10Btn = document.querySelector(`[data-line-id="${sourceLineId}"].x10-btn`);
+  const originalText = x10Btn.textContent;
+  
+  // Disable the button during processing
+  x10Btn.disabled = true;
+  x10Btn.textContent = 'Adding...';
+  
+  // Add 9 duplicate lines
+  for (let i = 1; i <= 9; i++) {
+    formLineCounter++;
+    const newLineId = formLineCounter;
+    
+    // Copy custom prompt if it exists for the source line
+    if (customPrompts[sourceLineId]) {
+      customPrompts[newLineId] = customPrompts[sourceLineId];
+    }
+    
+    // Create new form line HTML
+    const newLineHTML = createFormLineHTML(newLineId, sourceTopic, sourceNarrative);
+    
+    // Add new line to container
+    const container = document.getElementById('narrativeFormContainer');
+    container.insertAdjacentHTML('beforeend', newLineHTML);
+    
+    // Don't copy story content - always generate fresh story if narrative exists
+    if (sourceNarrative) {
+      // If there's a narrative, trigger auto generation after a brief delay
+      // Stagger the calls for multiple lines to avoid overwhelming the server
+      setTimeout(() => {
+        autoGenerateStory(newLineId, false);
+      }, 500 + (i * 200)); // Stagger by 200ms per line
+    }
+    
+    // Add event listeners for the new sheet input
+    addTopicEventListeners(newLineId);
+    
+    // Update edit button appearance if custom prompt was copied
+    if (customPrompts[newLineId]) {
+      const editBtn = document.querySelector(`[data-line-id="${newLineId}"].edit-prompt-btn`);
+      if (editBtn) {
+        editBtn.textContent = '📝 Prompt Edited ✓';
+        editBtn.style.background = '#357abd'; // Darker blue to indicate custom
+      }
+    }
+  }
+  
+  // Re-enable the button and show completion
+  x10Btn.disabled = false;
+  x10Btn.textContent = originalText;
+  
+  // Show success message
+  const errorDiv = document.getElementById('addNarrativeError');
+  if (errorDiv) {
+    errorDiv.innerHTML = '<div class="success">✅ Successfully added 9 duplicate lines!</div>';
+    errorDiv.style.display = 'block';
+    
+    // Hide success message after 3 seconds
+    setTimeout(() => {
+      errorDiv.style.display = 'none';
+    }, 3000);
+  }
 }
 
 /**
@@ -375,26 +450,39 @@ async function openAddNarrativeWithData(sheetName, narrativeText) {
   // Load all available narratives as backup
   await loadAllNarratives();
   
-  // Pre-fill the Sheet and Narrative fields
-  const sheetInput = document.getElementById('sheet1');
-  const narrativeInput = document.getElementById('narrative1');
-  
-  if (sheetInput) {
-    sheetInput.value = sheetName;
-  }
-  
-  if (narrativeInput) {
-    narrativeInput.value = narrativeText;
-  }
-  
-  // Clear any previous messages
-  document.getElementById('addNarrativeError').style.display = 'none';
-  
-  // Focus on the story input since Sheet and Narrative are already filled
-  const storyInput = document.getElementById('story1');
-  if (storyInput) {
-    setTimeout(() => storyInput.focus(), 100);
-  }
+  // Wait for DOM to be updated after resetFormContainer
+  setTimeout(() => {
+    // Pre-fill the Sheet and Narrative fields
+    const sheetInput = document.getElementById('sheet1');
+    const narrativeInput = document.getElementById('narrative1');
+    
+    if (sheetInput) {
+      sheetInput.value = sheetName;
+    }
+    
+    if (narrativeInput) {
+      narrativeInput.value = narrativeText;
+    }
+    
+    // Clear any previous messages
+    const errorElement = document.getElementById('addNarrativeError');
+    if (errorElement) {
+      errorElement.style.display = 'none';
+    }
+    
+    // Trigger automatic story generation since narrative is pre-filled
+    if (narrativeText && narrativeText.trim()) {
+      setTimeout(() => {
+        autoGenerateStory(1, false);
+      }, 200); // Small delay to ensure DOM is fully updated and event listeners are attached
+    }
+    
+    // Focus on the story input since Sheet and Narrative are already filled
+    const storyInput = document.getElementById('story1');
+    if (storyInput) {
+      setTimeout(() => storyInput.focus(), 100);
+    }
+  }, 100); // Wait for DOM to be updated after innerHTML change
 }
 
 /**
@@ -475,17 +563,15 @@ async function addSingleNarrative(lineId) {
       const allAddBtns = document.querySelectorAll('.add-btn-inline');
       allAddBtns.forEach(btn => {
         const btnLineId = btn.getAttribute('data-line-id');
-        if (btnLineId !== lineId.toString()) {
-          const originalState = buttonStates.get(btnLineId);
-          if (originalState) {
-            // Restore original state
-            btn.disabled = originalState.disabled;
-            btn.textContent = originalState.text;
-          } else {
-            // Fallback to default state
-            btn.disabled = false;
-            btn.textContent = 'Add';
-          }
+        const originalState = buttonStates.get(btnLineId);
+        if (originalState) {
+          // Restore original state
+          btn.disabled = originalState.disabled;
+          btn.textContent = originalState.text;
+        } else {
+          // Fallback to default state
+          btn.disabled = false;
+          btn.textContent = 'Add';
         }
       });
       
@@ -1156,7 +1242,7 @@ async function openYouTubeSearch(lineId) {
     // Show loading state
     if (videoInfoDiv) {
       videoInfoDiv.style.display = 'block';
-      videoInfoDiv.innerHTML = '<div style="text-align: center;">🔄 Generating search query...</div>';
+      videoInfoDiv.innerHTML = '<div style="text-align: center; color: #999; font-size: 11px;">🔄 Generating search query...</div>';
     }
     
     // Step 1: Generate video keywords from the story
@@ -1184,11 +1270,11 @@ async function openYouTubeSearch(lineId) {
     
     // Update loading state
     if (videoInfoDiv) {
-      videoInfoDiv.innerHTML = '<div style="text-align: center;">🔍 Searching for 3 videos...</div>';
+      videoInfoDiv.innerHTML = '<div style="text-align: center; color: #999; font-size: 11px;">🔍 Searching for video...</div>';
     }
     
-    // Step 2: Search for videos using the generated query - request 3 results
-    const searchResponse = await fetch(`/search-videos?query=${encodeURIComponent(searchQuery)}&max_results=3&max_duration=300`, {
+    // Step 2: Search for videos using the generated query - request 1 result
+    const searchResponse = await fetch(`/search-videos?query=${encodeURIComponent(searchQuery)}&max_results=1&max_duration=300`, {
       method: 'POST'
     });
     
@@ -1208,121 +1294,104 @@ async function openYouTubeSearch(lineId) {
         videoInfoDiv.style.display = 'none';
       }
       
-      // Function to populate a line with video data
-      function populateLineWithVideo(targetLineId, video) {
-        const linkInput = document.getElementById(`link${targetLineId}`);
-        const targetVideoInfoDiv = document.getElementById(`video-info-${targetLineId}`);
-        
-        if (linkInput) {
-          linkInput.value = video.url;
-        }
-        
-        if (targetVideoInfoDiv) {
-          const duration = Math.floor(video.duration / 60) + ':' + String(video.duration % 60).padStart(2, '0');
-          targetVideoInfoDiv.innerHTML = `
-            <div style="
-              background: #3a3a3a;
-              border: 1px solid #555;
-              border-radius: 8px;
-              padding: 12px;
-              margin: 4px 0;
-              box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-            ">
-              <div style="
-                background: rgba(255,255,255,0.05);
-                border-radius: 6px;
-                padding: 8px;
-                margin-bottom: 8px;
-              ">
-                <div style="
-                  color: #60a5fa;
-                  font-weight: 600;
-                  margin-bottom: 4px;
-                  line-height: 1.3;
-                  font-size: 12px;
-                  cursor: pointer;
-                  transition: color 0.2s ease;
-                " 
-                onclick="openVideoInPopup('${video.url.replace(/'/g, "\\'")}', '${video.title.replace(/'/g, "\\'")}')"
-                onmouseover="this.style.color='#3b82f6'"
-                onmouseout="this.style.color='#60a5fa'"
-                title="Click to open video in popup window"
-                >${video.title}</div>
-              </div>
-              
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px;">
-                <div style="
-                  background: rgba(255,255,255,0.03);
-                  padding: 6px 8px;
-                  border-radius: 4px;
-                  border-left: 3px solid #60a5fa;
-                ">
-                  <div style="color: #9ca3af; margin-bottom: 2px;">📺 Channel</div>
-                  <div style="color: #e5e7eb; font-weight: 500;">${video.uploader}</div>
-                </div>
-                
-                <div style="
-                  background: rgba(255,255,255,0.03);
-                  padding: 6px 8px;
-                  border-radius: 4px;
-                  border-left: 3px solid #f59e0b;
-                ">
-                  <div style="color: #9ca3af; margin-bottom: 2px;">⏱️ Duration</div>
-                  <div style="color: #e5e7eb; font-weight: 500;">${duration}</div>
-                </div>
-                
-                <div style="
-                  background: rgba(255,255,255,0.03);
-                  padding: 6px 8px;
-                  border-radius: 4px;
-                  border-left: 3px solid #ef4444;
-                ">
-                  <div style="color: #9ca3af; margin-bottom: 2px;">👁️ Views</div>
-                  <div style="color: #e5e7eb; font-weight: 500;">${video.view_count?.toLocaleString() || 'N/A'}</div>
-                </div>
-                
-                <div style="
-                  background: rgba(255,255,255,0.03);
-                  padding: 6px 8px;
-                  border-radius: 4px;
-                  border-left: 3px solid #8b5cf6;
-                ">
-                  <div style="color: #9ca3af; margin-bottom: 2px;">🔍 Query</div>
-                  <div style="color: #e5e7eb; font-weight: 500;">"${searchQuery}"</div>
-                </div>
-              </div>
-            </div>
-          `;
-          targetVideoInfoDiv.style.display = 'block';
-        }
+      // Get the first (and only) video found
+      const video = searchData.videos[0];
+      
+      // Populate the current line with video data
+      const linkInput = document.getElementById(`link${lineId}`);
+      if (linkInput) {
+        linkInput.value = video.url;
       }
       
-      // Populate the first video in the current line
-      populateLineWithVideo(lineId, searchData.videos[0]);
-      
-      // For additional videos, create new lines and populate them
-      let currentLineId = lineId;
-      for (let i = 1; i < searchData.videos.length; i++) {
-        // Add a new form line (this will copy sheet, narrative, and story from current line)
-        addNewFormLine(currentLineId);
-        
-        // Update currentLineId to the newly created line
-        currentLineId = formLineCounter;
-        
-        // Populate the new line with the video data
-        populateLineWithVideo(currentLineId, searchData.videos[i]);
+      if (videoInfoDiv) {
+        const duration = Math.floor(video.duration / 60) + ':' + String(video.duration % 60).padStart(2, '0');
+        videoInfoDiv.innerHTML = `
+          <div style="
+            background: #3a3a3a;
+            border: 1px solid #555;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 4px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          ">
+            <div style="
+              background: rgba(255,255,255,0.05);
+              border-radius: 6px;
+              padding: 8px;
+              margin-bottom: 8px;
+            ">
+              <div style="
+                color: #60a5fa;
+                font-weight: 600;
+                margin-bottom: 4px;
+                line-height: 1.3;
+                font-size: 12px;
+                cursor: pointer;
+                transition: color 0.2s ease;
+              " 
+              onclick="openVideoInPopup('${video.url.replace(/'/g, "\\'")}', '${video.title.replace(/'/g, "\\'")}')"
+              onmouseover="this.style.color='#3b82f6'"
+              onmouseout="this.style.color='#60a5fa'"
+              title="Click to open video in popup window"
+              >${video.title}</div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px;">
+              <div style="
+                background: rgba(255,255,255,0.03);
+                padding: 6px 8px;
+                border-radius: 4px;
+                border-left: 3px solid #60a5fa;
+              ">
+                <div style="color: #9ca3af; margin-bottom: 2px;">📺 Channel</div>
+                <div style="color: #e5e7eb; font-weight: 500;">${video.uploader}</div>
+              </div>
+              
+              <div style="
+                background: rgba(255,255,255,0.03);
+                padding: 6px 8px;
+                border-radius: 4px;
+                border-left: 3px solid #f59e0b;
+              ">
+                <div style="color: #9ca3af; margin-bottom: 2px;">⏱️ Duration</div>
+                <div style="color: #e5e7eb; font-weight: 500;">${duration}</div>
+              </div>
+              
+              <div style="
+                background: rgba(255,255,255,0.03);
+                padding: 6px 8px;
+                border-radius: 4px;
+                border-left: 3px solid #ef4444;
+              ">
+                <div style="color: #9ca3af; margin-bottom: 2px;">👁️ Views</div>
+                <div style="color: #e5e7eb; font-weight: 500;">${video.view_count?.toLocaleString() || 'N/A'}</div>
+              </div>
+              
+              <div style="
+                background: rgba(255,255,255,0.03);
+                padding: 6px 8px;
+                border-radius: 4px;
+                border-left: 3px solid #8b5cf6;
+              ">
+                <div style="color: #9ca3af; margin-bottom: 2px;">🔍 Query</div>
+                <div style="color: #e5e7eb; font-weight: 500;">"${searchQuery}"</div>
+              </div>
+            </div>
+          </div>
+        `;
+        videoInfoDiv.style.display = 'block';
       }
       
       // Show success message in the error div
       const errorDiv = document.getElementById('addNarrativeError');
       if (errorDiv) {
-        errorDiv.innerHTML = `<div class="success">Found ${searchData.videos.length} videos and populated ${searchData.videos.length} lines!</div>`;
+        errorDiv.innerHTML = `<div class="success">Found video and populated the current line!</div>`;
         errorDiv.style.display = 'block';
         
-        // Hide success message after 4 seconds
+        // Hide success message after 3 seconds
         setTimeout(() => {
           errorDiv.style.display = 'none';
-        }, 4000);
+        }, 3000);
       }
       
     } else {
@@ -1458,4 +1527,392 @@ function openVideoInPopup(videoUrl, videoTitle) {
     // Fallback if popup is blocked
     alert('Popup blocked. Please allow popups and try again, or manually open: ' + videoUrl);
   }
+}
+
+// Global object to track debounce timers and auto-generation state
+let narrativeAutoGeneration = {
+  debounceTimers: {},
+  inProgress: {},
+  videoSearchInProgress: {},
+  debounceDelay: 1500 // 1.5 seconds delay after user stops typing
+};
+
+/**
+ * Automatically generate story when narrative is filled
+ * This is a streamlined version of suggestStory for automatic triggers
+ */
+async function autoGenerateStory(lineId, isBlurTrigger = false) {
+  const narrative = document.getElementById(`narrative${lineId}`).value.trim();
+  const storyTextarea = document.getElementById(`story${lineId}`);
+  const suggestBtn = document.querySelector(`[data-line-id="${lineId}"].suggest-story-btn`);
+  
+  // Don't auto-generate if:
+  // 1. No narrative provided
+  // 2. Story already has content (don't overwrite user's work)
+  // 3. Auto-generation already in progress for this line
+  // 4. Manual suggest button is disabled (manual generation in progress)
+  if (!narrative || 
+      storyTextarea.value.trim() || 
+      narrativeAutoGeneration.inProgress[lineId] ||
+      (suggestBtn && suggestBtn.disabled)) {
+    return;
+  }
+  
+  // Mark as in progress
+  narrativeAutoGeneration.inProgress[lineId] = true;
+  
+  // Add subtle loading indicator
+  const storyLabel = document.querySelector(`label[for="story${lineId}"]`);
+  const originalLabelText = storyLabel ? storyLabel.textContent : '';
+  if (storyLabel && !originalLabelText.includes('🤖')) {
+    storyLabel.textContent = originalLabelText + ' 🤖';
+  }
+  
+  try {
+    // Check if this line has a custom prompt
+    const hasCustomPrompt = customPrompts[lineId];
+    let response;
+    
+    if (hasCustomPrompt) {
+      // Use custom prompt endpoint
+      response = await fetch('/generate-story-custom-prompt', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          narrative: narrative,
+          custom_prompt: customPrompts[lineId],
+          style: 'engaging'
+        }),
+      });
+    } else {
+      // Use default endpoint
+      response = await fetch('/generate-story', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          narrative: narrative,
+          style: 'engaging',
+          additional_context: ''
+        }),
+      });
+    }
+    
+    if (response.ok) {
+      const result = await response.json();
+      
+      // Only set the story if the textarea is still empty (user might have typed something)
+      if (!storyTextarea.value.trim()) {
+        storyTextarea.value = result.story;
+        
+        // Add a subtle visual indication that the story was auto-generated
+        storyTextarea.style.backgroundColor = '#f0fff0'; // Very light green
+        setTimeout(() => {
+          storyTextarea.style.backgroundColor = '';
+        }, 2000);
+        
+        // Automatically trigger video search after story is generated
+        setTimeout(() => {
+          autoYouTubeSearch(lineId);
+        }, 1000); // Wait 1 second after story generation to start video search
+      }
+    }
+  } catch (error) {
+    console.log('Auto story generation failed silently:', error);
+    // We don't show errors for automatic generation to avoid interrupting user flow
+  } finally {
+    // Mark as no longer in progress
+    narrativeAutoGeneration.inProgress[lineId] = false;
+    
+    // Remove loading indicator
+    const storyLabel = document.querySelector(`label[for="story${lineId}"]`);
+    if (storyLabel && storyLabel.textContent.includes('🤖')) {
+      storyLabel.textContent = storyLabel.textContent.replace(' 🤖', '');
+    }
+  }
+}
+
+/**
+ * Automatically search for YouTube video when story is generated
+ * This is a streamlined version of openYouTubeSearch for automatic triggers
+ */
+async function autoYouTubeSearch(lineId) {
+  const storyTextarea = document.getElementById(`story${lineId}`);
+  const videoInfoDiv = document.getElementById(`video-info-${lineId}`);
+  const linkInput = document.getElementById(`link${lineId}`);
+  
+  // Don't auto-search if:
+  // 1. No story content
+  // 2. Link field already has content (don't overwrite user's work)
+  // 3. Story field is empty (user might have cleared it)
+  // 4. Auto video search already in progress for this line
+  if (!storyTextarea || 
+      !storyTextarea.value.trim() || 
+      linkInput.value.trim() ||
+      narrativeAutoGeneration.videoSearchInProgress[lineId]) {
+    return;
+  }
+  
+  const storyContent = storyTextarea.value.trim();
+  
+  // Mark video search as in progress
+  narrativeAutoGeneration.videoSearchInProgress[lineId] = true;
+  
+  try {
+    // Show subtle loading state
+    if (videoInfoDiv) {
+      videoInfoDiv.style.display = 'block';
+      videoInfoDiv.innerHTML = '<div style="text-align: center; color: #999; font-size: 11px;">🔄 Auto-searching video...</div>';
+    }
+    
+    // Step 1: Generate video keywords from the story
+    const keywordsResponse = await fetch('/generate-video-keywords', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        story: storyContent,
+        max_keywords: 5
+      })
+    });
+    
+    if (!keywordsResponse.ok) {
+      throw new Error(`Failed to generate keywords: ${keywordsResponse.status}`);
+    }
+    
+    const keywordsData = await keywordsResponse.json();
+    const searchQuery = keywordsData.search_query;
+    
+    if (!searchQuery) {
+      throw new Error('No search query generated from the story');
+    }
+    
+    // Update loading state
+    if (videoInfoDiv) {
+      videoInfoDiv.innerHTML = '<div style="text-align: center; color: #999; font-size: 11px;">🔍 Finding video...</div>';
+    }
+    
+    // Step 2: Search for videos using the generated query - request 1 result
+    const searchResponse = await fetch(`/search-videos?query=${encodeURIComponent(searchQuery)}&max_results=1&max_duration=300`, {
+      method: 'POST'
+    });
+    
+    if (!searchResponse.ok) {
+      throw new Error(`Failed to search videos: ${searchResponse.status}`);
+    }
+    
+    const searchData = await searchResponse.json();
+    
+    if (!searchData.videos || !Array.isArray(searchData.videos)) {
+      throw new Error('Invalid response format from video search');
+    }
+    
+    if (searchData.videos && searchData.videos.length > 0) {
+      // Get the first (and only) video found
+      const video = searchData.videos[0];
+      
+      // Only populate if link field is still empty (user might have filled it)
+      if (!linkInput.value.trim()) {
+        linkInput.value = video.url;
+        
+        // Add subtle visual indication that the link was auto-populated
+        linkInput.style.backgroundColor = '#f0f8ff'; // Very light blue
+        setTimeout(() => {
+          linkInput.style.backgroundColor = '';
+        }, 3000);
+      }
+      
+      if (videoInfoDiv) {
+        const duration = Math.floor(video.duration / 60) + ':' + String(video.duration % 60).padStart(2, '0');
+        videoInfoDiv.innerHTML = `
+          <div style="
+            background: #3a3a3a;
+            border: 1px solid #555;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 4px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          ">
+            <div style="
+              background: rgba(255,255,255,0.05);
+              border-radius: 6px;
+              padding: 8px;
+              margin-bottom: 8px;
+            ">
+              <div style="
+                color: #60a5fa;
+                font-weight: 600;
+                margin-bottom: 4px;
+                line-height: 1.3;
+                font-size: 12px;
+                cursor: pointer;
+                transition: color 0.2s ease;
+              " 
+              onclick="openVideoInPopup('${video.url.replace(/'/g, "\\'")}', '${video.title.replace(/'/g, "\\'")}')"
+              onmouseover="this.style.color='#3b82f6'"
+              onmouseout="this.style.color='#60a5fa'"
+              title="Click to open video in popup window"
+              >${video.title}</div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px;">
+              <div style="
+                background: rgba(255,255,255,0.03);
+                padding: 6px 8px;
+                border-radius: 4px;
+                border-left: 3px solid #60a5fa;
+              ">
+                <div style="color: #9ca3af; margin-bottom: 2px;">📺 Channel</div>
+                <div style="color: #e5e7eb; font-weight: 500;">${video.uploader}</div>
+              </div>
+              
+              <div style="
+                background: rgba(255,255,255,0.03);
+                padding: 6px 8px;
+                border-radius: 4px;
+                border-left: 3px solid #f59e0b;
+              ">
+                <div style="color: #9ca3af; margin-bottom: 2px;">⏱️ Duration</div>
+                <div style="color: #e5e7eb; font-weight: 500;">${duration}</div>
+              </div>
+              
+              <div style="
+                background: rgba(255,255,255,0.03);
+                padding: 6px 8px;
+                border-radius: 4px;
+                border-left: 3px solid #ef4444;
+              ">
+                <div style="color: #9ca3af; margin-bottom: 2px;">👁️ Views</div>
+                <div style="color: #e5e7eb; font-weight: 500;">${video.view_count?.toLocaleString() || 'N/A'}</div>
+              </div>
+              
+              <div style="
+                background: rgba(255,255,255,0.03);
+                padding: 6px 8px;
+                border-radius: 4px;
+                border-left: 3px solid #8b5cf6;
+              ">
+                <div style="color: #9ca3af; margin-bottom: 2px;">🔍 Query</div>
+                <div style="color: #e5e7eb; font-weight: 500;">"${searchQuery}"</div>
+              </div>
+            </div>
+            
+            <div style="margin-top: 8px; padding: 4px 8px; background: rgba(0,255,0,0.1); border-radius: 4px; font-size: 10px; color: #4ade80;">
+              ✨ Auto-suggested based on story
+            </div>
+          </div>
+        `;
+        videoInfoDiv.style.display = 'block';
+      }
+      
+    } else {
+      // No videos found - show subtle message
+      if (videoInfoDiv) {
+        videoInfoDiv.innerHTML = '<div style="color: #999; text-align: center; font-size: 11px;">No videos found for this story</div>';
+        videoInfoDiv.style.display = 'block';
+        
+        // Hide the message after 3 seconds
+        setTimeout(() => {
+          videoInfoDiv.style.display = 'none';
+        }, 3000);
+      }
+    }
+    
+  } catch (error) {
+    console.log('Auto video search failed silently:', error);
+    // Hide loading indicator on error
+    if (videoInfoDiv) {
+      videoInfoDiv.style.display = 'none';
+    }
+    // We don't show errors for automatic operations to avoid interrupting user flow
+  } finally {
+    // Mark video search as no longer in progress
+    narrativeAutoGeneration.videoSearchInProgress[lineId] = false;
+  }
+}
+
+/**
+ * Simple test function to debug modal issues
+ */
+function testModalOpen() {
+  console.log('Test function called');
+  
+  // Check if modal exists
+  const modal = document.getElementById('addNarrativeModal');
+  console.log('Modal element:', modal);
+  
+  if (modal) {
+    modal.style.display = 'block';
+    
+    // Check if form elements exist
+    setTimeout(() => {
+      const sheet1 = document.getElementById('sheet1');
+      const narrative1 = document.getElementById('narrative1');
+      console.log('sheet1 element:', sheet1);
+      console.log('narrative1 element:', narrative1);
+      
+      if (sheet1) {
+        sheet1.value = 'TEST TOPIC';
+        console.log('Set sheet1 value to TEST TOPIC');
+      }
+      
+      if (narrative1) {
+        narrative1.value = 'TEST NARRATIVE';
+        console.log('Set narrative1 value to TEST NARRATIVE');
+      }
+    }, 200);
+  }
+}
+
+/**
+ * Setup automatic story generation for narrative fields
+ */
+function setupAutoStoryGeneration() {
+  // Set up debounced input listeners for narrative fields
+  const narrativeInputs = document.querySelectorAll('.narrative-input');
+  
+  narrativeInputs.forEach(input => {
+    const lineId = input.id.replace('narrative', '');
+    
+    // Clear any existing timer for this line
+    if (narrativeAutoGeneration.debounceTimers[lineId]) {
+      clearTimeout(narrativeAutoGeneration.debounceTimers[lineId]);
+    }
+    
+    // Add input event listener for debounced auto-generation
+    input.addEventListener('input', function() {
+      const narrativeText = this.value.trim();
+      
+      // Clear previous timer
+      if (narrativeAutoGeneration.debounceTimers[lineId]) {
+        clearTimeout(narrativeAutoGeneration.debounceTimers[lineId]);
+      }
+      
+      // Only auto-generate if there's text and no story content yet
+      if (narrativeText && !document.getElementById(`story${lineId}`).value.trim()) {
+        narrativeAutoGeneration.debounceTimers[lineId] = setTimeout(() => {
+          autoGenerateStory(lineId, false);
+        }, narrativeAutoGeneration.debounceDelay);
+      }
+    });
+    
+    // Add blur event listener for immediate auto-generation
+    input.addEventListener('blur', function() {
+      const narrativeText = this.value.trim();
+      
+      // Only auto-generate if there's text and no story content yet
+      if (narrativeText && !document.getElementById(`story${lineId}`).value.trim()) {
+        // Clear any pending timer and generate immediately
+        if (narrativeAutoGeneration.debounceTimers[lineId]) {
+          clearTimeout(narrativeAutoGeneration.debounceTimers[lineId]);
+        }
+        
+        autoGenerateStory(lineId, true);
+      }
+    });
+  });
 }
