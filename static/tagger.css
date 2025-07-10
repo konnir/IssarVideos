@@ -28,6 +28,31 @@ h1 {
   margin-bottom: 30px;
   font-size: 2.5em;
   font-weight: 300;
+  transition: all 0.3s ease;
+}
+
+/* Hide title when in tagging mode */
+.tagging-mode h1 {
+  display: none;
+}
+
+/* Reorganize layout when in tagging mode */
+.tagging-mode .container {
+  display: flex;
+  flex-direction: column;
+  padding-top: 20px; /* Reduce top padding since title is hidden */
+}
+
+.tagging-mode .video-section {
+  order: -1; /* Move video section (with narrative) to top */
+  margin-top: 0; /* Remove top margin */
+}
+
+.tagging-mode .username-section,
+.tagging-mode .instructions-section,
+.tagging-mode .stats-section,
+.tagging-mode .leaderboard-section {
+  order: 1; /* Keep other sections below */
 }
 
 .username-section {
@@ -53,7 +78,7 @@ h1 {
   background-color: #2d2d2d;
   padding: 20px;
   border-radius: 8px;
-  margin-bottom: 20px;
+  margin-bottom: 10px; /* Reduced from 20px */
 }
 
 .stats-section {
@@ -61,6 +86,76 @@ h1 {
   padding: 15px;
   border-radius: 8px;
   text-align: center;
+}
+
+/* Instructions Section */
+.instructions-section {
+  background-color: #2d2d2d;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border-left: 4px solid #4caf50;
+}
+
+.instructions-section h2 {
+  color: #4caf50;
+  margin-bottom: 15px;
+  font-size: 1.5em;
+  font-weight: 500;
+}
+
+.instructions-content {
+  color: #e0e0e0;
+  line-height: 1.6;
+}
+
+.instructions-content ol {
+  margin-left: 20px;
+  margin-bottom: 15px;
+}
+
+.instructions-content li {
+  margin-bottom: 8px;
+}
+
+.instructions-content ul {
+  margin: 8px 0 8px 20px;
+}
+
+.instructions-content ul li {
+  margin-bottom: 4px;
+}
+
+.instructions-content strong {
+  color: #4caf50;
+}
+
+/* Color coding for tagging options in instructions */
+.instructions-content ul li:nth-child(1) strong {
+  color: #4caf50; /* a) Yes - Green */
+}
+
+.instructions-content ul li:nth-child(2) strong {
+  color: #f44336; /* b) No - Red */
+}
+
+.instructions-content ul li:nth-child(3) strong {
+  color: #9c27b0; /* c) Too Obvious - Purple */
+}
+
+.instructions-content ul li:nth-child(4) strong {
+  color: #ff9800; /* d) Problem - Orange */
+}
+
+.thank-you {
+  text-align: center;
+  font-weight: bold;
+  color: #4caf50;
+  font-size: 1.1em;
+  margin-top: 15px;
+  padding: 10px;
+  background-color: rgba(76, 175, 80, 0.1);
+  border-radius: 6px;
 }
 
 input[type="text"] {
@@ -161,6 +256,27 @@ button:disabled {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
+.skip-video-btn {
+  background-color: #ff9800; /* Orange color for skip */
+  color: white;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-decoration: none;
+  display: inline-block;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.skip-video-btn:hover {
+  background-color: #f57c00;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
 iframe {
   width: 100%;
   height: 600px; /* Increased from 400px to 600px for full height */
@@ -171,22 +287,41 @@ iframe {
 .narrative-question {
   font-weight: bold;
   font-size: 18px;
-  margin-bottom: 20px;
+  margin-bottom: 10px; /* Reduced from 20px */
   color: #e0e0e0;
   line-height: 1.4;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center; /* Center the narrative box */
+}
+
+.narrative-label-text {
+  color: #4caf50;
+  font-weight: bold;
+  font-size: 18px;
+  margin-right: 8px;
+  white-space: nowrap;
+  align-self: center;
 }
 
 .narrative-highlight {
-  display: block;
-  margin-top: 10px;
+  display: inline-block;
   color: #2196F3;
   font-weight: bold;
-  font-size: 20px;
+  font-size: 18px;
   background-color: rgba(33, 150, 243, 0.1);
-  padding: 15px;
-  border-radius: 8px;
+  padding: 10px 12px;
+  border-radius: 6px;
   border-left: 4px solid #2196F3;
   box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+  flex: none; /* Remove flex: 1 to allow centering */
+  min-width: 300px;
+  max-width: 80%; /* Limit maximum width */
+  margin-top: 0;
+  line-height: 1.3;
+  text-align: center; /* Center text within the box */
 }
 
 .narrative-container {
@@ -238,11 +373,74 @@ iframe {
   align-items: center;
 }
 
-.radio-option {
+/* New Button Group Styles */
+.button-group {
   display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 5px; /* Further reduced from 10px */
   align-items: center;
-  gap: 8px;
+  justify-content: center;
 }
+
+.tag-button {
+  background-color: #4caf50;
+  color: white;
+  padding: 15px 25px;
+  font-size: 16px;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 140px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.tag-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.tag-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Individual button colors */
+.yes-button {
+  background-color: #4caf50; /* Green */
+}
+
+.yes-button:hover {
+  background-color: #45a049;
+}
+
+.no-button {
+  background-color: #f44336; /* Red */
+}
+
+.no-button:hover {
+  background-color: #e53935;
+}
+
+.obvious-button {
+  background-color: #9c27b0; /* Purple */
+}
+
+.obvious-button:hover {
+  background-color: #8e24aa;
+}
+
+.problem-button {
+  background-color: #ff9800; /* Orange */
+}
+
+.problem-button:hover {
+  background-color: #f57c00;
+}
+
+/* Old radio button styles - kept for reference but not used */
 
 input[type="radio"] {
   width: 18px;
@@ -261,14 +459,7 @@ label {
   margin-bottom: 0;
 }
 
-.send-button {
-  background-color: #2196f3;
-  margin-left: 20px;
-}
-
-.send-button:hover {
-  background-color: #1976d2;
-}
+/* Send button styles removed - using individual tag buttons now */
 
 .stats {
   font-size: 18px;
@@ -276,10 +467,72 @@ label {
   font-weight: bold;
 }
 
+/* Loading Overlay - Full Screen Modal */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(5px);
+}
+
+.loading-content {
+  background-color: #2d2d2d;
+  padding: 40px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  border: 2px solid #4caf50;
+  min-width: 300px;
+}
+
+.loading-content .spinner {
+  border: 4px solid #333;
+  border-top: 4px solid #4caf50;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px auto;
+}
+
+.loading-content .loading-text {
+  color: #4caf50;
+  font-size: 18px;
+  font-weight: bold;
+  margin: 0;
+}
+
 .loading {
   text-align: center;
   color: #888;
   font-style: italic;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* Spinner Animation */
+.spinner {
+  border: 3px solid #333;
+  border-top: 3px solid #4caf50;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .error {
@@ -353,6 +606,19 @@ label {
     align-items: flex-start;
   }
 
+  .button-group {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .tag-button {
+    min-width: auto;
+    width: 100%;
+    padding: 12px 20px;
+    font-size: 15px;
+  }
+
   iframe {
     height: 250px;
   }
@@ -384,6 +650,23 @@ label {
 
   .narrative-hebrew {
     border-top-color: #ff9800;
+  }
+
+  .narrative-question {
+    flex-direction: column;
+    align-items: center; /* Keep centered on mobile */
+  }
+
+  .narrative-label-text {
+    margin-right: 0;
+    margin-bottom: 8px;
+    text-align: center;
+  }
+
+  .narrative-highlight {
+    min-width: auto;
+    max-width: 95%; /* Allow more width on mobile */
+    margin-top: 0; /* Keep no top margin */
   }
 
   .report-link-section {

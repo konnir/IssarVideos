@@ -362,16 +362,14 @@ class SheetsNarrativesDB:
     ) -> Optional[Dict[str, Any]]:
         """Get a random row that the specified user hasn't tagged yet."""
         # Ensure data is fresh (5 minute cache)
-        self._ensure_fresh_data(max_age_seconds=300)
+        self._ensure_fresh_data(max_age_seconds=180)
 
         if self.df.empty:
             return None
 
-        # Filter rows where user hasn't tagged (Tagger_1 is not the user)
+        # Filter rows where NO ONE has tagged yet (Tagger_1 is empty/null)
         available_df = self.df[
-            (self.df["Tagger_1"].isna())
-            | (self.df["Tagger_1"] == "")
-            | (self.df["Tagger_1"] != username)
+            (self.df["Tagger_1"].isna()) | (self.df["Tagger_1"] == "")
         ]
 
         if available_df.empty:

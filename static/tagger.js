@@ -35,18 +35,49 @@ async function apiCall(endpoint, options = {}) {
 
 function showMessage(message, type = "info") {
   const messageSection = document.getElementById("messageSection");
-  const className =
-    type === "error"
-      ? "error"
-      : type === "success"
-      ? "success"
-      : "loading";
+  
+  // For loading messages, create a full-screen overlay
+  if (type === "loading") {
+    showLoadingOverlay(message);
+    return;
+  }
+  
+  // For non-loading messages, use the regular message section
+  const className = type === "error" ? "error" : type === "success" ? "success" : "loading";
   messageSection.innerHTML = `<div class="${className}">${message}</div>`;
 
   if (type !== "error") {
     setTimeout(() => {
       messageSection.innerHTML = "";
     }, 3000);
+  }
+}
+
+function showLoadingOverlay(message) {
+  // Remove existing overlay if any
+  hideLoadingOverlay();
+  
+  // Create overlay
+  const overlay = document.createElement('div');
+  overlay.className = 'loading-overlay';
+  overlay.id = 'loadingOverlay';
+  
+  // Create content
+  overlay.innerHTML = `
+    <div class="loading-content">
+      <div class="spinner"></div>
+      <div class="loading-text">${message}</div>
+    </div>
+  `;
+  
+  // Add to body
+  document.body.appendChild(overlay);
+}
+
+function hideLoadingOverlay() {
+  const overlay = document.getElementById('loadingOverlay');
+  if (overlay) {
+    overlay.remove();
   }
 }
 
@@ -79,14 +110,28 @@ async function startTagging() {
   }
 
   currentUsername = username;
-  showMessage("Loading your first video...", "loading");
-
+  
   try {
+    // Refresh data to ensure we have the most current information
+    showMessage("Loading fresh data...", "loading");
+    
+    // Add a small delay to ensure the message is visible
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    await apiCall("/refresh-data", { method: "POST" });
+    
+    showMessage("Loading your first video...", "loading");
     await updateTaggedCount();
     await loadNextVideo();
+    
+    // Hide loading overlay and show the video section
+    hideLoadingOverlay();
     document.getElementById("videoSection").style.display = "block";
+    // Add tagging mode class to hide title and reorganize layout
+    document.body.classList.add("tagging-mode");
     hideLeaderboard(); // Hide leaderboard when user starts tagging
   } catch (error) {
+    hideLoadingOverlay();
     showMessage("Error starting tagging: " + error.message, "error");
   }
 }
@@ -100,6 +145,7 @@ async function loadNextVideo() {
     );
     
     if (response.status === 404) {
+      hideLoadingOverlay();
       showMessage(
         "No more videos to tag! You have completed all available videos.",
         "success"
@@ -115,8 +161,39 @@ async function loadNextVideo() {
       radio.checked = false;
     });
 
-    showMessage("");
+    hideLoadingOverlay();
   } catch (error) {
+    hideLoadingOverlay();
+    showMessage("Error loading video: " + error.message, "error");
+  }
+}
+
+async function loadNextVideoWithoutLoading() {
+  try {
+    const response = await apiCall(
+      `/random-narrative-for-user/${encodeURIComponent(currentUsername)}`
+    );
+    
+    if (response.status === 404) {
+      hideLoadingOverlay();
+      showMessage(
+        "No more videos to tag! You have completed all available videos.",
+        "success"
+      );
+      return;
+    }
+
+    currentVideo = await response.json();
+    displayVideo(currentVideo);
+
+    // Clear previous selection
+    document.querySelectorAll('input[name="result"]').forEach((radio) => {
+      radio.checked = false;
+    });
+
+    hideLoadingOverlay();
+  } catch (error) {
+    hideLoadingOverlay();
     showMessage("Error loading video: " + error.message, "error");
   }
 }
@@ -146,6 +223,7 @@ function displayVideo(video) {
   // Update the video link button
   const videoLinkBtn = document.getElementById("videoLinkBtn");
   const restartVideoBtn = document.getElementById("restartVideoBtn");
+  const skipVideoBtn = document.getElementById("skipVideoBtn");
   
   if (videoLinkBtn && video.Link) {
     // Ensure we have the full URL
@@ -168,6 +246,12 @@ function displayVideo(video) {
     }
   }
 
+  // Enable skip video button (always available when video is loaded)
+  if (skipVideoBtn) {
+    skipVideoBtn.style.opacity = '1';
+    skipVideoBtn.style.pointerEvents = 'auto';
+  }
+
   // Update narrative content
   const narrativeEnglish = document.getElementById("narrativeEnglish");
   const narrativeHighlight = document.getElementById("narrativeHighlight");
@@ -184,17 +268,12 @@ function displayVideo(video) {
   }
 }
 
-async function submitTag() {
-  const selectedResult = document.querySelector(
-    'input[name="result"]:checked'
-  );
-
-  if (!selectedResult) {
-    showMessage("Please select a result option", "error");
+async function submitTag(result) {
+  // Validate the result parameter
+  if (!result || ![1, 2, 3, 4].includes(result)) {
+    showMessage("Invalid result option", "error");
     return;
   }
-
-  const result = parseInt(selectedResult.value);
 
   try {
     showMessage("Submitting tag...", "loading");
@@ -209,11 +288,14 @@ async function submitTag() {
     });
 
     const responseData = await response.json();
-    showMessage("Tag submitted successfully!", "success");
+    
+    // Don't hide loading overlay yet - transition directly to loading next video
+    showMessage("Loading next video...", "loading");
 
     await updateTaggedCount();
-    await loadNextVideo();
+    await loadNextVideoWithoutLoading(); // Use a version that doesn't show its own loading
   } catch (error) {
+    hideLoadingOverlay();
     showMessage("Error submitting tag: " + error.message, "error");
   }
 }
@@ -333,6 +415,24 @@ function restartVideo() {
     showMessage("Video restarted", "success");
   } else {
     showMessage("Cannot restart video - no embedded player available", "error");
+  }
+}
+
+/**
+ * Skip the current video and load the next one without tagging
+ */
+async function skipVideo() {
+  if (!currentVideo) {
+    showMessage("No video to skip", "error");
+    return;
+  }
+
+  try {
+    showMessage("Loading next video...", "loading");
+    await loadNextVideoWithoutLoading();
+  } catch (error) {
+    hideLoadingOverlay();
+    showMessage("Error skipping video: " + error.message, "error");
   }
 }
 

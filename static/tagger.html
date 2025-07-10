@@ -12,38 +12,33 @@
 
       <!-- Video Section -->
       <div class="video-section" id="videoSection">
-        <!-- Question and Narrative Section -->
+        <!-- Narrative Section -->
         <div class="narrative-question">
-          Does this video imply the following narrative?
+          <span class="narrative-label-text">Implied Narrative:</span>
           <span class="narrative-highlight" id="narrativeHighlight">
             <!-- Narrative will be loaded here -->
           </span>
         </div>
 
-        <div class="video-container" id="videoContainer">
-          <!-- Video will be loaded here -->
+        <div class="tagging-section">
+          <div class="button-group">
+            <button class="tag-button yes-button" onclick="submitTag(1)">
+              Yes
+            </button>
+            <button class="tag-button no-button" onclick="submitTag(2)">
+              No
+            </button>
+            <button class="tag-button obvious-button" onclick="submitTag(3)">
+              Too Obvious
+            </button>
+            <button class="tag-button problem-button" onclick="submitTag(4)">
+              Problem
+            </button>
+          </div>
         </div>
 
-        <div class="tagging-section">
-          <div class="radio-group">
-            <div class="radio-option">
-              <input type="radio" id="result1" name="result" value="1" />
-              <label for="result1">1 - Yes</label>
-            </div>
-            <div class="radio-option">
-              <input type="radio" id="result2" name="result" value="2" />
-              <label for="result2">2 - No</label>
-            </div>
-            <div class="radio-option">
-              <input type="radio" id="result3" name="result" value="3" />
-              <label for="result3">3 - Too Obvious</label>
-            </div>
-            <div class="radio-option">
-              <input type="radio" id="result4" name="result" value="4" />
-              <label for="result4">4 - Problem</label>
-            </div>
-            <button class="send-button" onclick="submitTag()">Send</button>
-          </div>
+        <div class="video-container" id="videoContainer">
+          <!-- Video will be loaded here -->
         </div>
 
         <!-- Open Link Button -->
@@ -57,6 +52,14 @@
           >
             Open video in new tab
           </a>
+          <button
+            class="skip-video-btn"
+            id="skipVideoBtn"
+            onclick="skipVideo()"
+            style="opacity: 0.5; pointer-events: none"
+          >
+            ⏭️ Skip
+          </button>
           <button
             class="restart-video-btn"
             id="restartVideoBtn"
@@ -85,6 +88,36 @@
       <div class="username-section">
         <input type="text" id="username" placeholder="Your full name" />
         <button onclick="startTagging()">Start Tagging</button>
+      </div>
+
+      <!-- Instructions Section -->
+      <div class="instructions-section">
+        <h2>📋 Instructions</h2>
+        <div class="instructions-content">
+          <ol>
+            <li>Enter your name and click "Start Tagging".</li>
+            <li>You will be given a narrative.</li>
+            <li>
+              Watch the video (it's a short clip and you have a speed control).
+            </li>
+            <li>
+              Tag the video:
+              <ul>
+                <li><strong>Yes</strong> - the video implies the narrative</li>
+                <li>
+                  <strong>No</strong> - the video doesn't imply the narrative
+                </li>
+                <li>
+                  <strong>Too Obvious</strong> - the narrative is too obvious or
+                  directly delivered
+                </li>
+                <li><strong>Problem</strong> - a problem occurred</li>
+              </ul>
+            </li>
+            <li>Tag as many videos as you can (at least 5).</li>
+          </ol>
+          <div class="thank-you">Thank You!</div>
+        </div>
       </div>
 
       <!-- Leaderboard Section -->
