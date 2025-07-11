@@ -26,7 +26,9 @@ class VideoKeywordGenerator:
         """
         self.openai_client = openai_client or OpenAIClient()
 
-    def generate_keywords(self, narrative: str, story: str, max_keywords: int = 10) -> Dict[str, Any]:
+    def generate_keywords(
+        self, narrative: str, story: str, max_keywords: int = 10
+    ) -> Dict[str, Any]:
         """
         Generate a single optimized YouTube search query based on a story.
 

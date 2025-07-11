@@ -66,6 +66,7 @@ class SheetsNarrativesDB:
 
             # Update both instance and global timestamps
             import time
+
             current_time = time.time()
             self.last_loaded_time = current_time
             SheetsNarrativesDB._global_last_loaded_time = current_time
@@ -150,10 +151,11 @@ class SheetsNarrativesDB:
                         "Tagger_1",
                         "Tagger_1_Result",
                     ]
-                )  
-            
+                )
+
             # Update both instance and global timestamps
             import time
+
             current_time = time.time()
             self.last_loaded_time = current_time
             SheetsNarrativesDB._global_last_loaded_time = current_time
@@ -354,8 +356,9 @@ class SheetsNarrativesDB:
 
         # Filter rows where Tagger_1 is empty/null AND Link is not empty/null
         untagged_df = self.df[
-            ((self.df["Tagger_1"].isna()) | (self.df["Tagger_1"] == "")) &
-            (self.df["Link"].notna()) & (self.df["Link"] != "")
+            ((self.df["Tagger_1"].isna()) | (self.df["Tagger_1"] == ""))
+            & (self.df["Link"].notna())
+            & (self.df["Link"] != "")
         ]
 
         if untagged_df.empty:
@@ -377,8 +380,9 @@ class SheetsNarrativesDB:
 
         # Filter rows where NO ONE has tagged yet (Tagger_1 is empty/null) AND Link is not empty/null
         available_df = self.df[
-            ((self.df["Tagger_1"].isna()) | (self.df["Tagger_1"] == "")) &
-            (self.df["Link"].notna()) & (self.df["Link"] != "")
+            ((self.df["Tagger_1"].isna()) | (self.df["Tagger_1"] == ""))
+            & (self.df["Link"].notna())
+            & (self.df["Link"] != "")
         ]
 
         if available_df.empty:
@@ -632,10 +636,14 @@ class SheetsNarrativesDB:
 
         # Check global timestamp first - if any instance loaded data recently, use it
         if current_time - SheetsNarrativesDB._global_last_loaded_time > max_age_seconds:
-            logger.info(f"Data is stale (age: {current_time - SheetsNarrativesDB._global_last_loaded_time:.1f}s), refreshing from Google Sheets...")
+            logger.info(
+                f"Data is stale (age: {current_time - SheetsNarrativesDB._global_last_loaded_time:.1f}s), refreshing from Google Sheets..."
+            )
             self.load_all_sheets_data()  # This will update both instance and global timestamps
         else:
-            logger.info(f"Data is fresh (age: {current_time - SheetsNarrativesDB._global_last_loaded_time:.1f}s), using cached data")
+            logger.info(
+                f"Data is fresh (age: {current_time - SheetsNarrativesDB._global_last_loaded_time:.1f}s), using cached data"
+            )
 
     def add_new_record_append(self, record_dict: Dict[str, Any]) -> bool:
         """Add a new record using append operation instead of full sheet rewrite."""
