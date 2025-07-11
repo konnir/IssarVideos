@@ -1278,6 +1278,10 @@ async function openYouTubeSearch(lineId) {
     return;
   }
   
+  // Get the narrative content for the current line
+  const narrativeInput = document.getElementById(`narrative${lineId}`);
+  const narrativeContent = narrativeInput ? narrativeInput.value.trim() : '';
+  
   try {
     // Show loading state
     if (videoInfoDiv) {
@@ -1293,6 +1297,7 @@ async function openYouTubeSearch(lineId) {
       },
       body: JSON.stringify({
         story: storyContent,
+        narrative: narrativeContent,
         max_keywords: 5
       })
     });
@@ -1701,6 +1706,10 @@ async function autoYouTubeSearch(lineId) {
   
   const storyContent = storyTextarea.value.trim();
   
+  // Get the narrative content for the current line
+  const narrativeInput = document.getElementById(`narrative${lineId}`);
+  const narrativeContent = narrativeInput ? narrativeInput.value.trim() : '';
+  
   // Mark video search as in progress
   narrativeAutoGeneration.videoSearchInProgress[lineId] = true;
   
@@ -1719,6 +1728,7 @@ async function autoYouTubeSearch(lineId) {
       },
       body: JSON.stringify({
         story: storyContent,
+        narrative: narrativeContent,
         max_keywords: 5
       })
     });

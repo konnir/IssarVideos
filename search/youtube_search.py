@@ -25,8 +25,8 @@ class YouTubeSearcher:
         self,
         query: str,
         max_results: int = 3,
-        max_duration: int = 300,
-        min_duration: int = 45,
+        max_duration: int = 180,
+        min_duration: int = 30,
     ) -> List[Dict[str, Any]]:
         """
         Search for videos on YouTube

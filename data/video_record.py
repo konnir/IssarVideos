@@ -119,6 +119,7 @@ class VideoKeywordRequest(BaseModel):
     """Model for generating YouTube search keywords from a story"""
 
     story: str
+    narrative: Optional[str] = ""
     max_keywords: Optional[int] = 10
 
     @validator("story")

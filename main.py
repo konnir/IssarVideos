@@ -665,6 +665,7 @@ def generate_video_keywords(request: VideoKeywordRequest):
 
         # Generate keywords
         result = generator.generate_keywords(
+            narrative=request.narrative or "",
             story=request.story,
             max_keywords=request.max_keywords,
         )
