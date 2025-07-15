@@ -8,6 +8,7 @@ import pandas as pd
 from typing import Optional, Any, List, Dict
 import gspread
 from google.oauth2.service_account import Credentials
+from googleapiclient.discovery import build
 
 logger = logging.getLogger(__name__)
 
@@ -432,3 +433,113 @@ class SheetsClient:
         except Exception as e:
             logger.error(f"Failed to delete worksheet '{sheet_name}': {str(e)}")
             raise
+
+    def batch_read_sheets_to_dataframes(
+        self, sheet_names: List[str]
+    ) -> Dict[str, pd.DataFrame]:
+        """
+        Read multiple sheets in a single batch API call and return as DataFrames.
+
+        Args:
+            sheet_names: List of worksheet names to read
+
+        Returns:
+            Dictionary mapping sheet names to their DataFrames
+        """
+        try:
+            if not sheet_names:
+                return {}
+
+            # Create ranges for each sheet (entire sheet)
+            ranges = [f"'{sheet_name}'" for sheet_name in sheet_names]
+
+            # Use the underlying Google Sheets API client for batch operations
+            from google.oauth2.service_account import Credentials
+
+            # Get credentials (reuse authentication logic)
+            scope = [
+                "https://spreadsheets.google.com/feeds",
+                "https://www.googleapis.com/auth/drive",
+            ]
+
+            if self.credentials_path and os.path.exists(self.credentials_path):
+                creds = Credentials.from_service_account_file(
+                    self.credentials_path, scopes=scope
+                )
+            else:
+                from google.auth import default
+
+                creds, _ = default(scopes=scope)
+
+            # Build the Sheets API service
+            service = build("sheets", "v4", credentials=creds)
+
+            # Make batch request
+            result = (
+                service.spreadsheets()
+                .values()
+                .batchGet(
+                    spreadsheetId=self.sheet_id,
+                    ranges=ranges,
+                    valueRenderOption="FORMATTED_VALUE",
+                    dateTimeRenderOption="FORMATTED_STRING",
+                )
+                .execute()
+            )
+
+            # Process results into DataFrames
+            dataframes = {}
+            value_ranges = result.get("valueRanges", [])
+
+            for i, sheet_name in enumerate(sheet_names):
+                if i < len(value_ranges):
+                    values = value_ranges[i].get("values", [])
+
+                    if values:
+                        # First row is headers
+                        headers = values[0] if values else []
+                        data_rows = values[1:] if len(values) > 1 else []
+
+                        # Create DataFrame
+                        if headers and data_rows:
+                            # Pad rows to match header length
+                            max_cols = len(headers)
+                            padded_rows = []
+                            for row in data_rows:
+                                padded_row = row + [""] * (max_cols - len(row))
+                                padded_rows.append(padded_row[:max_cols])
+
+                            df = pd.DataFrame(padded_rows, columns=headers)
+                            dataframes[sheet_name] = df
+                            logger.info(
+                                f"Batch read {len(df)} rows from sheet '{sheet_name}'"
+                            )
+                        else:
+                            dataframes[sheet_name] = pd.DataFrame()
+                            logger.warning(f"No data found in sheet '{sheet_name}'")
+                    else:
+                        dataframes[sheet_name] = pd.DataFrame()
+                        logger.warning(f"No data found in sheet '{sheet_name}'")
+                else:
+                    dataframes[sheet_name] = pd.DataFrame()
+                    logger.warning(f"No response data for sheet '{sheet_name}'")
+
+            logger.info(
+                f"Successfully batch read {len(dataframes)} sheets in single API call"
+            )
+            return dataframes
+
+        except Exception as e:
+            logger.error(f"Failed to batch read sheets: {str(e)}")
+            # Fallback to individual reads if batch fails
+            logger.info("Falling back to individual sheet reads")
+            dataframes = {}
+            for sheet_name in sheet_names:
+                try:
+                    dataframes[sheet_name] = self.read_sheet_to_dataframe(sheet_name)
+                except Exception as individual_error:
+                    logger.error(
+                        f"Failed to read sheet '{sheet_name}': {individual_error}"
+                    )
+                    dataframes[sheet_name] = pd.DataFrame()
+            return dataframes

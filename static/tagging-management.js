@@ -1319,7 +1319,7 @@ async function openYouTubeSearch(lineId) {
     }
     
     // Step 2: Search for videos using the generated query - request 1 result
-    const searchResponse = await fetch(`/search-videos?query=${encodeURIComponent(searchQuery)}&max_results=1&max_duration=300`, {
+    const searchResponse = await fetch(`/search-videos?query=${encodeURIComponent(searchQuery)}&max_results=1&max_duration=300${narrativeContent ? `&narrative=${encodeURIComponent(narrativeContent)}` : ''}`, {
       method: 'POST'
     });
     
@@ -1750,7 +1750,7 @@ async function autoYouTubeSearch(lineId) {
     }
     
     // Step 2: Search for videos using the generated query - request 1 result
-    const searchResponse = await fetch(`/search-videos?query=${encodeURIComponent(searchQuery)}&max_results=1&max_duration=300`, {
+    const searchResponse = await fetch(`/search-videos?query=${encodeURIComponent(searchQuery)}&max_results=1&max_duration=300${narrativeContent ? `&narrative=${encodeURIComponent(narrativeContent)}` : ''}`, {
       method: 'POST'
     });
     

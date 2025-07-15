@@ -20,10 +20,13 @@ from data.video_record import (
     CustomPromptStoryRequest,
     VideoKeywordRequest,
     VideoKeywordResponse,
+    NarrativeExplanationRequest,
+    NarrativeExplanationResponse,
 )
 from db.sheets_narratives_db import SheetsNarrativesDB
 from llm.get_story import StoryGenerator
 from llm.get_videos import VideoKeywordGenerator
+from llm.narrative_explain import NarrativeExplainer
 from search.youtube_search import YouTubeSearcher
 from data.video_record import YouTubeSearchResponse
 
@@ -367,12 +370,23 @@ def tag_record(request: TagRecordRequest):
     # URL decode the link parameter
     decoded_link = urllib.parse.unquote(request.link)
 
-    # Validate result value
-    if request.result not in [1, 2, 3, 4]:
+    # Validate numeric result value (0-6, where 0 is Problem, 6 is Too Obvious)
+    if request.numeric_result is not None and request.numeric_result not in [0, 1, 2, 3, 4, 5, 6]:
+        raise HTTPException(status_code=400, detail="Numeric result must be 0, 1, 2, 3, 4, 5, or 6")
+
+    # Convert 1-6 scale to backend values
+    backend_result = request.result  # This will be calculated from numeric_result
+    numeric_result = request.numeric_result
+    
+    # Logic: 1,2 -> No (2), 3 -> Problem (4), 4,5 -> Yes (1), 6 -> Too Obvious (3)
+    # Note: Button 3 (Neutral/Unclear) now saves as Problem instead of being skipped
+    
+    # Validate final result value for backend
+    if backend_result not in [1, 2, 3, 4]:
         raise HTTPException(status_code=400, detail="Result must be 1, 2, 3, or 4")
 
-    # Use cell-level update instead of full sheet rewrite
-    success = db.tag_record_cell_update(decoded_link, request.username, request.result)
+    # Use cell-level update with both values
+    success = db.tag_record_cell_update(decoded_link, request.username, backend_result, numeric_result)
     if not success:
         raise HTTPException(
             status_code=404,
@@ -383,7 +397,8 @@ def tag_record(request: TagRecordRequest):
         "message": "Record tagged successfully",
         "link": decoded_link,
         "username": request.username,
-        "result": request.result,
+        "result": backend_result,
+        "numeric_result": numeric_result,
     }
 
 
@@ -681,12 +696,18 @@ def generate_video_keywords(request: VideoKeywordRequest):
 
 @app.post("/search-videos", response_model=YouTubeSearchResponse)
 def search_videos(
-    query: str, max_results: int = 10, max_duration: int = 300, min_duration: int = 45
+    query: str,
+    max_results: int = 10,
+    max_duration: int = 300,
+    min_duration: int = 45,
+    narrative: str = None,
 ):
-    """Search for videos on YouTube with duration filtering"""
+    """Search for videos on YouTube with duration filtering and narrative-based ranking"""
     try:
         searcher = YouTubeSearcher()
-        videos = searcher.search_videos(query, max_results, max_duration, min_duration)
+        videos = searcher.search_videos(
+            query, max_results, max_duration, min_duration, narrative
+        )
         return YouTubeSearchResponse(videos=videos)
     except Exception as e:
         raise HTTPException(
@@ -802,6 +823,32 @@ def convert_youtube_shorts_url(url: str) -> str:
             return url
 
     return url
+
+
+@app.post("/explain-narrative", response_model=NarrativeExplanationResponse)
+def explain_narrative(request: NarrativeExplanationRequest):
+    """
+    Explain an English narrative in Hebrew.
+    
+    Args:
+        request: Contains the narrative to explain
+        
+    Returns:
+        Hebrew translation and explanation of the narrative
+    """
+    try:
+        explainer = NarrativeExplainer()
+        result = explainer.explain_narrative(request.narrative)
+        
+        return NarrativeExplanationResponse(
+            narrative_hebrew=result["narrative_hebrew"],
+            explanation_hebrew=result["explanation_hebrew"]
+        )
+    except Exception as e:
+        logger.error(f"Error explaining narrative: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to explain narrative: {str(e)}"
+        )
 
 
 if __name__ == "__main__":

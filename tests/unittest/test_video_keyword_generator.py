@@ -46,8 +46,9 @@ class TestVideoKeywordGenerator:
             "artist success story"
         )
 
+        narrative = "Personal growth through creativity"
         story = "A talented artist overcomes adversity to achieve their dreams"
-        result = self.generator.generate_keywords(story)
+        result = self.generator.generate_keywords(narrative, story)
 
         # Verify the result
         assert "search_query" in result
@@ -58,7 +59,7 @@ class TestVideoKeywordGenerator:
         call_args = self.mock_openai_client.generate_simple_completion.call_args
 
         # Check that proper parameters were passed
-        assert call_args.kwargs["temperature"] == 0.5
+        assert call_args.kwargs["temperature"] == 0.8
         assert call_args.kwargs["max_tokens"] == 50
         assert "artist" in call_args.kwargs["prompt"].lower()
         assert "YouTube search expert" in call_args.kwargs["system_prompt"]
@@ -85,7 +86,7 @@ class TestVideoKeywordGenerator:
                 mock_response
             )
 
-            result = self.generator.generate_keywords("test story")
+            result = self.generator.generate_keywords("test narrative", "test story")
             assert result["search_query"] == expected
 
     def test_generate_keywords_openai_error(self):
@@ -96,7 +97,7 @@ class TestVideoKeywordGenerator:
         )
 
         with pytest.raises(Exception) as exc_info:
-            self.generator.generate_keywords("test story")
+            self.generator.generate_keywords("test narrative", "test story")
 
         assert "Failed to generate search query" in str(exc_info.value)
 
@@ -112,12 +113,14 @@ class TestVideoKeywordGenerator:
 
     def test_create_user_prompt(self):
         """Test user prompt creation"""
+        narrative = "Personal growth through creativity"
         story = "A chef discovers a secret recipe"
-        user_prompt = self.generator._create_user_prompt(story)
+        user_prompt = self.generator._create_user_prompt(narrative, story)
 
-        # Check that the user prompt contains the story
+        # Check that the user prompt contains the narrative and story
+        assert narrative in user_prompt
         assert story in user_prompt
-        assert "Generate ONE YouTube search query" in user_prompt
+        assert "generate ONE YouTube search query" in user_prompt
 
     def test_max_keywords_parameter_ignored(self):
         """Test that max_keywords parameter is ignored (kept for compatibility)"""
@@ -126,8 +129,8 @@ class TestVideoKeywordGenerator:
         )
 
         # Should work the same regardless of max_keywords value
-        result1 = self.generator.generate_keywords("cooking story", max_keywords=5)
-        result2 = self.generator.generate_keywords("cooking story", max_keywords=20)
+        result1 = self.generator.generate_keywords("test narrative", "cooking story", max_keywords=5)
+        result2 = self.generator.generate_keywords("test narrative", "cooking story", max_keywords=20)
 
         assert result1 == result2
         assert result1["search_query"] == "cooking tutorial"
@@ -168,7 +171,7 @@ class TestVideoKeywordGenerator:
                 expected_theme
             )
 
-            result = self.generator.generate_keywords(story)
+            result = self.generator.generate_keywords("test narrative", story)
             assert result["search_query"] == expected_theme
 
             # Verify the story was included in the prompt

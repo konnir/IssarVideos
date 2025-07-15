@@ -8,6 +8,7 @@ class TagRecordRequest(BaseModel):
     link: str
     username: str
     result: int
+    numeric_result: Optional[int] = None
 
 
 class VideoRecord(BaseModel):
@@ -16,6 +17,7 @@ class VideoRecord(BaseModel):
     Story: Optional[str] = None
     Tagger_1: Optional[str] = None
     Tagger_1_Result: Optional[int] = None
+    Tagger_1_Result_Numeric: Optional[int] = None
     Link: Optional[str] = None
 
 
@@ -27,6 +29,7 @@ class VideoRecordUpdate(BaseModel):
     Story: Optional[str] = None
     Tagger_1: Optional[str] = None
     Tagger_1_Result: Optional[int] = None
+    Tagger_1_Result_Numeric: Optional[int] = None
     Link: Optional[str] = None
 
 
@@ -38,6 +41,7 @@ class VideoRecordCreate(BaseModel):
     Story: Optional[str] = None
     Tagger_1: Optional[str] = None
     Tagger_1_Result: Optional[int] = None
+    Tagger_1_Result_Numeric: Optional[int] = None
     Link: str
 
 
@@ -153,3 +157,22 @@ class YouTubeVideo(BaseModel):
 
 class YouTubeSearchResponse(BaseModel):
     videos: List[YouTubeVideo]
+
+
+class NarrativeExplanationRequest(BaseModel):
+    """Model for narrative explanation request"""
+
+    narrative: str
+
+    @validator("narrative")
+    def narrative_must_not_be_empty(cls, v):
+        if not v or not v.strip():
+            raise ValueError("Narrative cannot be empty")
+        return v
+
+
+class NarrativeExplanationResponse(BaseModel):
+    """Model for narrative explanation response"""
+
+    narrative_hebrew: str
+    explanation_hebrew: str

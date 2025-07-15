@@ -91,7 +91,7 @@ class TestUIFiles:
         assert 'id="username"' in content, "Should have username input"
         assert 'id="videoContainer"' in content, "Should have video container"
         assert 'id="narrativeEnglish"' in content, "Should have narrative display"
-        assert 'name="result"' in content, "Should have result radio buttons"
+        assert 'onclick="submitTag(' in content, "Should have rating buttons"
 
         # Check that old "Init" option is removed
         assert "0 - Init" not in content, "Should not have Init option"
@@ -119,7 +119,7 @@ class TestUIFiles:
         ), "Should have leaderboard section ID"
 
         # Check for username section content
-        assert "Enter Your Full Name:" in content, "Should have username label"
+        assert 'placeholder="Your full name"' in content, "Should have username input placeholder"
         assert "Start Tagging" in content, "Should have start tagging button"
 
     def test_report_html_structure(self):

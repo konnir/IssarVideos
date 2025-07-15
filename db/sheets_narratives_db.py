@@ -95,6 +95,7 @@ class SheetsNarrativesDB:
         """
         Load data from ALL worksheets and combine them into a single DataFrame.
         This is needed for the tagging management table to show all sheets.
+        Uses batch reading to reduce API calls from N+1 to 2 calls.
         """
         try:
             # Get all worksheets
@@ -103,42 +104,39 @@ class SheetsNarrativesDB:
                 logger.warning("No worksheets found in the spreadsheet")
                 return
 
+            # Use batch reading to get all sheets in a single API call
+            logger.info(f"Batch loading data from {len(worksheets)} sheets")
+            sheet_dataframes = self.sheets_client.batch_read_sheets_to_dataframes(
+                worksheets
+            )
+
             # List to collect DataFrames from all sheets
             all_dfs = []
 
             for sheet_name in worksheets:
-                try:
-                    logger.info(f"Loading data from sheet: {sheet_name}")
-                    sheet_df = self.sheets_client.read_sheet_to_dataframe(sheet_name)
+                sheet_df = sheet_dataframes.get(sheet_name, pd.DataFrame())
 
-                    if not sheet_df.empty:
-                        # Clean up the dataframe - remove empty column names
-                        # Get column names that are not empty or just whitespace
-                        valid_columns = [
-                            col for col in sheet_df.columns if col and str(col).strip()
-                        ]
-                        sheet_df = sheet_df[valid_columns]
+                if not sheet_df.empty:
+                    # Clean up the dataframe - remove empty column names
+                    valid_columns = [
+                        col for col in sheet_df.columns if col and str(col).strip()
+                    ]
+                    sheet_df = sheet_df[valid_columns]
 
-                        # Add/update the Sheet column with the actual sheet name
-                        sheet_df["Sheet"] = sheet_name
-                        all_dfs.append(sheet_df)
-                        logger.info(
-                            f"Loaded {len(sheet_df)} records from sheet '{sheet_name}'"
-                        )
-                    else:
-                        logger.warning(f"Sheet '{sheet_name}' is empty")
-
-                except Exception as e:
-                    logger.error(
-                        f"Failed to load data from sheet '{sheet_name}': {str(e)}"
+                    # Add/update the Sheet column with the actual sheet name
+                    sheet_df["Sheet"] = sheet_name
+                    all_dfs.append(sheet_df)
+                    logger.info(
+                        f"Processed {len(sheet_df)} records from sheet '{sheet_name}'"
                     )
-                    continue
+                else:
+                    logger.warning(f"Sheet '{sheet_name}' is empty")
 
             # Combine all DataFrames
             if all_dfs:
                 self.df = pd.concat(all_dfs, ignore_index=True)
                 logger.info(
-                    f"Successfully loaded {len(self.df)} total records from {len(all_dfs)} sheets"
+                    f"Successfully loaded {len(self.df)} total records from {len(all_dfs)} sheets using batch API"
                 )
             else:
                 logger.warning("No data loaded from any sheets")
@@ -440,7 +438,7 @@ class SheetsNarrativesDB:
 
         return True
 
-    def tag_record_cell_update(self, link: str, username: str, result: int) -> bool:
+    def tag_record_cell_update(self, link: str, username: str, result: int, numeric_result: Optional[int] = None) -> bool:
         """Tag a record using cell-level updates instead of full sheet rewrite."""
         if self.df.empty:
             return False
@@ -493,12 +491,22 @@ class SheetsNarrativesDB:
                 {"row": row_position, "col": result_col, "value": result},
             ]
 
+            # Add numeric result if provided and column exists
+            if numeric_result is not None and "Tagger_1_Result_Numeric" in column_mapping:
+                numeric_col = column_mapping["Tagger_1_Result_Numeric"]
+                updates.append({"row": row_position, "col": numeric_col, "value": numeric_result})
+
             # Perform batch cell update
             self.sheets_client.update_cells_batch(updates, sheet_name)
 
             # Update our local DataFrame
             self.df.loc[mask, "Tagger_1"] = username
             self.df.loc[mask, "Tagger_1_Result"] = result
+            if numeric_result is not None:
+                # Add column to DataFrame if it doesn't exist
+                if "Tagger_1_Result_Numeric" not in self.df.columns:
+                    self.df["Tagger_1_Result_Numeric"] = None
+                self.df.loc[mask, "Tagger_1_Result_Numeric"] = numeric_result
 
             logger.info(f"Successfully tagged record using cell-level update: {link}")
             return True

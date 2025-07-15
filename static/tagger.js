@@ -268,22 +268,64 @@ function displayVideo(video) {
   }
 }
 
-async function submitTag(result) {
-  // Validate the result parameter
-  if (!result || ![1, 2, 3, 4].includes(result)) {
-    showMessage("Invalid result option", "error");
+async function submitTag(numericResult) {
+  // Handle problem button (0)
+  if (numericResult === 0) {
+    // Problem button - submit as backend result 4
+    try {
+      showMessage("Reporting problem...", "loading");
+
+      const response = await apiCall("/tag-record", {
+        method: "POST",
+        body: JSON.stringify({
+          link: currentVideo.Link,
+          username: currentUsername,
+          result: 4, // Problem
+          numeric_result: 0, // Problem indicator
+        }),
+      });
+
+      const responseData = await response.json();
+      
+      showMessage("Loading next video...", "loading");
+      await updateTaggedCount();
+      await loadNextVideoWithoutLoading();
+    } catch (error) {
+      hideLoadingOverlay();
+      showMessage("Error reporting problem: " + error.message, "error");
+    }
     return;
   }
 
+  // Validate the numeric result parameter (1-6)
+  if (!numericResult || ![1, 2, 3, 4, 5, 6].includes(numericResult)) {
+    showMessage("Invalid rating option", "error");
+    return;
+  }
+
+  // Convert numeric result to backend result
+  let backendResult;
+  if (numericResult === 1 || numericResult === 2) {
+    backendResult = 2; // No (Completely Unrelated, Doesn't Imply)
+  } else if (numericResult === 3) {
+    // Neutral/Unclear - save with backend result 4 (problem) and numeric result 3
+    backendResult = 4; // Problem
+  } else if (numericResult === 4 || numericResult === 5) {
+    backendResult = 1; // Yes (Somewhat Implies, Strongly Implies)
+  } else if (numericResult === 6) {
+    backendResult = 3; // Too Obvious (previous value for 6)
+  }
+
   try {
-    showMessage("Submitting tag...", "loading");
+    showMessage("Submitting rating...", "loading");
 
     const response = await apiCall("/tag-record", {
       method: "POST",
       body: JSON.stringify({
         link: currentVideo.Link,
         username: currentUsername,
-        result: result,
+        result: backendResult,
+        numeric_result: numericResult,
       }),
     });
 
@@ -296,7 +338,7 @@ async function submitTag(result) {
     await loadNextVideoWithoutLoading(); // Use a version that doesn't show its own loading
   } catch (error) {
     hideLoadingOverlay();
-    showMessage("Error submitting tag: " + error.message, "error");
+    showMessage("Error submitting rating: " + error.message, "error");
   }
 }
 
@@ -434,6 +476,236 @@ async function skipVideo() {
     hideLoadingOverlay();
     showMessage("Error skipping video: " + error.message, "error");
   }
+}
+
+/**
+ * Explain the current narrative in Hebrew
+ */
+async function explainNarrative() {
+  if (!currentVideo || !currentVideo.Narrative) {
+    showMessage("No narrative to explain", "error");
+    return;
+  }
+
+  const explainBtn = document.getElementById("explainBtn");
+  const originalText = explainBtn.textContent;
+  
+  try {
+    // Disable button and show spinner
+    explainBtn.disabled = true;
+    explainBtn.innerHTML = '<span class="spinner"></span>';
+    
+    // Create AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, 10000); // 10 seconds timeout
+    
+    const response = await apiCall("/explain-narrative", {
+      method: "POST",
+      body: JSON.stringify({
+        narrative: currentVideo.Narrative
+      }),
+      signal: controller.signal
+    });
+    
+    // Clear timeout if request succeeds
+    clearTimeout(timeoutId);
+    
+    const data = await response.json();
+    
+    // Create or update explanation modal
+    showNarrativeExplanation(data.narrative_hebrew, data.explanation_hebrew);
+    
+  } catch (error) {
+    console.error("Error explaining narrative:", error);
+    
+    // Handle timeout specifically
+    if (error.name === 'AbortError') {
+      showMessage("Explanation request timed out after 10 seconds. Please try again.", "error");
+    } else {
+      showMessage("Error explaining narrative: " + error.message, "error");
+    }
+  } finally {
+    // Restore button
+    explainBtn.disabled = false;
+    explainBtn.textContent = originalText;
+  }
+}
+
+/**
+ * Show narrative explanation in a modal
+ */
+function showNarrativeExplanation(narrativeHebrew, explanationHebrew) {
+  // Create modal HTML
+  const modalHTML = `
+    <div class="explanation-modal-overlay" id="explanationModal" onclick="closeExplanationModal()">
+      <div class="explanation-modal-content" onclick="event.stopPropagation()">
+        <div class="explanation-modal-header">
+          <h3>הסבר הנרטיב</h3>
+          <button class="explanation-close-btn" onclick="closeExplanationModal()">×</button>
+        </div>
+        <div class="explanation-modal-body">
+          <div class="explanation-section">
+            <h4>תרגום:</h4>
+            <p class="narrative-hebrew">${narrativeHebrew}</p>
+          </div>
+          <div class="explanation-section">
+            <h4>הסבר:</h4>
+            <p class="explanation-hebrew">${explanationHebrew}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Remove existing modal if any
+  const existingModal = document.getElementById("explanationModal");
+  if (existingModal) {
+    existingModal.remove();
+  }
+  
+  // Add modal to body
+  document.body.insertAdjacentHTML("beforeend", modalHTML);
+  
+  // Add modal styles if not already present
+  addExplanationModalStyles();
+}
+
+/**
+ * Close explanation modal
+ */
+function closeExplanationModal() {
+  const modal = document.getElementById("explanationModal");
+  if (modal) {
+    modal.remove();
+  }
+}
+
+/**
+ * Add CSS styles for the explanation modal
+ */
+function addExplanationModalStyles() {
+  const styleId = "explanationModalStyles";
+  
+  // Don't add styles if already present
+  if (document.getElementById(styleId)) {
+    return;
+  }
+  
+  const style = document.createElement("style");
+  style.id = styleId;
+  style.textContent = `
+    .explanation-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    
+    .explanation-modal-content {
+      background-color: #2a2a2a;
+      border-radius: 12px;
+      padding: 0;
+      max-width: 600px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      direction: rtl;
+    }
+    
+    .explanation-modal-header {
+      background-color: #4caf50;
+      color: white;
+      padding: 15px 20px;
+      border-radius: 12px 12px 0 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .explanation-modal-header h3 {
+      margin: 0;
+      font-size: 20px;
+    }
+    
+    .explanation-close-btn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: background-color 0.3s ease;
+    }
+    
+    .explanation-close-btn:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    .explanation-modal-body {
+      padding: 20px;
+    }
+    
+    .explanation-section {
+      margin-bottom: 20px;
+    }
+    
+    .explanation-section h4 {
+      color: #4caf50;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+    
+    .narrative-hebrew {
+      background-color: rgba(33, 150, 243, 0.1);
+      padding: 15px;
+      border-radius: 8px;
+      border-right: 4px solid #2196F3;
+      font-size: 16px;
+      line-height: 1.5;
+      color: #e0e0e0;
+    }
+    
+    .explanation-hebrew {
+      background-color: rgba(76, 175, 80, 0.1);
+      padding: 15px;
+      border-radius: 8px;
+      border-right: 4px solid #4caf50;
+      font-size: 16px;
+      line-height: 1.6;
+      color: #e0e0e0;
+    }
+    
+    .spinner {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  `;
+  
+  document.head.appendChild(style);
 }
 
 // Initialize event listeners when DOM is loaded
