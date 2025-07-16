@@ -18,7 +18,11 @@
           <span class="narrative-highlight" id="narrativeHighlight">
             <!-- Narrative will be loaded here -->
           </span>
-          <button class="explain-button" id="explainBtn" onclick="explainNarrative()">
+          <button
+            class="explain-button"
+            id="explainBtn"
+            onclick="explainNarrative()"
+          >
             הסבר
           </button>
         </div>
@@ -27,31 +31,51 @@
           <div class="button-container">
             <div class="rating-buttons">
               <div class="rating-button-wrapper">
-                <button class="rating-button rating-1" onclick="submitTag(1)" title="Completely Unrelated">
+                <button
+                  class="rating-button rating-1"
+                  onclick="submitTag(1)"
+                  title="Completely Unrelated"
+                >
                   1
                 </button>
                 <span class="rating-label">Completely Unrelated</span>
               </div>
               <div class="rating-button-wrapper">
-                <button class="rating-button rating-2" onclick="submitTag(2)" title="Doesn't Imply">
+                <button
+                  class="rating-button rating-2"
+                  onclick="submitTag(2)"
+                  title="Doesn't Imply"
+                >
                   2
                 </button>
                 <span class="rating-label">Doesn't Imply</span>
               </div>
               <div class="rating-button-wrapper">
-                <button class="rating-button rating-3" onclick="submitTag(3)" title="Unclear To Me">
+                <button
+                  class="rating-button rating-3"
+                  onclick="submitTag(3)"
+                  title="Unclear To Me"
+                >
                   3
                 </button>
                 <span class="rating-label">Unclear To Me</span>
               </div>
               <div class="rating-button-wrapper">
-                <button class="rating-button rating-4" onclick="submitTag(4)" title="Somewhat Implies">
+                <button
+                  class="rating-button rating-4"
+                  onclick="submitTag(4)"
+                  title="Somewhat Implies"
+                >
                   4
                 </button>
                 <span class="rating-label">Somewhat Implies</span>
               </div>
               <div class="rating-button-wrapper">
-                <button class="rating-button rating-5" onclick="submitTag(5)" title="Strongly Implies">
+                <button
+                  class="rating-button rating-5"
+                  onclick="submitTag(5)"
+                  title="Strongly Implies"
+                >
                   5
                 </button>
                 <span class="rating-label">Strongly Implies</span>
@@ -59,17 +83,29 @@
             </div>
             <div class="special-rating-buttons">
               <div class="rating-button-wrapper">
-                <button class="rating-button rating-6" onclick="submitTag(6)" title="Too Obvious">
+                <button
+                  class="rating-button rating-6"
+                  onclick="submitTag(6)"
+                  title="Too Obvious"
+                >
                   !
                 </button>
                 <span class="rating-label">Too Obvious</span>
               </div>
             </div>
             <div class="action-buttons">
-              <button class="action-button skip-button" onclick="skipVideo()" title="Skip this video">
+              <button
+                class="action-button skip-button"
+                onclick="skipVideo()"
+                title="Skip this video"
+              >
                 Skip
               </button>
-              <button class="action-button problem-button" onclick="submitTag(0)" title="Report a problem">
+              <button
+                class="action-button problem-button"
+                onclick="submitTag(0)"
+                title="Report a problem"
+              >
                 Problem
               </button>
             </div>
@@ -132,21 +168,42 @@
               Watch the video (it's a short clip and you have a speed control).
             </li>
             <li>
-              Rate the video on a scale of 1-6:
+              Rate the video on a scale of 1-5:
               <ul>
-                <li><strong>1 - Completely Unrelated</strong> (Red) - the video is completely unrelated</li>
-                <li><strong>2 - Doesn't Imply</strong> (Orange) - the video doesn't imply the narrative</li>
-                <li><strong>3 - Unclear To Me</strong> (Yellow) - unclear or neutral (will be saved as problem)</li>
-                <li><strong>4 - Somewhat Implies</strong> (Light Green) - the video somewhat implies the narrative</li>
-                <li><strong>5 - Strongly Implies</strong> (Green) - the video clearly implies the narrative</li>
-                <li><strong>! - Too Obvious</strong> (Purple) - the video is too obvious for the narrative</li>
+                <li>
+                  <strong>1 - Completely Unrelated</strong> (Red) - the video is
+                  completely unrelated
+                </li>
+                <li>
+                  <strong>2 - Doesn't Imply</strong> (Orange) - the video
+                  doesn't imply the narrative
+                </li>
+                <li>
+                  <strong>3 - Unclear To Me</strong> (Yellow) - unclear or
+                  neutral (will be saved as problem)
+                </li>
+                <li>
+                  <strong>4 - Somewhat Implies</strong> (Light Green) - the
+                  video somewhat implies the narrative
+                </li>
+                <li>
+                  <strong>5 - Strongly Implies</strong> (Green) - the video
+                  clearly implies the narrative
+                </li>
               </ul>
             </li>
             <li>
               Additional options:
               <ul>
                 <li><strong>Skip</strong> - skip this video without rating</li>
-                <li><strong>Problem</strong> - report a technical problem with the video</li>
+                <li>
+                  <strong>Problem</strong> - report a technical problem with the
+                  video
+                </li>
+                <li>
+                  <strong>! - Too Obvious</strong> (Purple) - the narrative is
+                  explicitly stated or directly spoken in the video
+                </li>
               </ul>
             </li>
             <li>Tag as many videos as you can (at least 5).</li>

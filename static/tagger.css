@@ -131,37 +131,29 @@ h1 {
 }
 
 /* Color coding for tagging options in instructions */
-.instructions-content ul li:nth-child(1) strong {
-  color: #f44336; /* 1 - Completely Unrelated - Red */
+.instructions-content ol li:nth-child(4) ul li:nth-child(1) strong {
+  color: #f44336 !important; /* 1 - Completely Unrelated - Red */
 }
 
-.instructions-content ul li:nth-child(2) strong {
-  color: #ff5722; /* 2 - Doesn't Imply - Orange */
+.instructions-content ol li:nth-child(4) ul li:nth-child(2) strong {
+  color: #ff5722 !important; /* 2 - Doesn't Imply - Orange */
 }
 
-.instructions-content ul li:nth-child(3) strong {
-  color: #ffc107; /* 3 - Unclear To Me - Yellow */
+.instructions-content ol li:nth-child(4) ul li:nth-child(3) strong {
+  color: #ffc107 !important; /* 3 - Unclear To Me - Yellow */
 }
 
-.instructions-content ul li:nth-child(4) strong {
-  color: #8bc34a; /* 4 - Somewhat Implies - Light Green */
+.instructions-content ol li:nth-child(4) ul li:nth-child(4) strong {
+  color: #8bc34a !important; /* 4 - Somewhat Implies - Light Green */
 }
 
-.instructions-content ul li:nth-child(5) strong {
-  color: #4caf50; /* 5 - Strongly Implies - Green */
+.instructions-content ol li:nth-child(4) ul li:nth-child(5) strong {
+  color: #4caf50 !important; /* 5 - Strongly Implies - Green */
 }
 
-.instructions-content ul li:nth-child(6) strong {
-  color: #9c27b0; /* 6 - Too Obvious - Purple */
-}
-
-/* Color coding for additional options (Skip and Problem) */
-.instructions-content ul ul li:nth-child(1) strong {
-  color: #9e9e9e; /* Skip - Gray */
-}
-
-.instructions-content ul ul li:nth-child(2) strong {
-  color: #9e9e9e; /* Problem - Gray */
+/* Color coding for additional options (Too Obvious only) */
+.instructions-content ol li ul li:nth-child(3) strong {
+  color: #9c27b0 !important; /* ! - Too Obvious - Purple */
 }
 
 .thank-you {
@@ -533,7 +525,7 @@ iframe {
   justify-content: center;
   align-items: center;
   flex-wrap: wrap;
-  margin-left: 30px;
+  margin-left: 50px;
 }
 
 /* Rating Button Wrapper */
@@ -641,7 +633,7 @@ iframe {
   justify-content: center;
   align-items: center;
   margin-top: 0;
-  margin-left: 20px;
+  margin-left: 50px;
 }
 
 /* Action Button Styles */
