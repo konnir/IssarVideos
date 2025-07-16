@@ -495,6 +495,8 @@ def get_tagging_stats():
             "data": [],
         }
 
+
+
     # Group by Sheet and Narrative to get statistics
     grouped_stats = []
 
@@ -518,10 +520,12 @@ def get_tagging_stats():
         )
 
         # Count different tag results (1=Yes, 2=No, 3=Too Obvious, 4=Problem)
-        yes_count = len(subset[subset["Tagger_1_Result"] == 1])
-        no_count = len(subset[subset["Tagger_1_Result"] == 2])
-        too_obvious_count = len(subset[subset["Tagger_1_Result"] == 3])
-        problem_count = len(subset[subset["Tagger_1_Result"] == 4])
+        # Use .fillna(0) to handle NaN values consistently
+        tagger_results = subset["Tagger_1_Result"].fillna(0)
+        yes_count = len(subset[tagger_results == 1])
+        no_count = len(subset[tagger_results == 2])
+        too_obvious_count = len(subset[tagger_results == 3])
+        problem_count = len(subset[tagger_results == 4])
 
         # Calculate missing (5 - yes - initial)
         missing = max(0, 5 - yes_count - initial_count)
@@ -551,12 +555,13 @@ def get_tagging_stats():
     # Total done narratives (narratives with >=5 yes responses)
     total_done_narratives = sum(1 for stat in grouped_stats if stat["yes_count"] >= 5)
 
-    # Total counts across all narratives
-    total_initial = sum(stat["initial_count"] for stat in grouped_stats)
-    total_yes = sum(stat["yes_count"] for stat in grouped_stats)
-    total_no = sum(stat["no_count"] for stat in grouped_stats)
-    total_too_obvious = sum(stat["too_obvious_count"] for stat in grouped_stats)
-    total_problem = sum(stat["problem_count"] for stat in grouped_stats)
+    # Calculate totals directly from DataFrame (more accurate)
+    tagger_results = db.df["Tagger_1_Result"].fillna(0)
+    total_initial = len(db.df[(db.df["Tagger_1_Result"].isna()) | (db.df["Tagger_1_Result"] == 0)])
+    total_yes = len(db.df[tagger_results == 1])
+    total_no = len(db.df[tagger_results == 2])
+    total_too_obvious = len(db.df[tagger_results == 3])
+    total_problem = len(db.df[tagger_results == 4])
 
     # Missing narratives (narratives where missing column > 0)
     total_missing_narratives = sum(1 for stat in grouped_stats if stat["missing"] > 0)

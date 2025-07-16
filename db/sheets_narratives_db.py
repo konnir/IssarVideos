@@ -88,6 +88,7 @@ class SheetsNarrativesDB:
                     "Link",
                     "Tagger_1",
                     "Tagger_1_Result",
+                    "Tagger_1_Result_Numeric",
                 ]
             )
 
@@ -123,6 +124,21 @@ class SheetsNarrativesDB:
                     ]
                     sheet_df = sheet_df[valid_columns]
 
+                    # Ensure all expected columns exist to prevent concat issues
+                    expected_columns = [
+                        "Sheet",
+                        "Narrative", 
+                        "Story",
+                        "Link",
+                        "Tagger_1",
+                        "Tagger_1_Result",
+                        "Tagger_1_Result_Numeric"
+                    ]
+                    
+                    for col in expected_columns:
+                        if col not in sheet_df.columns:
+                            sheet_df[col] = None
+                    
                     # Add/update the Sheet column with the actual sheet name
                     sheet_df["Sheet"] = sheet_name
                     all_dfs.append(sheet_df)
@@ -135,6 +151,16 @@ class SheetsNarrativesDB:
             # Combine all DataFrames
             if all_dfs:
                 self.df = pd.concat(all_dfs, ignore_index=True)
+                
+                # Ensure proper data types for critical columns
+                if "Tagger_1_Result" in self.df.columns:
+                    # Convert to numeric, coercing errors to NaN
+                    self.df["Tagger_1_Result"] = pd.to_numeric(self.df["Tagger_1_Result"], errors="coerce")
+                
+                if "Tagger_1_Result_Numeric" in self.df.columns:
+                    # Convert to numeric, coercing errors to NaN
+                    self.df["Tagger_1_Result_Numeric"] = pd.to_numeric(self.df["Tagger_1_Result_Numeric"], errors="coerce")
+                
                 logger.info(
                     f"Successfully loaded {len(self.df)} total records from {len(all_dfs)} sheets using batch API"
                 )
@@ -148,6 +174,7 @@ class SheetsNarrativesDB:
                         "Link",
                         "Tagger_1",
                         "Tagger_1_Result",
+                        "Tagger_1_Result_Numeric",
                     ]
                 )
 
@@ -173,6 +200,7 @@ class SheetsNarrativesDB:
                     "Link",
                     "Tagger_1",
                     "Tagger_1_Result",
+                    "Tagger_1_Result_Numeric",
                 ]
             )
 
