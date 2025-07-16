@@ -39,7 +39,8 @@ class VideoRanker:
 
         Returns:
             List of videos sorted by relevance (most relevant first),
-            with added relevance_score and relevance_reasoning fields
+            with added relevance_score and relevance_reasoning fields.
+            Only returns videos with relevance_score >= 6.0
 
         Raises:
             Exception: If ranking fails
@@ -66,13 +67,22 @@ class VideoRanker:
             # Parse the response and apply rankings
             ranked_videos = self._parse_ranking_response(response, videos)
 
-            logger.info(f"Successfully ranked {len(ranked_videos)} videos")
-            return ranked_videos
+            # Filter out videos with relevance score below 6.0
+            filtered_videos = [
+                video
+                for video in ranked_videos
+                if video.get("relevance_score", 0) >= 6.0
+            ]
+
+            logger.info(
+                f"Successfully ranked {len(ranked_videos)} videos, filtered to {len(filtered_videos)} relevant videos (score >= 6.0)"
+            )
+            return filtered_videos
 
         except Exception as e:
             logger.error(f"Video ranking failed: {str(e)}")
-            # Return original videos if ranking fails
-            return videos
+            # Return empty list if ranking fails to maintain filtering behavior
+            return []
 
     def _create_system_prompt(self) -> str:
         """Create the system prompt for video ranking."""

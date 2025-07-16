@@ -1580,6 +1580,7 @@ let narrativeAutoGeneration = {
   debounceTimers: {},
   inProgress: {},
   videoSearchInProgress: {},
+  retryAttempts: {}, // Track retry attempts per line
   debounceDelay: 1500 // 1.5 seconds delay after user stops typing
 };
 
@@ -1587,18 +1588,18 @@ let narrativeAutoGeneration = {
  * Automatically generate story when narrative is filled
  * This is a streamlined version of suggestStory for automatic triggers
  */
-async function autoGenerateStory(lineId, isBlurTrigger = false) {
+async function autoGenerateStory(lineId, isBlurTrigger = false, isRetryGeneration = false) {
   const narrative = document.getElementById(`narrative${lineId}`).value.trim();
   const storyTextarea = document.getElementById(`story${lineId}`);
   const suggestBtn = document.querySelector(`[data-line-id="${lineId}"].suggest-story-btn`);
   
   // Don't auto-generate if:
   // 1. No narrative provided
-  // 2. Story already has content (don't overwrite user's work)
+  // 2. Story already has content (don't overwrite user's work) - but allow during retry
   // 3. Auto-generation already in progress for this line
   // 4. Manual suggest button is disabled (manual generation in progress)
   if (!narrative || 
-      storyTextarea.value.trim() || 
+      (!isRetryGeneration && storyTextarea.value.trim()) || 
       narrativeAutoGeneration.inProgress[lineId] ||
       (suggestBtn && suggestBtn.disabled)) {
     return;
@@ -1606,6 +1607,11 @@ async function autoGenerateStory(lineId, isBlurTrigger = false) {
   
   // Mark as in progress
   narrativeAutoGeneration.inProgress[lineId] = true;
+  
+  // Only reset retry attempts when starting fresh story generation (not during retry)
+  if (!isRetryGeneration) {
+    narrativeAutoGeneration.retryAttempts[lineId] = 0;
+  }
   
   // Add subtle loading indicator
   const storyLabel = document.querySelector(`label[for="story${lineId}"]`);
@@ -1665,7 +1671,7 @@ async function autoGenerateStory(lineId, isBlurTrigger = false) {
         
         // Automatically trigger video search after story is generated
         setTimeout(() => {
-          autoYouTubeSearch(lineId);
+          autoYouTubeSearch(lineId, false);
         }, 1000); // Wait 1 second after story generation to start video search
       }
     }
@@ -1686,8 +1692,9 @@ async function autoGenerateStory(lineId, isBlurTrigger = false) {
 /**
  * Automatically search for YouTube video when story is generated
  * This is a streamlined version of openYouTubeSearch for automatic triggers
+ * Includes retry logic - will retry once if no videos are found
  */
-async function autoYouTubeSearch(lineId) {
+async function autoYouTubeSearch(lineId, isRetry = false) {
   const storyTextarea = document.getElementById(`story${lineId}`);
   const videoInfoDiv = document.getElementById(`video-info-${lineId}`);
   const linkInput = document.getElementById(`link${lineId}`);
@@ -1714,10 +1721,13 @@ async function autoYouTubeSearch(lineId) {
   narrativeAutoGeneration.videoSearchInProgress[lineId] = true;
   
   try {
-    // Show subtle loading state
+    // Show subtle loading state with attempt number
+    const currentAttempts = narrativeAutoGeneration.retryAttempts[lineId] || 0;
+    const attemptText = currentAttempts > 0 ? ` (attempt ${currentAttempts + 1}/5)` : '';
+    
     if (videoInfoDiv) {
       videoInfoDiv.style.display = 'block';
-      videoInfoDiv.innerHTML = '<div style="text-align: center; color: #999; font-size: 11px;">🔄 Auto-searching video...</div>';
+      videoInfoDiv.innerHTML = `<div style="text-align: center; color: #999; font-size: 11px;">🔄 Auto-searching video${attemptText}...</div>`;
     }
     
     // Step 1: Generate video keywords from the story
@@ -1746,7 +1756,7 @@ async function autoYouTubeSearch(lineId) {
     
     // Update loading state
     if (videoInfoDiv) {
-      videoInfoDiv.innerHTML = '<div style="text-align: center; color: #999; font-size: 11px;">🔍 Finding video...</div>';
+      videoInfoDiv.innerHTML = `<div style="text-align: center; color: #999; font-size: 11px;">🔍 Finding video${attemptText}...</div>`;
     }
     
     // Step 2: Search for videos using the generated query - request 1 result
@@ -1866,15 +1876,55 @@ async function autoYouTubeSearch(lineId) {
       }
       
     } else {
-      // No videos found - show subtle message
-      if (videoInfoDiv) {
-        videoInfoDiv.innerHTML = '<div style="color: #999; text-align: center; font-size: 11px;">No videos found for this story</div>';
-        videoInfoDiv.style.display = 'block';
+      // No videos found - check if we should retry
+      const currentAttempts = narrativeAutoGeneration.retryAttempts[lineId] || 0;
+      
+      if (!isRetry && currentAttempts < 4) {
+        // Not reached max attempts yet - increment retry count and try again
+        narrativeAutoGeneration.retryAttempts[lineId] = currentAttempts + 1;
         
-        // Hide the message after 3 seconds
-        setTimeout(() => {
-          videoInfoDiv.style.display = 'none';
-        }, 3000);
+        if (videoInfoDiv) {
+          videoInfoDiv.innerHTML = '<div style="color: #f59e0b; text-align: center; font-size: 11px;">🔄 No videos found, retrying with new story...</div>';
+        }
+        
+        // Wait a moment, then regenerate story and retry
+        setTimeout(async () => {
+          try {
+            // Clear the story field to trigger fresh generation
+            const storyTextarea = document.getElementById(`story${lineId}`);
+            storyTextarea.value = '';
+            
+            // Generate new story with retry flag to prevent resetting retry counter
+            await autoGenerateStory(lineId, false, true);
+            
+            // Wait for story to be generated, then retry video search
+            setTimeout(() => {
+              autoYouTubeSearch(lineId, true);
+            }, 2000);
+            
+          } catch (error) {
+            // If retry fails, show final failure message
+            if (videoInfoDiv) {
+              videoInfoDiv.innerHTML = '<div style="color: #ef4444; text-align: center; font-size: 11px;">❌ No videos found after retries</div>';
+              videoInfoDiv.style.display = 'block';
+              
+              setTimeout(() => {
+                videoInfoDiv.style.display = 'none';
+              }, 5000);
+            }
+          }
+        }, 1000);
+        
+      } else {
+        // Final failure after max retries - show message
+        if (videoInfoDiv) {
+          videoInfoDiv.innerHTML = '<div style="color: #ef4444; text-align: center; font-size: 11px;">❌ No videos found after 5 attempts</div>';
+          videoInfoDiv.style.display = 'block';
+          
+          setTimeout(() => {
+            videoInfoDiv.style.display = 'none';
+          }, 5000);
+        }
       }
     }
     
@@ -1888,6 +1938,13 @@ async function autoYouTubeSearch(lineId) {
     // Mark video search as no longer in progress
     narrativeAutoGeneration.videoSearchInProgress[lineId] = false;
   }
+}
+
+/**
+ * Reset retry attempts for a specific line
+ */
+function resetRetryAttempts(lineId) {
+  narrativeAutoGeneration.retryAttempts[lineId] = 0;
 }
 
 /**
@@ -1908,6 +1965,9 @@ function setupAutoStoryGeneration() {
     // Add input event listener for debounced auto-generation
     input.addEventListener('input', function() {
       const narrativeText = this.value.trim();
+      
+      // Reset retry attempts when user changes narrative
+      resetRetryAttempts(lineId);
       
       // Clear previous timer
       if (narrativeAutoGeneration.debounceTimers[lineId]) {
@@ -1932,6 +1992,9 @@ function setupAutoStoryGeneration() {
         if (narrativeAutoGeneration.debounceTimers[lineId]) {
           clearTimeout(narrativeAutoGeneration.debounceTimers[lineId]);
         }
+        
+        // Reset retry attempts when user changes narrative
+        resetRetryAttempts(lineId);
         
         autoGenerateStory(lineId, true);
       }
