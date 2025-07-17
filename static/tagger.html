@@ -81,6 +81,8 @@
                 <span class="rating-label">Strongly Implies</span>
               </div>
             </div>
+
+            <!-- Desktop: Special rating buttons and action buttons -->
             <div class="special-rating-buttons">
               <div class="rating-button-wrapper">
                 <button
@@ -93,6 +95,7 @@
                 <span class="rating-label">Too Obvious</span>
               </div>
             </div>
+
             <div class="action-buttons">
               <button
                 class="action-button skip-button"
@@ -108,6 +111,47 @@
               >
                 Problem
               </button>
+            </div>
+
+            <!-- Mobile bottom row: special buttons + action buttons + explain button -->
+            <div class="mobile-bottom-row">
+              <div class="special-rating-buttons">
+                <div class="rating-button-wrapper">
+                  <button
+                    class="rating-button rating-6"
+                    onclick="submitTag(6)"
+                    title="Too Obvious"
+                  >
+                    <span class="button-text-line">Too</span>
+                    <span class="button-text-line">Obvious</span>
+                  </button>
+                </div>
+              </div>
+              <div class="action-buttons">
+                <button
+                  class="action-button skip-button"
+                  onclick="skipVideo()"
+                  title="Skip this video"
+                >
+                  Skip
+                </button>
+                <button
+                  class="action-button problem-button"
+                  onclick="submitTag(0)"
+                  title="Report a problem"
+                >
+                  Problem
+                </button>
+              </div>
+              <div class="mobile-explain-button">
+                <button
+                  class="explain-button"
+                  id="mobileExplainBtn"
+                  onclick="explainNarrative()"
+                >
+                  הסבר
+                </button>
+              </div>
             </div>
           </div>
         </div>

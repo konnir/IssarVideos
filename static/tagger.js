@@ -487,13 +487,36 @@ async function explainNarrative() {
     return;
   }
 
-  const explainBtn = document.getElementById("explainBtn");
+  // Get the appropriate explain button (desktop or mobile)
+  const desktopBtn = document.getElementById("explainBtn");
+  const mobileBtn = document.getElementById("mobileExplainBtn");
+  
+  // Determine which button is visible/clicked
+  let explainBtn;
+  let isMobile = false;
+  if (window.innerWidth <= 768) {
+    explainBtn = mobileBtn;
+    isMobile = true;
+  } else {
+    explainBtn = desktopBtn;
+    isMobile = false;
+  }
+  
+  if (!explainBtn) {
+    showMessage("Explain button not found", "error");
+    return;
+  }
+  
   const originalText = explainBtn.textContent;
   
   try {
-    // Disable button and show spinner
+    // Disable button and show appropriate loading state
     explainBtn.disabled = true;
-    explainBtn.innerHTML = '<span class="spinner"></span>';
+    if (isMobile) {
+      explainBtn.textContent = "...";
+    } else {
+      explainBtn.innerHTML = '<span class="spinner"></span>';
+    }
     
     // Create AbortController for timeout
     const controller = new AbortController();
