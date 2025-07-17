@@ -43,8 +43,8 @@ class YouTubeSearcher:
             List[Dict]: List of video information dictionaries, sorted by narrative relevance if provided
         """
         # Fetch more results to increase the chance of finding videos with the right duration
-        # Minimum of 15 videos, or max_results * 5 if user asks for more than 15
-        search_count = max(15, max_results * 5)
+        # Minimum of 50 videos, or max_results * 5 if user asks for more than 50
+        search_count = max(50, max_results * 5)
         rank_count = max_results * 3
         search_query = f"ytsearch{search_count}:{query}"
 
@@ -61,7 +61,7 @@ class YouTubeSearcher:
                             and entry.get("duration")
                             and entry["duration"] >= min_duration
                             and entry["duration"] <= max_duration
-                            and entry.get("view_count", 0) >= 300
+                            and entry.get("view_count", 0) >= 500
                         ):
                             video_info = {
                                 "title": entry.get("title", "Unknown Title"),

@@ -313,6 +313,7 @@ function createFormLineHTML(lineId, copyTopic = '', copyNarrative = '') {
             <button class="add-btn-inline" onclick="addSingleNarrative(${lineId})" data-line-id="${lineId}">Add</button>
             <button class="plus-btn" onclick="addNewFormLine(${lineId})" title="Add new line">+</button>
             <button class="x10-btn" onclick="addTenFormLines(${lineId})" title="Add 9 duplicate lines" data-line-id="${lineId}">x10</button>
+            <button class="remove-btn" onclick="removeFormLine(${lineId})" title="Remove this line" data-line-id="${lineId}" style="background: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 14px;">-</button>
           </div>
         </div>
       </div>
@@ -1723,7 +1724,7 @@ async function autoYouTubeSearch(lineId, isRetry = false) {
   try {
     // Show subtle loading state with attempt number
     const currentAttempts = narrativeAutoGeneration.retryAttempts[lineId] || 0;
-    const attemptText = currentAttempts > 0 ? ` (attempt ${currentAttempts + 1}/5)` : '';
+    const attemptText = currentAttempts > 0 ? ` (attempt ${currentAttempts + 1}/10)` : '';
     
     if (videoInfoDiv) {
       videoInfoDiv.style.display = 'block';
@@ -1879,7 +1880,7 @@ async function autoYouTubeSearch(lineId, isRetry = false) {
       // No videos found - check if we should retry
       const currentAttempts = narrativeAutoGeneration.retryAttempts[lineId] || 0;
       
-      if (!isRetry && currentAttempts < 4) {
+      if (!isRetry && currentAttempts < 9) {
         // Not reached max attempts yet - increment retry count and try again
         narrativeAutoGeneration.retryAttempts[lineId] = currentAttempts + 1;
         
@@ -1918,7 +1919,7 @@ async function autoYouTubeSearch(lineId, isRetry = false) {
       } else {
         // Final failure after max retries - show message
         if (videoInfoDiv) {
-          videoInfoDiv.innerHTML = '<div style="color: #ef4444; text-align: center; font-size: 11px;">❌ No videos found after 5 attempts</div>';
+          videoInfoDiv.innerHTML = '<div style="color: #ef4444; text-align: center; font-size: 11px;">❌ No videos found after 10 attempts</div>';
           videoInfoDiv.style.display = 'block';
           
           setTimeout(() => {
@@ -2174,5 +2175,65 @@ function resetAddAllButton() {
     addAllButton.className = 'add-all-btn';
     addAllButton.style.opacity = '0.5';
     addAllButton.style.background = '#4a90e2';
+  }
+}
+
+/**
+ * Remove a form line by ID
+ */
+function removeFormLine(lineId) {
+  const formLine = document.getElementById(`formLine${lineId}`);
+  if (!formLine) {
+    return;
+  }
+  
+  // Get total number of lines
+  const formLines = document.querySelectorAll('.narrative-form-line');
+  
+  // Don't allow removing the last line
+  if (formLines.length <= 1) {
+    const errorDiv = document.getElementById('addNarrativeError');
+    if (errorDiv) {
+      errorDiv.innerHTML = '<div class="error">Cannot remove the last line. At least one line is required.</div>';
+      errorDiv.style.display = 'block';
+      
+      // Hide error message after 3 seconds
+      setTimeout(() => {
+        errorDiv.style.display = 'none';
+      }, 3000);
+    }
+    return;
+  }
+  
+  // Clear any timers or auto-generation state for this line
+  if (narrativeAutoGeneration.debounceTimers[lineId]) {
+    clearTimeout(narrativeAutoGeneration.debounceTimers[lineId]);
+    delete narrativeAutoGeneration.debounceTimers[lineId];
+  }
+  
+  // Clean up auto-generation state
+  delete narrativeAutoGeneration.inProgress[lineId];
+  delete narrativeAutoGeneration.videoSearchInProgress[lineId];
+  delete narrativeAutoGeneration.retryAttempts[lineId];
+  
+  // Clean up custom prompts
+  delete customPrompts[lineId];
+  
+  // Remove the line from DOM
+  formLine.remove();
+  
+  // Check validation state after removing line
+  setTimeout(checkAllLinesValid, 200);
+  
+  // Show success message
+  const errorDiv = document.getElementById('addNarrativeError');
+  if (errorDiv) {
+    errorDiv.innerHTML = '<div class="success">✅ Line removed successfully!</div>';
+    errorDiv.style.display = 'block';
+    
+    // Hide success message after 2 seconds
+    setTimeout(() => {
+      errorDiv.style.display = 'none';
+    }, 2000);
   }
 }
