@@ -1779,7 +1779,71 @@ async function autoYouTubeSearch(lineId, isRetry = false) {
       // Get the first (and only) video found
       const video = searchData.videos[0];
       
-      // Only populate if link field is still empty (user might have filled it)
+      // Check if this video URL is already used in another line
+      const isDuplicate = checkForDuplicateVideoLink(video.url, lineId);
+      
+      if (isDuplicate) {
+        // Video is already used in another line - treat as "no videos found" and retry
+        const currentAttempts = narrativeAutoGeneration.retryAttempts[lineId] || 0;
+        
+        if (!isRetry && currentAttempts < 9) {
+          // Not reached max attempts yet - increment retry count and try again
+          narrativeAutoGeneration.retryAttempts[lineId] = currentAttempts + 1;
+          
+          if (videoInfoDiv) {
+            videoInfoDiv.innerHTML = '<div style="color: #f59e0b; text-align: center; font-size: 11px;">🔄 Video already used elsewhere, retrying with new story...</div>';
+          }
+          
+          // Wait a moment, then regenerate story and retry
+          setTimeout(async () => {
+            try {
+              // Clear the story field to trigger fresh generation
+              const storyTextarea = document.getElementById(`story${lineId}`);
+              storyTextarea.value = '';
+              
+              // Generate new story with retry flag to prevent resetting retry counter
+              await autoGenerateStory(lineId, false, true);
+              
+              // Wait for story to be generated, then retry video search
+              setTimeout(() => {
+                autoYouTubeSearch(lineId, true);
+              }, 2000);
+              
+            } catch (error) {
+              // If retry fails, show final failure message
+              if (videoInfoDiv) {
+                videoInfoDiv.innerHTML = '<div style="color: #ef4444; text-align: center; font-size: 11px;">❌ No unique videos found after retries</div>';
+                videoInfoDiv.style.display = 'block';
+                
+                setTimeout(() => {
+                  videoInfoDiv.style.display = 'none';
+                }, 5000);
+              }
+            }
+          }, 1000);
+          
+          // Mark video search as no longer in progress and return early
+          narrativeAutoGeneration.videoSearchInProgress[lineId] = false;
+          return;
+          
+        } else {
+          // Final failure after max retries - show message about duplicates
+          if (videoInfoDiv) {
+            videoInfoDiv.innerHTML = '<div style="color: #ef4444; text-align: center; font-size: 11px;">❌ No unique videos found after 10 attempts</div>';
+            videoInfoDiv.style.display = 'block';
+            
+            setTimeout(() => {
+              videoInfoDiv.style.display = 'none';
+            }, 5000);
+          }
+          
+          // Mark video search as no longer in progress and return early
+          narrativeAutoGeneration.videoSearchInProgress[lineId] = false;
+          return;
+        }
+      }
+      
+      // Only populate if link field is still empty (user might have filled it) and video is unique
       if (!linkInput.value.trim()) {
         linkInput.value = video.url;
         
@@ -1919,7 +1983,7 @@ async function autoYouTubeSearch(lineId, isRetry = false) {
       } else {
         // Final failure after max retries - show message
         if (videoInfoDiv) {
-          videoInfoDiv.innerHTML = '<div style="color: #ef4444; text-align: center; font-size: 11px;">❌ No videos found after 10 attempts</div>';
+          videoInfoDiv.innerHTML = '<div style="color: #ef4444; text-align: center; font-size: 11px;">❌ No unique videos found after 10 attempts</div>';
           videoInfoDiv.style.display = 'block';
           
           setTimeout(() => {
@@ -1939,6 +2003,35 @@ async function autoYouTubeSearch(lineId, isRetry = false) {
     // Mark video search as no longer in progress
     narrativeAutoGeneration.videoSearchInProgress[lineId] = false;
   }
+}
+
+/**
+ * Check if a video URL is already used in another form line
+ */
+function checkForDuplicateVideoLink(videoUrl, currentLineId) {
+  if (!videoUrl || !videoUrl.trim()) {
+    return false;
+  }
+  
+  // Get all form lines
+  const formLines = document.querySelectorAll('.narrative-form-line');
+  
+  for (const line of formLines) {
+    const lineId = line.getAttribute('data-line-id');
+    
+    // Skip the current line
+    if (lineId === currentLineId.toString()) {
+      continue;
+    }
+    
+    // Check the link input for this line
+    const linkInput = document.getElementById(`link${lineId}`);
+    if (linkInput && linkInput.value.trim() === videoUrl.trim()) {
+      return true; // Duplicate found
+    }
+  }
+  
+  return false; // No duplicate found
 }
 
 /**

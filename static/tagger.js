@@ -507,7 +507,7 @@ async function explainNarrative() {
     return;
   }
   
-  const originalText = explainBtn.textContent;
+  const originalText = explainBtn.innerHTML;
   
   try {
     // Disable button and show appropriate loading state
@@ -552,7 +552,7 @@ async function explainNarrative() {
   } finally {
     // Restore button
     explainBtn.disabled = false;
-    explainBtn.textContent = originalText;
+    explainBtn.innerHTML = originalText;
   }
 }
 

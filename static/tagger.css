@@ -453,7 +453,7 @@ iframe {
   background-color: #2196F3;
   color: white;
   border: none;
-  padding: 4px 8px;
+  padding: 6px 10px;
   border-radius: 4px;
   font-size: 12px;
   font-weight: bold;
@@ -461,11 +461,12 @@ iframe {
   transition: all 0.3s ease;
   margin-left: 8px;
   min-width: 40px;
-  height: 28px;
+  height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   align-self: center;
+  line-height: 1.2;
 }
 
 .explain-button:hover {
@@ -1048,10 +1049,10 @@ iframe {
   .mobile-bottom-row .rating-button {
     min-width: 45px;
     min-height: auto;
-    padding: 6px 10px;
-    font-size: 10px;
+    padding: 8px 10px;
+    font-size: 12px;
     border-radius: 6px;
-    height: auto;
+    height: 50px;
     flex-direction: column;
     line-height: 1.1;
   }
@@ -1224,7 +1225,7 @@ iframe {
   }
   
   .rating-button {
-    min-width: 40px;
+    min-width: 55px;
     min-height: 40px;
     padding: 6px 8px;
     font-size: 14px;

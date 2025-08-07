@@ -67,15 +67,15 @@ class VideoRanker:
             # Parse the response and apply rankings
             ranked_videos = self._parse_ranking_response(response, videos)
 
-            # Filter out videos with relevance score below 7.0
+            # Filter out videos with relevance score below 8.0
             filtered_videos = [
                 video
                 for video in ranked_videos
-                if video.get("relevance_score", 0) >= 7.0
+                if video.get("relevance_score", 0) >= 8.0
             ]
 
             logger.info(
-                f"Successfully ranked {len(ranked_videos)} videos, filtered to {len(filtered_videos)} relevant videos (score >= 6.0)"
+                f"Successfully ranked {len(ranked_videos)} videos, filtered to {len(filtered_videos)} relevant videos (score >= 8.0)"
             )
             return filtered_videos
 

@@ -23,12 +23,53 @@
             id="explainBtn"
             onclick="explainNarrative()"
           >
-            הסבר
+            הסבר<br>נרטיב
           </button>
         </div>
 
         <div class="tagging-section">
           <div class="button-container">
+            <!-- Mobile bottom row: special buttons + action buttons + explain button -->
+            <div class="mobile-bottom-row">
+              <div class="special-rating-buttons">
+                <div class="rating-button-wrapper">
+                  <button
+                    class="rating-button rating-6"
+                    onclick="submitTag(6)"
+                    title="Too Obvious"
+                  >
+                    <span class="button-text-line">Too</span>
+                    <span class="button-text-line">Obvious</span>
+                  </button>
+                </div>
+              </div>
+              <div class="action-buttons">
+                <button
+                  class="action-button skip-button"
+                  onclick="skipVideo()"
+                  title="Skip this video"
+                >
+                  Skip
+                </button>
+                <button
+                  class="action-button problem-button"
+                  onclick="submitTag(0)"
+                  title="Report a problem"
+                >
+                  Problem
+                </button>
+              </div>
+              <div class="mobile-explain-button">
+                <button
+                  class="explain-button"
+                  id="mobileExplainBtn"
+                  onclick="explainNarrative()"
+                >
+                  הסבר<br>נרטיב
+                </button>
+              </div>
+            </div>
+
             <div class="rating-buttons">
               <div class="rating-button-wrapper">
                 <button
@@ -111,47 +152,6 @@
               >
                 Problem
               </button>
-            </div>
-
-            <!-- Mobile bottom row: special buttons + action buttons + explain button -->
-            <div class="mobile-bottom-row">
-              <div class="special-rating-buttons">
-                <div class="rating-button-wrapper">
-                  <button
-                    class="rating-button rating-6"
-                    onclick="submitTag(6)"
-                    title="Too Obvious"
-                  >
-                    <span class="button-text-line">Too</span>
-                    <span class="button-text-line">Obvious</span>
-                  </button>
-                </div>
-              </div>
-              <div class="action-buttons">
-                <button
-                  class="action-button skip-button"
-                  onclick="skipVideo()"
-                  title="Skip this video"
-                >
-                  Skip
-                </button>
-                <button
-                  class="action-button problem-button"
-                  onclick="submitTag(0)"
-                  title="Report a problem"
-                >
-                  Problem
-                </button>
-              </div>
-              <div class="mobile-explain-button">
-                <button
-                  class="explain-button"
-                  id="mobileExplainBtn"
-                  onclick="explainNarrative()"
-                >
-                  הסבר
-                </button>
-              </div>
             </div>
           </div>
         </div>
